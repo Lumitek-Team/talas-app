@@ -13,6 +13,7 @@
     "@clerk/themes": "^2.2.38",
     "@prisma/client": "^6.7.0",
     "@radix-ui/react-slot": "^1.2.0",
+    "@supabase/supabase-js": "^2.49.4",
     "@tanstack/react-query": "^5.74.11",
     "@trpc/client": "^11.1.2",
     "@trpc/react-query": "^11.1.2",
