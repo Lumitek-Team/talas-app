@@ -29,16 +29,18 @@ export default async function RootLayout({
 }>) {
   const user = await currentUser();
 
+
   if (user) {
-    const { id, emailAddresses, firstName, lastName } = user;
+    const { id, emailAddresses, firstName, lastName, externalAccounts, imageUrl } = user;
 
     const trpc = await getTrpcCaller();
     await trpc.user.syncWithSupabase({
-      id,
+      id: id,
       name: `${firstName} ${lastName}`,
       email: emailAddresses[0].emailAddress,
+      auth_type: externalAccounts[0]?.provider || "unknown",
+      photo_profile: imageUrl,
     });
-
   }
 
   return (
