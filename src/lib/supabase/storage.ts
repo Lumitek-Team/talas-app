@@ -21,3 +21,9 @@ export async function uploadFile(bucketName: string, filePath: string, file: Fil
   
   return data;
 }
+
+// Get image URL
+export async function getImageUrl(bucketName: string, filePath: string) {
+    const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+    return data.publicUrl;
+}

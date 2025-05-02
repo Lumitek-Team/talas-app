@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { uploadFile } from '@/lib/supabase/storage'
+import { getImageUrl, uploadFile } from '@/lib/supabase/storage'
 
 export default function ProfilePage() {
   const [uploadStatus, setUploadStatus] = useState<string>('')
@@ -13,11 +13,12 @@ export default function ProfilePage() {
     const file = input?.files?.[0]
     if (!file) return
 
-    const filePath = `photo_profile/${Date.now()}_${file.name}`
+    const filePath = `test_image/${Date.now()}_${file.name}`
 
     try {
       const result = await uploadFile('talas-image', filePath, file)
-      const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/talas-image/${result.path}`
+      const publicUrl = await getImageUrl('talas-image', result.path)
+      console.log(publicUrl)
       setImageUrl(publicUrl)
       setUploadStatus('Upload successful!')
     } catch (err: any) {
