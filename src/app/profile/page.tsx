@@ -21,8 +21,8 @@ export default function ProfilePage() {
       console.log(publicUrl)
       setImageUrl(publicUrl)
       setUploadStatus('Upload successful!')
-    } catch (err: any) {
-      setUploadStatus('Upload failed: ' + err.message)
+    } catch (err) {
+      setUploadStatus('Upload failed: ' + err)
     }
   }
 

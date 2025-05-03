@@ -1,4 +1,4 @@
-import { protectedProcedure, publicProcedure, router } from "../trpc";
+import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { retryConnect } from "@/lib/utils";
 import { z } from "zod";
@@ -37,9 +37,19 @@ export const userRouter = router({
 			}
 		}),
 
-	getUsers: publicProcedure.query(async () => {
-		return await prisma.user.findMany();
-	}),
+	getAll: protectedProcedure
+		.input(
+			z.object({
+				limit: z.number().optional(),
+				offset: z.number().optional(),
+			}).optional()
+		)
+		.query(async ({ input }) => {
+			return await prisma.user.findMany({
+				take: input?.limit,
+				skip: input?.offset,
+			});
+		}),
 });
 
 export type UserRouter = typeof userRouter;
