@@ -66,11 +66,11 @@ model Notification {
   user        User     @relation(fields: [id_user], references: [id])
   title       String
   description String
-  isRead      Boolean  @default(false)
+  is_read     Boolean  @default(false)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  @@index([id_user, isRead], name: "idx_user_isRead")
+  @@index([id_user, is_read], name: "idx_user_isRead")
 }
 
 model Follow {
