@@ -50,6 +50,38 @@ export const userRouter = router({
 				skip: input?.offset,
 			});
 		}),
+
+	getPhotoProfile: protectedProcedure
+		.input(
+			z.object({
+				id: z.string().optional(),
+				username: z.string().optional(),
+			})
+		)
+		.query(async ({ input }) => {
+			const { id, username } = input
+
+			if (!id && !username) {
+				throw new Error('You must provide either id or username.')
+			  }
+		
+			  const user = await prisma.user.findFirst({
+				where: id
+				  ? { id }
+				  : { username: username! },
+				select: {
+				  photo_profile: true,
+				},
+			  })
+		
+			  if (!user || !user.photo_profile) {
+				throw new Error('User or photo profile not found.')
+			  }
+		
+			  return {
+				photo_profile: user.photo_profile,
+			  }
+		})
 });
 
 export type UserRouter = typeof userRouter;
