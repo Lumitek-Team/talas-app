@@ -184,6 +184,42 @@ export const userRouter = router({
 				throw new Error("Error fetching followers: " + error)
 			}
 		}),
+
+	getAllFollowing: protectedProcedure
+		.input(
+			z.object({
+				id_follower: z.string(),
+				limit: z.number().optional(),
+				offset: z.number().optional(),
+			})
+		)
+		.query(async ({ input }) => {
+			try {
+				const followings = await prisma.follow.findMany({
+					where: {
+						id_follower: input.id_follower
+					},
+					take: input.limit,
+					skip: input.offset,
+					select: {
+						follower: {
+							select: {
+								username: true,
+								name: true,
+								photo_profile: true,
+							}
+						}
+					}
+				})
+
+				const data = followings.map(follow => ({
+					...follow.follower
+				}))
+
+				return data;
+			} catch (error) {
+				throw new Error("Error fetching followings: " + error)
+			}
 		}),
 
 	getPhotoProfile: protectedProcedure
