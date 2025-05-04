@@ -76,28 +76,39 @@ export const userRouter = router({
 			})
 		)
 		.query(async ({ input }) => {
-			return await prisma.user.findUnique({
-				where: {
-					id: input.id
-				},
-				select: {
-					username: true,
-					name: true,
-					bio: true,
-					photo_profile: true,
-					instagram: true,
-					linkedin: true,
-					github: true,
-					gender: true,
-					email_contact: true,
-					count_summary: {
-						select: {
-							count_project: true,
-							count_comment: true,
-							count_follower: true,
-							count_following: true,
-							count_notif_unread: true,
+			try {
+				
+				const data = await prisma.user.findUnique({
+					where: {
+						id: input.id
+					},
+					select: {
+						username: true,
+						name: true,
+						bio: true,
+						photo_profile: true,
+						instagram: true,
+						linkedin: true,
+						github: true,
+						gender: true,
+						email_contact: true,
+						count_summary: {
+							select: {
+								count_project: true,
+								count_comment: true,
+								count_follower: true,
+								count_following: true,
+								count_notif_unread: true,
+							},
 						},
+					}
+				})
+	
+				return data;
+			} catch (error) {
+				throw new Error("Error fetching user: " + error)
+			}
+		}),
 					},
 				}
 			})
@@ -111,28 +122,21 @@ export const userRouter = router({
 			})
 		)
 		.query(async ({ input }) => {
-			const { id, username } = input
+			try {
+				const data = await prisma.user.findFirst({
+				  where: {
+					  OR: [{ id: input.id }, { username: input.username }],
+				  },
+				  select: {
+					photo_profile: true,
+				  },
+				})
 
-			if (!id && !username) {
-				throw new Error('You must provide either id or username.')
-			  }
-		
-			  const user = await prisma.user.findFirst({
-				where: id
-				  ? { id }
-				  : { username: username! },
-				select: {
-				  photo_profile: true,
-				},
-			  })
-		
-			  if (!user || !user.photo_profile) {
-				throw new Error('User or photo profile not found.')
-			  }
-		
-			  return {
-				photo_profile: user.photo_profile,
-			  }
+				return data;
+			} catch (error) {
+				throw new Error("Error fetching photoProfile: " + error)
+			}
+		}),
 		})
 });
 
