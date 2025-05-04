@@ -51,6 +51,20 @@ export const userRouter = router({
 			});
 		}),
 
+	getById: protectedProcedure
+		.input(
+			z.object({
+				id: z.string()
+			})
+		)
+		.query(async ({ input }) => {
+			return await prisma.user.findUnique({
+				where: {
+					id: input.id
+				}
+			})
+		}),
+
 	getPhotoProfile: protectedProcedure
 		.input(
 			z.object({
