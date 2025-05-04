@@ -72,6 +72,26 @@ export const userRouter = router({
 			return await prisma.user.findUnique({
 				where: {
 					id: input.id
+				},
+				select: {
+					username: true,
+					name: true,
+					bio: true,
+					photo_profile: true,
+					instagram: true,
+					linkedin: true,
+					github: true,
+					gender: true,
+					email_contact: true,
+					count_summary: {
+						select: {
+							count_project: true,
+							count_comment: true,
+							count_follower: true,
+							count_following: true,
+							count_notif_unread: true,
+						},
+					},
 				}
 			})
 		}),
