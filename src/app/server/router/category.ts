@@ -1,24 +1,55 @@
-import { z } from 'zod'
-import { publicProcedure, router } from '../trpc'
-import prisma from '@/lib/prisma'
+import { z } from "zod";
+import { protectedProcedure,  router } from "../trpc";
+import prisma from "@/lib/prisma";
+import { retryConnect } from "@/lib/utils";
 
 export const categoryRouter = router({
-  getAll: publicProcedure.query(async () => {
-    return await prisma.category.findMany()
-  }),
+	getAll: protectedProcedure.query(async () => {
+		const data = await retryConnect(() =>
+      prisma.category.findMany({
+        select: {
+          slug: true,
+          title: true,
+          count_projects: true,
+        },
+        orderBy: {
+          count_projects: "desc",
+        },
+      })
+    );
 
-  getBySlug: publicProcedure.input(
-    z.object({
-      slug: z.string(),
-    }),
-  ).query(async ({ input }) => {
-    return await prisma.category.findFirst({
-      where: {
-        slug: input.slug,
-      },
-    })
-  }),
-})
+    return data;
+	}),
 
+	getOne: protectedProcedure
+		.input(
+			z.object({
+				id: z.string().optional(),
+				slug: z.string().optional(),
+			})
+		)
+		.query(async ({ input }) => {
+			try {
+				const data = await retryConnect(() =>
+					prisma.category.findFirst({
+						where: {
+							OR: [{ id: input.id }, { slug: input.slug }],
+						},
+            orderBy: {
+              count_projects: "desc",
+            },
+					})
+				);
 
-export type CategoryRouter = typeof categoryRouter
+				return {
+					slug: data.slug,
+					title: data.title,
+					count_projects: data.count_projects,
+				};
+			} catch (error) {
+				throw new Error("Error fetching category: " + error);
+			}
+		}),
+});
+
+export type CategoryRouter = typeof categoryRouter;
