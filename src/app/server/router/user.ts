@@ -45,21 +45,28 @@ export const userRouter = router({
 			}).optional()
 		)
 		.query(async ({ input }) => {
-			return await prisma.user.findMany({
-				take: input?.limit,
-				skip: input?.offset,
-				select: {
-					username: true,
-					name: true,
-					bio: true,
-					photo_profile: true,
-					instagram: true,
-					linkedin: true,
-					github: true,
-					gender: true,
-					email_contact: true,
-				}
-			});
+			try {
+				
+				const data =  await prisma.user.findMany({
+					take: input?.limit,
+					skip: input?.offset,
+					select: {
+						username: true,
+						name: true,
+						bio: true,
+						photo_profile: true,
+						instagram: true,
+						linkedin: true,
+						github: true,
+						gender: true,
+						email_contact: true,
+					}
+				});
+	
+				return data;
+			} catch (error) {
+				throw new Error("Error fetching user: " + error)
+			}
 		}),
 
 	getById: protectedProcedure
