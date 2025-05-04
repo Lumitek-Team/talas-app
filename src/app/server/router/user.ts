@@ -48,6 +48,17 @@ export const userRouter = router({
 			return await prisma.user.findMany({
 				take: input?.limit,
 				skip: input?.offset,
+				select: {
+					username: true,
+					name: true,
+					bio: true,
+					photo_profile: true,
+					instagram: true,
+					linkedin: true,
+					github: true,
+					gender: true,
+					email_contact: true,
+				}
 			});
 		}),
 
