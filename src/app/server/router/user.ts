@@ -245,6 +245,63 @@ export const userRouter = router({
 				throw new Error("Error fetching photoProfile: " + error)
 			}
 		}),
+
+	update: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				data: z.object({
+					username: z.string().optional(),
+					name: z.string().optional(),
+					bio: z.string().optional(),
+					photo_profile: z.string().optional(),
+					instagram: z.string().optional(),
+					linkedin: z.string().optional(),
+					github: z.string().optional(),
+					gender: z.enum(['MALE', 'FEMALE']).optional(),
+					email_contact: z.string().optional(),
+				})
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				await prisma.user.update({
+					where: {
+						id: input.id
+					},
+					data: input.data
+				});
+				
+				const updatedUser = await prisma.user.findUnique({
+					where: {
+						id: input.id
+					},
+					select: {
+						username: true,
+						name: true,
+						bio: true,
+						photo_profile: true,
+						instagram: true,
+						linkedin: true,
+						github: true,
+						gender: true,
+						email_contact: true,
+						count_summary: {
+							select: {
+								count_project: true,
+								count_comment: true,
+								count_follower: true,
+								count_following: true,
+								count_notif_unread: true,
+							},
+						},
+					}
+				});
+				
+				return updatedUser;
+			} catch (error) {
+				throw new Error("Error updating user: " + error);
+			}
 		})
 });
 
