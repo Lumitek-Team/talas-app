@@ -109,8 +109,44 @@ export const userRouter = router({
 				throw new Error("Error fetching user: " + error)
 			}
 		}),
+
+	getByUsername: protectedProcedure
+		.input(
+			z.object({
+				username: z.string()
+			})
+		)
+		.query(async ({ input }) => {
+			try {
+				const data = await prisma.user.findFirst({
+					where: {
+						username: input.username,
 					},
-				}
+					select: {
+						username: true,
+						name: true,
+						bio: true,
+						photo_profile: true,
+						instagram: true,
+						linkedin: true,
+						github: true,
+						gender: true,
+						email_contact: true,
+						count_summary: {
+							select: {
+								count_project: true,
+								count_follower: true,
+								count_following: true,
+							},
+						},
+					}
+				})
+	
+				return data;
+			} catch (error) {
+				throw new Error("Error fetching user: " + error)
+			}
+		}),
 			})
 		}),
 
