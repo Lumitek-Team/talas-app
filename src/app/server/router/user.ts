@@ -95,10 +95,9 @@ export const userRouter = router({
 						count_summary: {
 							select: {
 								count_project: true,
-								count_comment: true,
 								count_follower: true,
 								count_following: true,
-								count_notif_unread: true,
+								all_notif_read: true,
 							},
 						},
 					}
@@ -289,10 +288,9 @@ export const userRouter = router({
 						count_summary: {
 							select: {
 								count_project: true,
-								count_comment: true,
 								count_follower: true,
 								count_following: true,
-								count_notif_unread: true,
+								all_notif_read: true,
 							},
 						},
 					}

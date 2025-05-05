@@ -41,10 +41,12 @@ export const projectRouter = router({
 						video: true,
 						count_likes: true,
 						count_comments: true,
+						is_archived: true,
 						created_at: true,
 						updated_at: true,
 						category: {
 							select: {
+								id: true,
 								title: true,
 								slug: true,
 							},
