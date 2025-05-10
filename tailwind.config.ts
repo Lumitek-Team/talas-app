@@ -12,7 +12,7 @@ const config: Config = {
         "container-bg": "#1A1A1A",
       },
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
+        sans: ['var(--font-comfortaa)', 'sans-serif'],
       },
       fontSize: {
         hero: ["4rem", { lineHeight: "1.1" }],
