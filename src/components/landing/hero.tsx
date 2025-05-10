@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export function Hero() {
   return (
-    <section className="mb-50 text-center py-26 px-4">
+    <section className="mb-40 text-center py-26 px-4">
       <h1 className="text-white font-bold text-5xl sm:text-6xl max-w-4xl mx-auto mb-8"> 
         SHOWCASE AND COLLABORATE ON YOUR NEXT BIG PROJECT
       </h1>
