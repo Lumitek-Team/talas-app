@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 
 const tech = [
@@ -8,14 +9,18 @@ const tech = [
   { name: "PHP", src: "/logo/php.svg" },
 ];
 
+const duplicatedTech = [...tech, ...tech, ...tech];
+
 export function TechIcons() {
   return (
-    <div className="flex justify-center gap-12 py-8">
-      {tech.map((t) => (
-        <div key={t.name} className="flex flex-col items-center">
-          <Image src={t.src} alt={t.name} width={32} height={32} />
-        </div>
-      ))}
+    <div className="my-40 overflow-hidden w-full h-[120px]">
+      <div className="flex animate-scroll whitespace-nowrap gap-40 min-w-[300%]">
+        {duplicatedTech.map((t, i) => (
+          <div key={i} className="inline-flex items-center px-5">
+            <Image src={t.src} alt={t.name} width={100} height={100} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
