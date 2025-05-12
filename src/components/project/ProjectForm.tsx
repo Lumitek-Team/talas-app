@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
 import {
     Form,
     FormControl,
@@ -12,24 +12,24 @@ import {
     FormItem,
     FormLabel,
     FormMessage,
-} from "@/components/ui/form"
+} from "@/components/ui/form";
 import {
     Select,
     SelectContent,
-    SelectGroup,
     SelectItem,
-    SelectLabel,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { CategoryType, ProjectOneType } from "@/lib/type"
-import { useState } from "react"
-import { convertIframeToOembed, convertOembedToIframe } from "@/lib/utils"
-import RichEditor from "./ckeditor"
-import { Separator } from "../ui/separator"
-import { trpc } from "@/app/_trpc/client"
-
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { CategoryType, ProjectOneType } from "@/lib/type";
+import { useState } from "react";
+import { convertIframeToOembed, convertOembedToIframe } from "@/lib/utils";
+import RichEditor from "./ckeditor";
+import { Separator } from "../ui/separator";
+import { trpc } from "@/app/_trpc/client";
+import ImageCropperModal from "../imageCropper";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface ProjectFormProps {
     mode: "create" | "edit";
@@ -46,7 +46,7 @@ const formSchema = z.object({
     image4: z.any().nullable(),
     image5: z.any().nullable(),
     video: z.any().nullable(),
-    is_archived: z.boolean()
+    is_archived: z.boolean(),
 });
 
 const defaultContent = convertIframeToOembed(`
@@ -85,16 +85,18 @@ const defaultContent = convertIframeToOembed(`
     </table>
         `);
 
-
-const ProjectForm: React.FC<ProjectFormProps> = ({ mode, project }) => {
+const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) => {
     const [loading, setLoading] = useState(false);
-    const [submittedTitle, setSubmittedTitle] = useState('');
-    const [submittedContent, setSubmittedContent] = useState('');
+    const [submittedTitle, setSubmittedTitle] = useState("");
+    const [submittedContent, setSubmittedContent] = useState("");
+
     const [openCropper, setOpenCropper] = useState(false);
     const [imageSrc, setImageSrc] = useState("");
     const [croppedImage, setCroppedImage] = useState<File | null>(null);
 
-    const { data, isLoading } = trpc.category.getAll.useQuery<CategoryType[]>();
+    const { data, isLoading: isCategoryLoading } = trpc.category.getAll.useQuery<CategoryType[]>();
+
+    const router = useRouter();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -113,25 +115,74 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode, project }) => {
         },
     });
 
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setImageSrc(URL.createObjectURL(file));
+            setOpenCropper(true);
+        }
+    };
+
+    const handleImageCropped = (file: File) => {
+        setCroppedImage(file);
+    };
+
     function previewContent() {
         const values = form.getValues();
         setSubmittedTitle(values.title || "No Title");
-        setSubmittedContent(convertOembedToIframe(values.content) || "<p>No content provided.</p>");
+        setSubmittedContent(
+            convertOembedToIframe(values.content) || "<p>No content provided.</p>"
+        );
     }
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setLoading(true);
         const transformedContent = convertOembedToIframe(values.content);
 
-        console.log("Form values:", {
-            ...values,
-            content: transformedContent,
-        });
-        setLoading(false);
+        const formData = new FormData();
+        formData.append("id_category", values.category);
+        formData.append("title", values.title);
+        formData.append("content", transformedContent);
+
+        if (croppedImage) {
+            formData.append("image1", croppedImage);
+        }
+
+        if (mode === "create") {
+            try {
+                const res = await fetch("/api/project/create", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error("Server response:", errorText);
+                    throw new Error("Failed to create project");
+                }
+
+                const data = await res.json();
+                console.log("Project created:", data.project.slug);
+                setLoading(false);
+                router.push(`/project/${data.project.slug}`);
+            } catch (err) {
+                setLoading(false);
+                console.error("Error creating project:", err);
+            }
+        }
     }
 
     return (
         <>
+            {/* modal image editor */}
+            <ImageCropperModal
+                open={openCropper}
+                imageSrc={imageSrc}
+                aspectRatio={16 / 9}
+                onClose={() => setOpenCropper(false)}
+                onCropDone={handleImageCropped}
+            />
+
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                     <div className="grid grid-cols-2 gap-4">
@@ -146,27 +197,73 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode, project }) => {
                                             <Input placeholder="shadcn" {...field} />
                                         </FormControl>
                                         <FormDescription>
-                                            This is your public display name.
+                                            This is your {mode} project title.
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
                         </div>
-                        {/* <div className="col-span-1">
+                        <div className="col-span-2">
                             <FormField
                                 control={form.control}
-                                name="featuredImage"
+                                name="category"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Category</FormLabel>
+                                        <FormControl>
+                                            <Select
+                                                value={field.value}
+                                                onValueChange={(value) => field.onChange(value)}
+                                            >
+                                                <SelectTrigger className="w-[280px]">
+                                                    <SelectValue placeholder="Select a category" />
+                                                </SelectTrigger>
+                                                {isCategoryLoading ? (
+                                                    <SelectContent>Loading...</SelectContent>
+                                                ) : (
+                                                    <SelectContent>
+                                                        {data?.map((category) => (
+                                                            <SelectItem key={category.id} value={category.id}>
+                                                                {category.title}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                )}
+                                            </Select>
+                                        </FormControl>
+                                        <FormDescription>
+                                            This is your category blog.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-1">
+                            <FormField
+                                control={form.control}
+                                name="image1"
                                 render={() => (
                                     <FormItem>
                                         <FormLabel>featured Image</FormLabel>
-                                        <FormControl >
+                                        <FormControl>
                                             <div>
-                                                {project?.featuredImage && !croppedImage && (
-                                                    <Image src={project.featuredImage} alt="Current Image" className="w-full h-auto rounded mb-2 aspect-video" width={480} height={480} />
+                                                {project?.image1 && !croppedImage && (
+                                                    <Image
+                                                        src={project.image1}
+                                                        alt="Current Image"
+                                                        className="w-full h-auto rounded mb-2 aspect-video"
+                                                        width={480}
+                                                        height={480}
+                                                    />
                                                 )}
                                                 <div className="flex gap-2">
-                                                    <Input type="file" accept="image/*" onChange={handleImageChange} />
+                                                    <Input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handleImageChange}
+                                                    />
                                                     {croppedImage && (
                                                         <Button
                                                             type="button"
@@ -187,39 +284,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode, project }) => {
                                     </FormItem>
                                 )}
                             />
-                        </div> */}
-                        <div className="col-span-2">
-                            <FormField
-                                control={form.control}
-                                name="category"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Category</FormLabel>
-                                        <FormControl>
-                                            <Select
-                                                value={field.value}
-                                                onValueChange={(value) => field.onChange(value)}
-                                            >
-                                                <SelectTrigger className="w-[280px]">
-                                                    <SelectValue placeholder="Select a category" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {data?.map((category) => (
-                                                        <SelectItem key={category.id} value={category.id}>
-                                                            {category.title}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </FormControl>
-                                        <FormDescription>
-                                            This is your category blog.
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
                         </div>
+
                         <div className="col-span-2">
                             <FormField
                                 control={form.control}
@@ -243,13 +309,18 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode, project }) => {
                                     </FormItem>
                                 )}
                             />
-
                         </div>
                     </div>
                     <div className="flex gap-2 justify-end">
-                        <Button type="button" variant={"outline"} onClick={previewContent}>Preview</Button>
+                        <Button type="button" variant={"outline"} onClick={previewContent}>
+                            Preview
+                        </Button>
                         {loading ? (
-                            <Button type="submit" disabled={loading} className="cursor-default" >
+                            <Button
+                                type="submit"
+                                disabled={loading}
+                                className="cursor-default"
+                            >
                                 Saving...
                             </Button>
                         ) : (
@@ -259,18 +330,17 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode, project }) => {
                         )}
                     </div>
                 </form>
-
-                <Separator />
-
-                {/* hasil */}
-
-                <div className="project-view mt-8" id="project-view">
-                    <h2 className="text-lg font-semibold mb-2">{submittedTitle}</h2>
-                    <div dangerouslySetInnerHTML={{ __html: submittedContent }} />
-                </div>
             </Form>
-        </>
-    )
-}
+            <Separator />
 
-export default ProjectForm
+            {/* hasil */}
+
+            <div className="project-view mt-8" id="project-view">
+                <h2 className="text-lg font-semibold mb-2">{submittedTitle}</h2>
+                <div dangerouslySetInnerHTML={{ __html: submittedContent }} />
+            </div>
+        </>
+    );
+};
+
+export default ProjectForm;

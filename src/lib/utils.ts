@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import imageCompression from "browser-image-compression";
+import { supabase } from "./supabase/client";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -159,4 +160,18 @@ function createImage(url: string): Promise<HTMLImageElement> {
 		img.setAttribute("crossOrigin", "anonymous");
 		img.src = url;
 	});
+}
+
+
+export function getPublicUrl(path: string) {
+	const { data } = supabase.storage
+		.from("talas-image")
+		.getPublicUrl(path);
+
+	if (!data.publicUrl) {
+		console.error("Error getting public URL");
+		return "";
+	}
+
+	return data.publicUrl;
 }

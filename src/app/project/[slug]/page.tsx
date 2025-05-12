@@ -1,37 +1,41 @@
-"use client"
+"use client";
 
-import { trpc } from "@/app/_trpc/client"
-import { ProjectOneType } from "@/lib/type"
-import { useUser } from "@clerk/nextjs"
-import Image from "next/image"
+import { useParams } from "next/navigation";
+import { trpc } from "@/app/_trpc/client";
+import { ProjectOneType } from "@/lib/type";
+import { useUser } from "@clerk/nextjs";
+import Image from "next/image";
+import { Separator } from "@/components/ui/separator";
+import { getPublicUrl } from "@/lib/utils";
 
-interface ProjectPageProps {
-    params: { slug: string }
-}
-
-const ProjectPage: React.FC<ProjectPageProps> = ({ params }: ProjectPageProps) => {
-    const { user } = useUser()
+const ProjectPage = () => {
+    const { slug } = useParams() as { slug: string };
+    const { user } = useUser();
 
     const { data, isLoading } = trpc.project.getOne.useQuery({
-        id: params.slug,
+        id: slug,
         id_user: user?.id || "",
-    })
+    });
 
+    if (isLoading) return (<div> <h1>Loading...</h1> </div>);
     const project: ProjectOneType = data;
-
-    if (isLoading) return (<div> <h1>Loading...</h1> </div>)
 
     return (
         <div>
             <h1>{project.title}</h1>
             <div className="flex gap-2 flex-wrap w-full">
-                <Image src={project.image1 ?? ""} height={360} width={360} alt={project.title + " image"} />
+                {project.image1 && (
+                    <>
+                        <Separator />
+                        <Image src={getPublicUrl(project.image1)} height={360} width={360} alt={project.title} />
+                    </>
+                )}
             </div>
             <div>
                 <div dangerouslySetInnerHTML={{ __html: project.content }} />
             </div>
         </div>
-    )
-}
+    );
+};
 
-export default ProjectPage
+export default ProjectPage;

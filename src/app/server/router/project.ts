@@ -72,14 +72,32 @@ export const projectRouter = router({
 		}
 	}),
 
+	checkSlug: protectedProcedure
+	.input(z.string())
+	.query(async ({ input }) => {
+		try {
+			const project = await retryConnect(() =>
+				prisma.project.findFirst({
+					where: {
+						slug: input,
+					},
+				})
+			);
+
+			return project ? true : false;
+		} catch (error) {
+			throw new Error("Error checking slug: " + error);
+		}
+	}),
+
 	create: protectedProcedure
 		.input(
 			z.object({
 				id_user: z.string(),
 				id_category: z.string(),
 				title: z.string(),
-				is_archived: z.boolean().default(false),
 				content: z.string().min(1),
+				is_archived: z.boolean().default(false),
 				image1: z.any().optional(),
 				image2: z.any().optional(),
 				image3: z.any().optional(),
@@ -150,7 +168,7 @@ export const projectRouter = router({
 				await retryConnect(() =>
 					prisma.count_summary.update({
 						where: {
-							id: input.id_user,
+							id_user: input.id_user,
 						},
 						data: {
 							count_project: {
@@ -159,6 +177,8 @@ export const projectRouter = router({
 						},
 					})
 				);
+
+				return newProject;
 			} catch (error) {
 				throw new Error("Error creating project: " + error);
 			}
