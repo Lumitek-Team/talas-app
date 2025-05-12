@@ -56,7 +56,7 @@ model User {
 model Project {
   id             String        @id @default(ulid())
   id_category    String
-  category       Category      @relation(fields: [id_category], references: [id])
+  category       Category      @relation(fields: [id_category], references: [id], onDelete: Cascade)
   Comment        Comment[]
   project_user   ProjectUser[]
   bookmarks      Bookmark[]
@@ -86,7 +86,7 @@ model Comment {
   id_user     String
   user        User          @relation(fields: [id_user], references: [id])
   id_project  String
-  project     Project       @relation(fields: [id_project], references: [id])
+  project     Project       @relation(fields: [id_project], references: [id], onDelete: Cascade)
   content     String
   count_like  Int           @default(0)
   parent_id   String?
@@ -148,7 +148,7 @@ model ProjectUser {
   id_user    String
   user       User     @relation(fields: [id_user], references: [id])
   id_project String
-  project    Project  @relation(fields: [id_project], references: [id])
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
   created_at DateTime @default(now())
 
   @@index([id_user, id_project], name: "idx_user_project")
@@ -159,7 +159,7 @@ model Bookmark {
   id_user    String
   user       User     @relation(fields: [id_user], references: [id])
   id_project String
-  project    Project  @relation(fields: [id_project], references: [id])
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
   created_at DateTime @default(now())
 
   @@index([id_user, id_project], name: "idx_user_project_bookmark")
@@ -170,7 +170,7 @@ model LikeProject {
   id_user    String
   user       User     @relation(fields: [id_user], references: [id])
   id_project String
-  project    Project  @relation(fields: [id_project], references: [id])
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
   created_at DateTime @default(now())
 
   @@index([id_user, id_project], name: "idx_user_project_like")

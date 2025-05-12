@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import imageCompression from "browser-image-compression";
 import { supabase } from "./supabase/client";
+import { randomUUID } from "crypto";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -162,6 +163,23 @@ function createImage(url: string): Promise<HTMLImageElement> {
 	});
 }
 
+export async function uploadImage(file: File, folder: string): Promise<string> {
+	const buffer = Buffer.from(await file.arrayBuffer());
+	const fileExt = file.name.split(".").pop();
+	const fileName = `${folder}/${Date.now()}-${randomUUID()}.${fileExt}`;
+
+	const { error } = await supabase.storage
+		.from("talas-image")
+		.upload(fileName, buffer, {
+			contentType: file.type,
+		});
+
+	if (error) {
+		throw new Error(`Failed to upload image: ${error.message}`);
+	}
+
+	return fileName;
+}
 
 export function getPublicUrl(path: string) {
 	const { data } = supabase.storage
