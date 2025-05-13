@@ -10,7 +10,7 @@ export default function LandingPage() {
     <main 
       className="bg-bg-primary min-h-screen font-sans relative"
       style={{
-        backgroundImage: "url('/img/landingPage-bg.svg')",
+        backgroundImage: "url('/img/landingPage-bg2.jpg')",
         backgroundSize: "110%", 
         backgroundPosition: "top center",
         backgroundRepeat: "no-repeat"
