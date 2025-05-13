@@ -12,7 +12,7 @@ export function CTA() {
   ];
 
   return (
-    <section className="text-center py-50 px-4 bg-bg-primary"> {/* Changed py-24 to py-32 */}
+    <section className="text-center py-50 px-4 bg-bg-primary">
       <h2 className="text-4xl text-white font-bold mb-16">Behind Talas</h2>
       
       <div className="flex justify-center gap-6 mb-16 flex-wrap">
