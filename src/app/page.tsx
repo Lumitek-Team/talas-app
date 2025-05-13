@@ -20,7 +20,7 @@ export default function LandingPage() {
       
       <div className="relative z-10">
         <Navbar />
-        <div className="pt-28 md:pt-32"> {/* Added padding-top here */}
+        <div className="pt-28 md:pt-32">
           <Hero />
           <TechIcons />
           <Preview />

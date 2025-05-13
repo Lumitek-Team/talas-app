@@ -17,6 +17,12 @@ const config: Config = {
       fontSize: {
         hero: ["4rem", { lineHeight: "1.1" }],
       },
+      transitionProperty: {
+        blur: 'filter',
+      },
+      transitionDuration: {
+        700: '250ms',
+      },
     },
   },
   plugins: [],
