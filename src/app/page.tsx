@@ -10,7 +10,7 @@ export default function LandingPage() {
     <main
       className="bg-bg-primary min-h-screen font-sans relative"
       style={{
-        backgroundImage: "url('/img/landingPage-bg.svg')",
+        backgroundImage: "url('/img/landingPage-bg2.jpg')",
         backgroundSize: "110%",
         backgroundPosition: "top center",
         backgroundRepeat: "no-repeat"
@@ -20,7 +20,7 @@ export default function LandingPage() {
 
       <div className="relative z-10">
         <Navbar />
-        <div className="pt-28 md:pt-32"> {/* Added padding-top here */}
+        <div className="pt-28 md:pt-32">
           <Hero />
           <TechIcons />
           <Preview />
