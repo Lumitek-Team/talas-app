@@ -8,26 +8,51 @@ import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import { getPublicUrl } from "@/lib/utils";
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 const ProjectPage = () => {
     const { slug } = useParams() as { slug: string };
-    const { user } = useUser();
+    const { user, isLoaded } = useUser();
+    const router = useRouter();
 
     const { data, isLoading } = trpc.project.getOne.useQuery({
         id: slug,
         id_user: user?.id || "",
     });
 
-    if (isLoading) return (<div> <h1>Loading...</h1> </div>);
-    const project: ProjectOneType = data;
 
+    const deleteMutation = trpc.project.delete.useMutation({
+        onSuccess: () => {
+            router.push("/"); // Redirect to the homepage after deletion
+        },
+        onError: (error) => {
+            alert(`Failed to delete project: ${error.message}`);
+        },
+    });
+
+    if (isLoading || !isLoaded) return (<div> <h1>Loading...</h1> </div>);
+    if (user === null && isLoaded) return router.push("/sign-in");
+
+    const deleteProject = () => {
+        if (confirm("Are you sure you want to delete this project?")) {
+            deleteMutation.mutate({
+                id: slug,
+                id_user: user.id,
+            });
+        }
+    };
+
+    const project: ProjectOneType = data;
 
     return (
         <div>
             {(user?.id === project.project_user[0].user.id) && (
                 <div className="flex justify-end gap-4 items-center">
                     <Link href={`/project/${slug}/edit`} className={buttonVariants({ variant: "default" })}>edit</Link>
+                    <Button variant="destructive" onClick={deleteProject}>
+                        Delete
+                    </Button>
                 </div>
             )}
             <h1 className="text-xl font-semibold">{project.title}</h1>
@@ -42,9 +67,7 @@ const ProjectPage = () => {
                         Github
                     </Link>
                 )}
-
             </div>
-
 
             <p>{project.category.title}</p>
             <div className="flex gap-2 flex-wrap w-full">

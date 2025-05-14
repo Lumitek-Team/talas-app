@@ -1,8 +1,9 @@
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { retryConnect } from "@/lib/utils";
+import { retryConnect, deleteImage } from "@/lib/utils";
 import { z } from "zod";
 import slugify from "slugify";
+import { getTrpcCaller } from "@/app/_trpc/server";
 
 export const projectRouter = router({
 	getOne: protectedProcedure
@@ -359,6 +360,61 @@ export const projectRouter = router({
 				return updatedProject;
 			} catch (error) {
 				throw new Error("Error editing project: " + error);
+			}
+		}),
+	delete: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				id_user: z.string(),
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				const existingProject = await (
+					await getTrpcCaller()
+				).project.getOne({
+					id: input.id,
+					id_user: input.id_user,
+				});
+
+				if (!existingProject) {
+					throw new Error("Project not found.");
+				}
+				if (existingProject.project_user[0].user.id !== input.id_user) {
+					throw new Error("Project access denied.");
+				}
+
+				// delete all images in this project from storage
+				const images = [
+					existingProject.image1,
+					existingProject.image2,
+					existingProject.image3,
+					existingProject.image4,
+					existingProject.image5,
+				].filter(Boolean);
+
+				for (const imagePath of images) {
+					await deleteImage(imagePath);
+				}
+
+				await retryConnect(() =>
+					prisma.$transaction([
+						prisma.project.delete({
+							where: { id: input.id },
+						}),
+						prisma.category.update({
+							where: { id: existingProject.category.id }, // Ensure id_category is valid
+							data: { count_projects: { decrement: 1 } },
+						}),
+						prisma.count_summary.update({
+							where: { id_user: input.id_user },
+							data: { count_project: { decrement: 1 } },
+						}),
+					])
+				);
+			} catch (error) {
+				throw new Error("Error deleting project: " + error);
 			}
 		}),
 });
