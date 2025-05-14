@@ -14,20 +14,177 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum genderType {
+  MALE
+  FEMALE
+}
+
+enum notifType {
+  FOLLOW
+  LIKE_PROJECT
+  LIKE_COMMENT
+  COMMENT
+}
+
 model User {
-  id        String   @id @default(ulid())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
+  id            String         @id @default(ulid())
+  followers     Follow[]       @relation("Follower")
+  following     Follow[]       @relation("Following")
+  notifications Notification[]
+  project_user  ProjectUser[]
+  Bookmark      Bookmark[]
+  count_summary count_summary?
+  LikeProject   LikeProject[]
+  Comment       Comment[]
+  LikeComment   LikeComment[]
+  email         String         @unique
+  auth_type     String
+  username      String
+  name          String
+  bio           String?
+  photo_profile String?
+  instagram     String?
+  linkedin      String?
+  github        String?
+  gender        genderType?
+  email_contact String?
+  created_at    DateTime       @default(now())
+
+  @@index([username], name: "idx_username")
+}
+
+model Project {
+  id             String        @id @default(ulid())
+  id_category    String
+  category       Category      @relation(fields: [id_category], references: [id], onDelete: Cascade)
+  Comment        Comment[]
+  project_user   ProjectUser[]
+  bookmarks      Bookmark[]
+  LikeProject    LikeProject[]
+  slug           String        @unique
+  title          String
+  content        String
+  is_archived    Boolean       @default(false)
+  image1         String?
+  image2         String?
+  image3         String?
+  image4         String?
+  image5         String?
+  video          String?
+  link_github    String?
+  link_figma     String?
+  count_likes    Int           @default(0)
+  count_comments Int           @default(0)
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+
+  @@index([id_category], name: "idx_category")
+  @@index([slug], name: "idx_slug_project")
+}
+
+model Comment {
+  id          String        @id @default(ulid())
+  LikeComment LikeComment[]
+  id_user     String
+  user        User          @relation(fields: [id_user], references: [id])
+  id_project  String
+  project     Project       @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  content     String
+  count_like  Int           @default(0)
+  parent_id   String?
+  parent      Comment?      @relation("CommentReplies", fields: [parent_id], references: [id])
+  replies     Comment[]     @relation("CommentReplies")
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+
+  @@index([id_project], name: "idx_project_comment")
+}
+
+model Notification {
+  id         String    @id @default(ulid())
+  id_user    String
+  user       User      @relation(fields: [id_user], references: [id])
+  title      String
+  type       notifType
+  is_read    Boolean   @default(false)
+  created_at DateTime  @default(now())
+
+  @@index([id_user], name: "idx_user_notification")
 }
 
 model Category {
-  id             String   @id @default(ulid())
+  id             String    @id @default(ulid())
+  slug           String    @unique
   title          String
-  slug           String
-  count_projects Int      @default(0)
-  createdAt      DateTime @default(now())
+  count_projects Int       @default(0)
+  projects       Project[]
+  created_at     DateTime  @default(now())
+}
 
-  @@index([slug], name: "category_slug_index")
-  @@index([count_projects], name: "category_count_projects_index")
+model count_summary {
+  id              String   @id @default(ulid())
+  id_user         String   @unique
+  user            User     @relation(fields: [id_user], references: [id])
+  count_project   Int      @default(0)
+  count_following Int      @default(0)
+  count_follower  Int      @default(0)
+  all_notif_read  Boolean  @default(false)
+  created_at      DateTime @default(now())
+
+  @@index([id_user], name: "idx_user_count_summary")
+}
+
+model Follow {
+  id           String   @id @default(ulid())
+  id_follower  String
+  follower     User     @relation("Follower", fields: [id_follower], references: [id])
+  id_following String
+  following    User     @relation("Following", fields: [id_following], references: [id])
+  created_at   DateTime @default(now())
+
+  @@index([id_follower, id_following], name: "idx_follower_following")
+}
+
+model ProjectUser {
+  id         String   @id @default(ulid())
+  id_user    String
+  user       User     @relation(fields: [id_user], references: [id])
+  id_project String
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+
+  @@index([id_user, id_project], name: "idx_user_project")
+}
+
+model Bookmark {
+  id         String   @id @default(ulid())
+  id_user    String
+  user       User     @relation(fields: [id_user], references: [id])
+  id_project String
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+
+  @@index([id_user, id_project], name: "idx_user_project_bookmark")
+}
+
+model LikeProject {
+  id         String   @id @default(ulid())
+  id_user    String
+  user       User     @relation(fields: [id_user], references: [id])
+  id_project String
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+
+  @@index([id_user, id_project], name: "idx_user_project_like")
+}
+
+model LikeComment {
+  id         String   @id @default(ulid())
+  id_user    String
+  user       User     @relation(fields: [id_user], references: [id])
+  id_comment String
+  comment    Comment  @relation(fields: [id_comment], references: [id])
+  created_at DateTime @default(now())
+
+  @@index([id_user, id_comment], name: "idx_user_comment_like")
 }
