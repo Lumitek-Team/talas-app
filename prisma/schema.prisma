@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,53 +8,36 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum genderType {
-  MALE
-  FEMALE
-}
-
-enum notifType {
-  FOLLOW
-  LIKE_PROJECT
-  LIKE_COMMENT
-  COMMENT
-}
-
 model User {
   id            String         @id @default(ulid())
-  followers     Follow[]       @relation("Follower")
-  following     Follow[]       @relation("Following")
-  notifications Notification[]
-  project_user  ProjectUser[]
-  Bookmark      Bookmark[]
-  count_summary count_summary?
-  LikeProject   LikeProject[]
-  Comment       Comment[]
-  LikeComment   LikeComment[]
+  name          String
   email         String         @unique
   auth_type     String
-  username      String
-  name          String
   bio           String?
-  photo_profile String?
+  created_at    DateTime       @default(now())
+  email_contact String?
+  github        String?
   instagram     String?
   linkedin      String?
-  github        String?
+  photo_profile String?
+  username      String
   gender        genderType?
-  email_contact String?
-  created_at    DateTime       @default(now())
+  Bookmark      Bookmark[]
+  Comment       Comment[]
+  followers     Follow[]       @relation("Follower")
+  following     Follow[]       @relation("Following")
+  LikeComment   LikeComment[]
+  LikeProject   LikeProject[]
+  notifications Notification[]
+  project_user  ProjectUser[]
+  count_summary count_summary?
 
-  @@index([username], name: "idx_username")
+  @@index([username], map: "idx_username")
 }
 
 model Project {
   id             String        @id @default(ulid())
   id_category    String
-  category       Category      @relation(fields: [id_category], references: [id], onDelete: Cascade)
-  Comment        Comment[]
-  project_user   ProjectUser[]
-  bookmarks      Bookmark[]
-  LikeProject    LikeProject[]
   slug           String        @unique
   title          String
   content        String
@@ -77,39 +54,44 @@ model Project {
   count_comments Int           @default(0)
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
+  bookmarks      Bookmark[]
+  Comment        Comment[]
+  LikeProject    LikeProject[]
+  category       Category      @relation(fields: [id_category], references: [id], onDelete: Cascade)
+  project_user   ProjectUser[]
 
-  @@index([id_category], name: "idx_category")
-  @@index([slug], name: "idx_slug_project")
+  @@index([id_category], map: "idx_category")
+  @@index([slug], map: "idx_slug_project")
 }
 
 model Comment {
   id          String        @id @default(ulid())
-  LikeComment LikeComment[]
   id_user     String
-  user        User          @relation(fields: [id_user], references: [id])
   id_project  String
-  project     Project       @relation(fields: [id_project], references: [id], onDelete: Cascade)
   content     String
   count_like  Int           @default(0)
-  parent_id   String?
-  parent      Comment?      @relation("CommentReplies", fields: [parent_id], references: [id])
-  replies     Comment[]     @relation("CommentReplies")
   created_at  DateTime      @default(now())
   updated_at  DateTime      @updatedAt
+  parent_id   String?
+  project     Project       @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [id_user], references: [id])
+  parent      Comment?      @relation("CommentReplies", fields: [parent_id], references: [id])
+  replies     Comment[]     @relation("CommentReplies")
+  LikeComment LikeComment[]
 
-  @@index([id_project], name: "idx_project_comment")
+  @@index([id_project], map: "idx_project_comment")
 }
 
 model Notification {
   id         String    @id @default(ulid())
   id_user    String
-  user       User      @relation(fields: [id_user], references: [id])
   title      String
-  type       notifType
-  is_read    Boolean   @default(false)
   created_at DateTime  @default(now())
+  is_read    Boolean   @default(false)
+  type       notifType
+  user       User      @relation(fields: [id_user], references: [id])
 
-  @@index([id_user], name: "idx_user_notification")
+  @@index([id_user], map: "idx_user_notification")
 }
 
 model Category {
@@ -117,74 +99,86 @@ model Category {
   slug           String    @unique
   title          String
   count_projects Int       @default(0)
-  projects       Project[]
   created_at     DateTime  @default(now())
+  projects       Project[]
 }
 
 model count_summary {
   id              String   @id @default(ulid())
   id_user         String   @unique
-  user            User     @relation(fields: [id_user], references: [id])
   count_project   Int      @default(0)
   count_following Int      @default(0)
   count_follower  Int      @default(0)
-  all_notif_read  Boolean  @default(false)
   created_at      DateTime @default(now())
+  all_notif_read  Boolean  @default(false)
+  user            User     @relation(fields: [id_user], references: [id])
 
-  @@index([id_user], name: "idx_user_count_summary")
+  @@index([id_user], map: "idx_user_count_summary")
 }
 
 model Follow {
   id           String   @id @default(ulid())
   id_follower  String
-  follower     User     @relation("Follower", fields: [id_follower], references: [id])
   id_following String
-  following    User     @relation("Following", fields: [id_following], references: [id])
   created_at   DateTime @default(now())
+  follower     User     @relation("Follower", fields: [id_follower], references: [id])
+  following    User     @relation("Following", fields: [id_following], references: [id])
 
-  @@index([id_follower, id_following], name: "idx_follower_following")
+  @@index([id_follower, id_following], map: "idx_follower_following")
 }
 
 model ProjectUser {
   id         String   @id @default(ulid())
   id_user    String
-  user       User     @relation(fields: [id_user], references: [id])
   id_project String
-  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
   created_at DateTime @default(now())
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [id_user], references: [id])
 
-  @@index([id_user, id_project], name: "idx_user_project")
+  @@index([id_user, id_project], map: "idx_user_project")
 }
 
 model Bookmark {
   id         String   @id @default(ulid())
   id_user    String
-  user       User     @relation(fields: [id_user], references: [id])
   id_project String
-  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
   created_at DateTime @default(now())
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [id_user], references: [id])
 
-  @@index([id_user, id_project], name: "idx_user_project_bookmark")
+  @@index([id_user, id_project], map: "idx_user_project_bookmark")
 }
 
 model LikeProject {
   id         String   @id @default(ulid())
   id_user    String
-  user       User     @relation(fields: [id_user], references: [id])
   id_project String
-  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
   created_at DateTime @default(now())
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [id_user], references: [id])
 
-  @@index([id_user, id_project], name: "idx_user_project_like")
+  @@index([id_user, id_project], map: "idx_user_project_like")
 }
 
 model LikeComment {
   id         String   @id @default(ulid())
   id_user    String
-  user       User     @relation(fields: [id_user], references: [id])
   id_comment String
-  comment    Comment  @relation(fields: [id_comment], references: [id])
   created_at DateTime @default(now())
+  comment    Comment  @relation(fields: [id_comment], references: [id])
+  user       User     @relation(fields: [id_user], references: [id])
 
-  @@index([id_user, id_comment], name: "idx_user_comment_like")
+  @@index([id_user, id_comment], map: "idx_user_comment_like")
+}
+
+enum genderType {
+  MALE
+  FEMALE
+}
+
+enum notifType {
+  FOLLOW
+  LIKE_PROJECT
+  LIKE_COMMENT
+  COMMENT
 }
