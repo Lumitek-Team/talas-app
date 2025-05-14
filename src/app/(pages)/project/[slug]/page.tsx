@@ -24,7 +24,7 @@ const ProjectPage = () => {
 
     const deleteMutation = trpc.project.delete.useMutation({
         onSuccess: () => {
-            router.push("/"); // Redirect to the homepage after deletion
+            router.push("/feeds/contoh");
         },
         onError: (error) => {
             alert(`Failed to delete project: ${error.message}`);
@@ -37,7 +37,7 @@ const ProjectPage = () => {
     const deleteProject = () => {
         if (confirm("Are you sure you want to delete this project?")) {
             deleteMutation.mutate({
-                id: slug,
+                id: data.id,
                 id_user: user.id,
             });
         }

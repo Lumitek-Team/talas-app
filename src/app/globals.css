@@ -8,7 +8,7 @@
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
-	--font-sans: var(--font-geist-sans);
+	--font-sans: var(--font-comfortaa);
 	--font-mono: var(--font-geist-mono);
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
@@ -119,8 +119,134 @@
 		@apply border-border outline-ring/50;
 	}
 	body {
-		@apply bg-background text-foreground;
+		@apply bg-background text-foreground font-sans;
 	}
+
+	a {
+		@apply cursor-pointer;
+	}
+
+	/* CK editor css */
+	.container {
+		@apply mx-auto;
+	}
+
+	.project-view h1,
+	.ck-content h1 {
+		@apply text-4xl/normal;
+	}
+	.project-view h2,
+	.ck-content h2 {
+		@apply text-3xl/normal;
+	}
+	.project-view h3,
+	.ck-content h3 {
+		@apply text-2xl;
+	}
+	.project-view h4,
+	.ck-content h4 {
+		@apply text-xl;
+	}
+	.project-view h5,
+	.ck-content h5 {
+		@apply text-lg;
+	}
+	.project-view h6,
+	.ck-content h6 {
+		@apply text-base;
+	}
+	.project-view p,
+	.ck-content p {
+		@apply text-base/normal;
+	}
+
+	.project-view a,
+	.ck-content a {
+		@apply text-base text-white hover:text-zinc-200 underline;
+	}
+
+	.project-view hr {
+		@apply my-2;
+	}
+	.project-view pre {
+		@apply p-4 my-2;
+	}
+
+	.project-view ul,
+	.project-view ol,
+	.ck-content ul,
+	.ck-content ol {
+		list-style-position: inside !important;
+	}
+}
+
+/* CK editor css */
+@layer components {
+	.project-view table {
+		@apply w-full text-sm text-left border border-zinc-200 border-collapse overflow-hidden rounded-lg my-6;
+	}
+
+	.project-view tbody {
+		@apply border border-zinc-200;
+	}
+
+	.project-view th,
+	.project-view td {
+		@apply p-3 border border-zinc-200;
+	}
+
+	.project-view tr:hover {
+		@apply bg-zinc-800;
+	}
+}
+
+/* CK editor css */
+.main-container {
+	margin-left: auto;
+	margin-right: auto;
+	@apply w-full;
+}
+
+.ck-content {
+	line-height: 1.5;
+}
+
+.ck-toolbar,
+.ck-content,
+.ck-button,
+.ck-list,
+.ck-dialog,
+.ck-form__header__label,
+.ck-input,
+.ck-label,
+.ck-character-info__code,
+.ck-character-info__name,
+.ck-balloon-panel,
+.ck-dropdown__panel {
+	background: var(--background) !important;
+	color: var(--foreground) !important;
+}
+
+.ck-content blockquote {
+	border-color: var(--color-muted-foreground) !important;
+}
+
+pre {
+	background-color: var(--color-zinc-800) !important;
+	color: var(--color-zinc-200) !important;
+}
+pre[data-language]::after {
+	background: var(--color-zinc-200) !important;
+	color: var(--color-zinc-800) !important;
+}
+
+.ck-editor__editable .ck-list-bogus-paragraph {
+	display: inline-block !important;
+}
+
+.ck-horizontal-line > hr {
+	background: var(--color-muted-foreground) !important;
+	@apply rounded-full;
 }
 
 @keyframes scroll {
