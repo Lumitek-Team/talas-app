@@ -12,7 +12,8 @@ export const userRouter = router({
 				email: z.string().email(),
 				auth_type: z.string(),
 				photo_profile: z.string(),
-			}))
+			})
+		)
 		.mutation(async ({ input }) => {
 			const existingUser = await retryConnect(() =>
 				prisma.user.findFirst({
@@ -39,15 +40,16 @@ export const userRouter = router({
 
 	getAll: protectedProcedure
 		.input(
-			z.object({
-				limit: z.number().optional(),
-				offset: z.number().optional(),
-			}).optional()
+			z
+				.object({
+					limit: z.number().optional(),
+					offset: z.number().optional(),
+				})
+				.optional()
 		)
 		.query(async ({ input }) => {
 			try {
-				
-				const data =  await prisma.user.findMany({
+				const data = await prisma.user.findMany({
 					take: input?.limit,
 					skip: input?.offset,
 					select: {
@@ -60,27 +62,26 @@ export const userRouter = router({
 						github: true,
 						gender: true,
 						email_contact: true,
-					}
+					},
 				});
-	
+
 				return data;
 			} catch (error) {
-				throw new Error("Error fetching user: " + error)
+				throw new Error("Error fetching user: " + error);
 			}
 		}),
 
 	getById: protectedProcedure
 		.input(
 			z.object({
-				id: z.string()
+				id: z.string(),
 			})
 		)
 		.query(async ({ input }) => {
 			try {
-				
 				const data = await prisma.user.findUnique({
 					where: {
-						id: input.id
+						id: input.id,
 					},
 					select: {
 						username: true,
@@ -100,19 +101,19 @@ export const userRouter = router({
 								all_notif_read: true,
 							},
 						},
-					}
-				})
-	
+					},
+				});
+
 				return data;
 			} catch (error) {
-				throw new Error("Error fetching user: " + error)
+				throw new Error("Error fetching user: " + error);
 			}
 		}),
 
 	getByUsername: protectedProcedure
 		.input(
 			z.object({
-				username: z.string()
+				username: z.string(),
 			})
 		)
 		.query(async ({ input }) => {
@@ -138,12 +139,12 @@ export const userRouter = router({
 								count_following: true,
 							},
 						},
-					}
-				})
-	
+					},
+				});
+
 				return data;
 			} catch (error) {
-				throw new Error("Error fetching user: " + error)
+				throw new Error("Error fetching user: " + error);
 			}
 		}),
 
@@ -159,7 +160,7 @@ export const userRouter = router({
 			try {
 				const followers = await prisma.follow.findMany({
 					where: {
-						id_following: input.id_following
+						id_following: input.id_following,
 					},
 					take: input.limit,
 					skip: input.offset,
@@ -169,18 +170,18 @@ export const userRouter = router({
 								username: true,
 								name: true,
 								photo_profile: true,
-							}
-						}
-					}
-				})
+							},
+						},
+					},
+				});
 
-				const data = followers.map(follow => ({
-					...follow.follower
-				}))
+				const data = followers.map((follow) => ({
+					...follow.follower,
+				}));
 
 				return data;
 			} catch (error) {
-				throw new Error("Error fetching followers: " + error)
+				throw new Error("Error fetching followers: " + error);
 			}
 		}),
 
@@ -196,7 +197,7 @@ export const userRouter = router({
 			try {
 				const followings = await prisma.follow.findMany({
 					where: {
-						id_follower: input.id_follower
+						id_follower: input.id_follower,
 					},
 					take: input.limit,
 					skip: input.offset,
@@ -206,18 +207,18 @@ export const userRouter = router({
 								username: true,
 								name: true,
 								photo_profile: true,
-							}
-						}
-					}
-				})
+							},
+						},
+					},
+				});
 
-				const data = followings.map(follow => ({
-					...follow.follower
-				}))
+				const data = followings.map((follow) => ({
+					...follow.follower,
+				}));
 
 				return data;
 			} catch (error) {
-				throw new Error("Error fetching followings: " + error)
+				throw new Error("Error fetching followings: " + error);
 			}
 		}),
 
@@ -231,17 +232,17 @@ export const userRouter = router({
 		.query(async ({ input }) => {
 			try {
 				const data = await prisma.user.findFirst({
-				  where: {
-					  OR: [{ id: input.id }, { username: input.username }],
-				  },
-				  select: {
-					photo_profile: true,
-				  },
-				})
+					where: {
+						OR: [{ id: input.id }, { username: input.username }],
+					},
+					select: {
+						photo_profile: true,
+					},
+				});
 
 				return data;
 			} catch (error) {
-				throw new Error("Error fetching photoProfile: " + error)
+				throw new Error("Error fetching photoProfile: " + error);
 			}
 		}),
 
@@ -257,23 +258,23 @@ export const userRouter = router({
 					instagram: z.string().optional(),
 					linkedin: z.string().optional(),
 					github: z.string().optional(),
-					gender: z.enum(['MALE', 'FEMALE']).optional(),
+					gender: z.enum(["MALE", "FEMALE"]).optional(),
 					email_contact: z.string().optional(),
-				})
+				}),
 			})
 		)
 		.mutation(async ({ input }) => {
 			try {
 				await prisma.user.update({
 					where: {
-						id: input.id
+						id: input.id,
 					},
-					data: input.data
+					data: input.data,
 				});
-				
+
 				const updatedUser = await prisma.user.findUnique({
 					where: {
-						id: input.id
+						id: input.id,
 					},
 					select: {
 						username: true,
@@ -293,14 +294,14 @@ export const userRouter = router({
 								all_notif_read: true,
 							},
 						},
-					}
+					},
 				});
-				
+
 				return updatedUser;
 			} catch (error) {
 				throw new Error("Error updating user: " + error);
 			}
-		})
+		}),
 });
 
 export type UserRouter = typeof userRouter;

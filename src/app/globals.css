@@ -81,19 +81,19 @@
 }
 
 .dark {
-	--background: oklch(0.141 0.005 285.823);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.21 0.006 285.885);
-	--card-foreground: oklch(0.985 0 0);
+	--background: oklch(0.13 0 0);
+	--foreground: oklch(1 0 0);
+	--card: oklch(0.22 0 0);
+	--card-foreground: oklch(1 0 0);
 	--popover: oklch(0.21 0.006 285.885);
 	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.92 0.004 286.32);
-	--primary-foreground: oklch(0.21 0.006 285.885);
-	--secondary: oklch(0.274 0.006 286.033);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.274 0.006 286.033);
+	--primary: oklch(0.68 0.1605 143.57);
+	--primary-foreground: oklch(0.81 0.191 143.55);
+	--secondary: oklch(0.73 0.2119 147.82);
+	--secondary-foreground: oklch(0.87 0.2554 147.53);
+	--muted: oklch(0.64 0 0);
 	--muted-foreground: oklch(0.705 0.015 286.067);
-	--accent: oklch(0.274 0.006 286.033);
+	--accent: oklch(0.75 0.1752 143.57);
 	--accent-foreground: oklch(0.985 0 0);
 	--destructive: oklch(0.704 0.191 22.216);
 	--border: oklch(1 0 0 / 10%);
@@ -260,4 +260,29 @@ pre[data-language]::after {
 
 .animate-scroll {
 	animation: scroll 40s linear infinite;
+}
+
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(128, 128, 128, 0.3);
+	border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(128, 128, 128, 0.5);
+}
+
+/* For Firefox */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
 }
