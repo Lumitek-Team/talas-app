@@ -397,6 +397,8 @@ export const projectRouter = router({
 				for (const imagePath of images) {
 					await deleteImage(imagePath);
 				}
+				console.log("Deleted project: ", input.id);
+				console.log("existing project: ", existingProject.id);
 
 				await retryConnect(() =>
 					prisma.$transaction([
