@@ -215,6 +215,39 @@ export const userRouter = router({
 				throw new Error("Error updating follower: " + error)
 			}
 		}),
+	
+	updateFollowing: protectedProcedure
+		.input(
+			z.object({
+				id_user: z.string(),
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				const followingCount = await prisma.follow.count({
+					where: {
+						id_follower: input.id_user
+					}
+				})
+
+				const updatedSummary = await prisma.count_summary.update({
+					where: {
+						id_user: input.id_user,
+					},
+					data: {
+						count_following: followingCount,
+					},
+					select: {
+						count_following: true,
+					}
+				})
+
+				return updatedSummary
+			} catch (error) {
+				throw new Error("Error updating following: " + error)
+			}
+		}),
+
 	getAllFollowing: protectedProcedure
 		.input(
 			z.object({
