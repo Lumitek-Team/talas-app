@@ -1,24 +1,26 @@
 import { z } from "zod";
-import { protectedProcedure,  router } from "../trpc";
+import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { retryConnect } from "@/lib/utils";
+import { CategoryType } from "@/lib/type";
 
 export const categoryRouter = router({
 	getAll: protectedProcedure.query(async () => {
-		const data = await retryConnect(() =>
-      prisma.category.findMany({
-        select: {
-          slug: true,
-          title: true,
-          count_projects: true,
-        },
-        orderBy: {
-          count_projects: "desc",
-        },
-      })
-    );
+		const data: CategoryType[] = await retryConnect(() =>
+			prisma.category.findMany({
+				select: {
+					id: true,
+					slug: true,
+					title: true,
+					count_projects: true,
+				},
+				orderBy: {
+					count_projects: "desc",
+				},
+			})
+		);
 
-    return data;
+		return data;
 	}),
 
 	getOne: protectedProcedure
@@ -34,14 +36,15 @@ export const categoryRouter = router({
 					prisma.category.findFirst({
 						where: {
 							OR: [{ id: input.id }, { slug: input.slug }],
+							},
+						orderBy: {
+							count_projects: "desc",
 						},
-            orderBy: {
-              count_projects: "desc",
-            },
 					})
 				);
 
 				return {
+					id: true,
 					slug: data.slug,
 					title: data.title,
 					count_projects: data.count_projects,
