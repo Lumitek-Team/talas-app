@@ -1,21 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 export function SidebarLogo() {
   return (
     <div className="px-6">
       <Link href="/" className="flex items-center gap-x-3">
-        <div className="flex flex-col gap-0.5">
-          <div className="flex gap-0.5">
-            <div className="w-2.5 h-2.5 bg-white"></div>
-            <div className="w-2.5 h-2.5 bg-white"></div>
-          </div>
-          <div className="flex gap-0.5">
-            <div className="w-2.5 h-2.5 bg-white"></div>
-            <div className="w-2.5 h-2.5 bg-white"></div>
-          </div>
-        </div>
+        <Image 
+          src="/logo/talas-logo.png"
+          alt="Talas Logo"
+          width={35}
+          height={35}
+          className="object-contain"
+        />
         <span className="text-xl font-medium text-white">
           talas
         </span>

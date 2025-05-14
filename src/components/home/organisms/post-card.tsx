@@ -54,9 +54,9 @@ export function PostCard({
         timestamp={timestamp}
       />
       
-      <div className="mb-4">
-        <h2 className="text-lg font-medium mb-2">{content.split('\n')[0]}</h2>
-        <p className="text-muted-foreground whitespace-pre-line">
+      <div className="mb-6"> {/* Changed from mb-2 to mb-6 to increase gap */}
+        <h2 className="text-lg font-bold">{content.split('\n')[0]}</h2>
+        <p className="text-white text-sm whitespace-pre-line">
           {content.split('\n').slice(1).join('\n')}
         </p>
       </div>

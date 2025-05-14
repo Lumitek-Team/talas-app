@@ -3,6 +3,7 @@
 import { Sidebar } from "@/components/home/organisms/sidebar";
 import { PostComposer } from "@/components/home/organisms/post-composer";
 import { PostCard } from "@/components/home/organisms/post-card";
+import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { useState } from "react";
 
 // Mock data for demonstration
@@ -66,6 +67,7 @@ const MOCK_POSTS = [
 
 export default function HomePage() {
   const [posts, setPosts] = useState(MOCK_POSTS);
+  const [showComposer, setShowComposer] = useState(false);
 
   const handleNewPost = (content: string) => {
     const newPost = {
@@ -80,6 +82,15 @@ export default function HomePage() {
     };
 
     setPosts([newPost, ...posts]);
+  };
+
+  const handleFabClick = () => {
+    // You can implement different behaviors here:
+    // 1. Scroll to the top where the composer is
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // 2. Or you could show a modal composer
+    // setShowComposer(true);
   };
 
   return (
@@ -110,6 +121,9 @@ export default function HomePage() {
           ))}
         </div>
       </main>
+
+      {/* Floating Action Button */}
+      <FloatingActionButton onClick={handleFabClick} />
     </div>
   );
 }

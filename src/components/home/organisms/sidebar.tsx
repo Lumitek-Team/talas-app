@@ -6,7 +6,7 @@ import { SidebarMore } from "../molecules/sidebar-more";
 
 export function Sidebar() {
   return (
-    <aside className="w-[250px] h-screen bg-black fixed left-0 top-0 flex flex-col justify-between py-12 px-4">
+    <aside className="w-[270px] h-screen bg-background fixed left-0 top-0 flex flex-col justify-between py-12 px-4 border-r border-white/10">
       {/* Logo section */}
       <SidebarLogo />
 
