@@ -4,7 +4,7 @@ import Image from "next/image";
 export function Footer() {
   return (
     <footer>
-      <div className="bg-[#1A1A1A] text-gray-400 py-14 px-10">
+      <div className="bg-[#1A1A1A] text-gray-400 py-12">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between">
           {/* Left side - Logo and description */}
           <div className="flex flex-col">
@@ -36,7 +36,7 @@ export function Footer() {
       </div>
       
       {/* Copyright bar */}
-      <div className="bg-primary text-white py-2 px-4 text-center"> 
+      <div className="bg-card text-muted py-2 px-4 text-center"> 
         <p className="text-sm">© 2025 Talas. All rights reserved</p>
       </div>
     </footer>
