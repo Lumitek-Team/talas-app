@@ -1,3 +1,4 @@
+import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -24,12 +25,14 @@ export function Navbar() {
           >
             About
           </Link>
-          <Link
-            href="/login"
-            className="text-text-primary hover:text-accent-green transition-colors duration-200 text-lg"
-          >
-            Login
-          </Link>
+          <SignedOut>
+            <SignInButton>
+              <p className="text-text-primary hover:text-accent-green transition-colors duration-200 text-lg cursor-pointer">Login</p>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <Link href={"/feeds"} className="text-text-primary hover:text-accent-green transition-colors duration-200 text-lg cursor-pointer">Feeds</Link>
+          </SignedIn>
         </div>
       </nav>
     </div>

@@ -6,75 +6,148 @@ import slugify from "slugify";
 
 export const projectRouter = router({
 	getOne: protectedProcedure
-	.input(
-		z.object({
-			id: z.string(),
-			id_user: z.string(),
-		})
-	).query(async ({ input }) => {
-		try {
-			const project = await retryConnect(() => 
-				prisma.project.findFirst({
-					where: {
-						OR: [
-							{ id: input.id },
-							{ slug: input.id },
-						],
-						AND: [
-							{
-								OR: [
-									{ is_archived: false },
-									{ is_archived: true, project_user: { some: { id_user: input.id_user } } },
-								],
-							},
-						],
-					},
-					select: {
-						title: true,
-						slug: true,
-						content: true,
-						image1: true,
-						image2: true,
-						image3: true,
-						image4: true,
-						image5: true,
-						video: true,
-						count_likes: true,
-						count_comments: true,
-						is_archived: true,
-						created_at: true,
-						updated_at: true,
-						category: {
-							select: {
-								id: true,
-								title: true,
-								slug: true,
-							},
+		.input(
+			z.object({
+				id: z.string(),
+				id_user: z.string(),
+			})
+		)
+		.query(async ({ input }) => {
+			try {
+				const project = await retryConnect(() =>
+					prisma.project.findFirst({
+						where: {
+							OR: [{ id: input.id }, { slug: input.id }],
+							AND: [
+								{
+									OR: [
+										{ is_archived: false },
+										{
+											is_archived: true,
+											project_user: { some: { id_user: input.id_user } },
+										},
+									],
+								},
+							],
 						},
-						project_user: {
-							select: {
-								user: {
-									select: {
-										name: true,
-										username: true,
-										photo_profile: true,
+						select: {
+							title: true,
+							slug: true,
+							content: true,
+							image1: true,
+							image2: true,
+							image3: true,
+							image4: true,
+							image5: true,
+							video: true,
+							count_likes: true,
+							count_comments: true,
+							is_archived: true,
+							created_at: true,
+							updated_at: true,
+							category: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+								},
+							},
+							project_user: {
+								select: {
+									user: {
+										select: {
+											name: true,
+											username: true,
+											photo_profile: true,
+										},
 									},
 								},
 							},
 						},
-					},
-				})
-			);
+					})
+				);
 
-			return project;
-		} catch (error) {
-			throw new Error("Error fetching project: " + error);
-		}
-	}),
+				return project;
+			} catch (error) {
+				throw new Error("Error fetching project: " + error);
+			}
+		}),
 
-	checkSlug: protectedProcedure
-	.input(z.string())
-	.query(async ({ input }) => {
+	getAll: protectedProcedure
+		.input(
+			z.object({
+				limit: z.number().min(1).max(100).nullish(),
+				cursor: z.string().nullish(),
+			})
+		)
+		.query(async ({ input }) => {
+			const limit = input.limit ?? 50;
+			const { cursor } = input;
+
+			try {
+				const projects = await retryConnect(() =>
+					prisma.project.findMany({
+						where: {
+							is_archived: false,
+						},
+						select: {
+							id: true,
+							title: true,
+							slug: true,
+							content: true,
+							image1: true,
+							image2: true,
+							image3: true,
+							image4: true,
+							image5: true,
+							video: true,
+							count_likes: true,
+							count_comments: true,
+							created_at: true,
+							updated_at: true,
+							category: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+								},
+							},
+							project_user: {
+								select: {
+									user: {
+										select: {
+											name: true,
+											username: true,
+											photo_profile: true,
+										},
+									},
+								},
+							},
+						},
+						orderBy: {
+							created_at: "desc",
+						},
+						take: limit + 1,
+						cursor: cursor ? { id: cursor } : undefined,
+					})
+				);
+				let nextCursor: typeof cursor | undefined = undefined;
+
+				if (projects.length > limit) {
+					const nextItem = projects.pop();
+					nextCursor = nextItem!.id;
+				}
+
+				return {
+					projects,
+					nextCursor,
+				};
+			} catch (error) {
+				throw new Error("Error fetching projects: " + error);
+			}
+		}),
+
+	checkSlug: protectedProcedure.input(z.string()).query(async ({ input }) => {
 		try {
 			const project = await retryConnect(() =>
 				prisma.project.findFirst({
