@@ -5,7 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export async function retryConnect(fn, retries = 3) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function retryConnect(fn: () => Promise<any>, retries = 3) {
 	try {
 		return await fn();
 	} catch (err) {
