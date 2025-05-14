@@ -16,7 +16,7 @@ export function Footer() {
               and collaborating on software projects.
             </p>
           </div>
-          
+
           {/* Right side - Navigation links */}
           <div className="flex justify-end mt-6 md:mt-0">
             {/* First column of links */}
@@ -25,7 +25,7 @@ export function Footer() {
               <Link href="/about" className="text-white duration-200 hover:text-green-500">About</Link>
               <Link href="/login" className="text-white duration-200 hover:text-green-500">Login</Link>
             </div>
-            
+
             {/* Second column of links */}
             <div className="flex flex-col space-y-6">
               <Link href="/privacy-policy" className="text-white duration-200 hover:text-green-500">Privacy Policy</Link>
@@ -34,7 +34,7 @@ export function Footer() {
           </div>
         </div>
       </div>
-      
+
       {/* Copyright bar */}
       <div className="bg-green-500 text-white py-2 px-4 text-center">
         <p className="text-sm">© 2025 Talas. All rights reserved</p>

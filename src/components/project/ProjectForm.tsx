@@ -88,7 +88,6 @@ const defaultContent = convertIframeToOembed(`
         `);
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) => {
-
     const [loading, setLoading] = useState(false);
     const [submittedTitle, setSubmittedTitle] = useState("");
     const [submittedContent, setSubmittedContent] = useState("");
