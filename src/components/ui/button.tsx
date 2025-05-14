@@ -9,7 +9,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={cn(
-        "cursor-pointer bg-green-500 text-white rounded-lg px-8 py-3 text-1xl font-normal transition-colors duration-200 hover:bg-green-400 focus:bg-green-300",
+        "cursor-pointer bg-primary text-white rounded-lg px-8 py-3 text-1xl font-normal transition-colors duration-200 hover:bg-primary-foreground focus:bg-secondary",
         className
       )}
       {...props}
