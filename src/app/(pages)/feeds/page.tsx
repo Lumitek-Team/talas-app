@@ -25,6 +25,7 @@ const MOCK_POSTS = [
     avatarSrc: "/placeholder-avatar.png",
     timestamp: "3 hrs",
     content: "Next-Gen Portfolio Website\n\nA modern, sleek portfolio website built with React and Tailwind CSS. Featuring dark mode, smooth animations, and a fully responsive layout.\n🔧 Tech Stack: React, Tailwind CSS, Framer Motion\n📎 GitHub Repo: hanna.git",
+    images: ["/placeholder-image-1.jpg", "/placeholder-image-2.jpg", "/placeholder-image-3.jpg"],
     likes: 8,
     comments: 5,
   }
@@ -54,12 +55,6 @@ export default function HomePage() {
 
       <main className="ml-[420px] max-w-[900px] mx-auto py-8 px-4">
         <h1 className="text-2xl font-bold mb-6">Home</h1>
-
-        <PostComposer
-          avatarSrc="/placeholder-avatar.png"
-          username="You"
-          onSubmit={handleNewPost}
-        />
 
         <div className="space-y-6">
           {posts.map((post) => (
