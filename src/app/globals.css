@@ -8,7 +8,7 @@
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
-	--font-sans: var(--font-comfortaa);
+	--font-sans: var(--font-geist-sans);
 	--font-mono: var(--font-geist-mono);
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
@@ -81,19 +81,19 @@
 }
 
 .dark {
-	--background: oklch(0.141 0.005 285.823);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.21 0.006 285.885);
-	--card-foreground: oklch(0.985 0 0);
+	--background: oklch(0.13 0 0);
+	--foreground: oklch(1 0 0);
+	--card: oklch(0.22 0 0);
+	--card-foreground: oklch(1 0 0);
 	--popover: oklch(0.21 0.006 285.885);
 	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.92 0.004 286.32);
-	--primary-foreground: oklch(0.21 0.006 285.885);
-	--secondary: oklch(0.274 0.006 286.033);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.274 0.006 286.033);
+	--primary: oklch(0.68 0.1605 143.57);
+	--primary-foreground: oklch(0.81 0.191 143.55);
+	--secondary: oklch(0.73 0.2119 147.82);
+	--secondary-foreground: oklch(0.87 0.2554 147.53);
+	--muted: oklch(0.64 0 0);
 	--muted-foreground: oklch(0.705 0.015 286.067);
-	--accent: oklch(0.274 0.006 286.033);
+	--accent: oklch(0.75 0.1752 143.57);
 	--accent-foreground: oklch(0.985 0 0);
 	--destructive: oklch(0.704 0.191 22.216);
 	--border: oklch(1 0 0 / 10%);
@@ -119,134 +119,8 @@
 		@apply border-border outline-ring/50;
 	}
 	body {
-		@apply bg-background text-foreground font-sans;
+		@apply bg-background text-foreground;
 	}
-
-	a {
-		@apply cursor-pointer;
-	}
-
-	/* CK editor css */
-	.container {
-		@apply mx-auto;
-	}
-
-	.project-view h1,
-	.ck-content h1 {
-		@apply text-4xl/normal;
-	}
-	.project-view h2,
-	.ck-content h2 {
-		@apply text-3xl/normal;
-	}
-	.project-view h3,
-	.ck-content h3 {
-		@apply text-2xl;
-	}
-	.project-view h4,
-	.ck-content h4 {
-		@apply text-xl;
-	}
-	.project-view h5,
-	.ck-content h5 {
-		@apply text-lg;
-	}
-	.project-view h6,
-	.ck-content h6 {
-		@apply text-base;
-	}
-	.project-view p,
-	.ck-content p {
-		@apply text-base/normal;
-	}
-
-	.project-view a,
-	.ck-content a {
-		@apply text-base text-white hover:text-zinc-200 underline;
-	}
-
-	.project-view hr {
-		@apply my-2;
-	}
-	.project-view pre {
-		@apply p-4 my-2;
-	}
-
-	.project-view ul,
-	.project-view ol,
-	.ck-content ul,
-	.ck-content ol {
-		list-style-position: inside !important;
-	}
-}
-
-/* CK editor css */
-@layer components {
-	.project-view table {
-		@apply w-full text-sm text-left border border-zinc-200 border-collapse overflow-hidden rounded-lg my-6;
-	}
-
-	.project-view tbody {
-		@apply border border-zinc-200;
-	}
-
-	.project-view th,
-	.project-view td {
-		@apply p-3 border border-zinc-200;
-	}
-
-	.project-view tr:hover {
-		@apply bg-zinc-800;
-	}
-}
-
-/* CK editor css */
-.main-container {
-	margin-left: auto;
-	margin-right: auto;
-	@apply w-full;
-}
-
-.ck-content {
-	line-height: 1.5;
-}
-
-.ck-toolbar,
-.ck-content,
-.ck-button,
-.ck-list,
-.ck-dialog,
-.ck-form__header__label,
-.ck-input,
-.ck-label,
-.ck-character-info__code,
-.ck-character-info__name,
-.ck-balloon-panel,
-.ck-dropdown__panel {
-	background: var(--background) !important;
-	color: var(--foreground) !important;
-}
-
-.ck-content blockquote {
-	border-color: var(--color-muted-foreground) !important;
-}
-
-pre {
-	background-color: var(--color-zinc-800) !important;
-	color: var(--color-zinc-200) !important;
-}
-pre[data-language]::after {
-	background: var(--color-zinc-200) !important;
-	color: var(--color-zinc-800) !important;
-}
-
-.ck-editor__editable .ck-list-bogus-paragraph {
-	display: inline-block !important;
-}
-
-.ck-horizontal-line > hr {
-	background: var(--color-muted-foreground) !important;
-	@apply rounded-full;
 }
 
 @keyframes scroll {
@@ -260,4 +134,29 @@ pre[data-language]::after {
 
 .animate-scroll {
 	animation: scroll 40s linear infinite;
+}
+
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: rgba(128, 128, 128, 0.3);
+	border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: rgba(128, 128, 128, 0.5);
+}
+
+/* For Firefox */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
 }

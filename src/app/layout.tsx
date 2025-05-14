@@ -3,8 +3,6 @@ import { Geist, Geist_Mono, Comfortaa } from "next/font/google"
 import "./globals.css"
 import { ClerkProvider } from "@clerk/nextjs"
 import { dark } from "@clerk/themes"
-import { currentUser } from "@clerk/nextjs/server"
-import { getTrpcCaller } from "./_trpc/server"
 import TRPCProvider from "@/app/_trpc/Provider";
 
 const geistSans = Geist({
@@ -33,21 +31,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const user = await currentUser();
-
-
-  if (user) {
-    const { id, emailAddresses, firstName, lastName, externalAccounts, imageUrl } = user;
-
-    const trpc = await getTrpcCaller();
-    await trpc.user.syncWithSupabase({
-      id: id,
-      name: `${firstName} ${lastName}`,
-      email: emailAddresses[0].emailAddress,
-      auth_type: externalAccounts[0]?.provider || "unknown",
-      photo_profile: imageUrl,
-    });
-  }
 
   return (
     <ClerkProvider
