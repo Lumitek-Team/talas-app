@@ -56,11 +56,15 @@ export const projectRouter = router({
 								select: {
 									user: {
 										select: {
+											id: true,
 											name: true,
 											username: true,
 											photo_profile: true,
 										},
 									},
+								},
+								orderBy: {
+									created_at: "asc",
 								},
 							},
 						},
@@ -116,11 +120,15 @@ export const projectRouter = router({
 								select: {
 									user: {
 										select: {
+											id: true,
 											name: true,
 											username: true,
 											photo_profile: true,
 										},
 									},
+								},
+								orderBy: {
+									created_at: "asc",
 								},
 							},
 						},
@@ -254,6 +262,104 @@ export const projectRouter = router({
 				return newProject;
 			} catch (error) {
 				throw new Error("Error creating project: " + error);
+			}
+		}),
+
+	edit: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				id_user: z.string(),
+				id_category: z.string().optional(),
+				title: z.string().optional(),
+				content: z.string().optional(),
+				is_archived: z.boolean().optional(),
+				image1: z.any().optional(),
+				image2: z.any().optional(),
+				image3: z.any().optional(),
+				image4: z.any().optional(),
+				image5: z.any().optional(),
+				video: z.any().optional(),
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				const existingProject = await retryConnect(() =>
+					prisma.project.findFirst({
+						where: {
+							id: input.id,
+							project_user: {
+								some: { id_user: input.id_user },
+							},
+						},
+					})
+				);
+
+				if (!existingProject) {
+					throw new Error("Project not found or access denied.");
+				}
+
+				let updatedSlug = existingProject.slug;
+				if (input.title && input.title !== existingProject.title) {
+					updatedSlug = slugify(input.title, {
+						lower: true,
+						strict: true,
+					});
+
+					const existingSlug = await retryConnect(() =>
+						prisma.project.findFirst({
+							where: {
+								slug: updatedSlug,
+								NOT: { id: input.id },
+							},
+						})
+					);
+
+					if (existingSlug) {
+						updatedSlug = `${updatedSlug}-${Math.floor(Math.random() * 1000)}`;
+					}
+				}
+
+				if (
+					input.id_category &&
+					input.id_category !== existingProject.id_category
+				) {
+					await retryConnect(() =>
+						prisma.$transaction([
+							prisma.category.update({
+								where: { id: existingProject.id_category },
+								data: { count_projects: { decrement: 1 } },
+							}),
+							prisma.category.update({
+								where: { id: input.id_category },
+								data: { count_projects: { increment: 1 } },
+							}),
+						])
+					);
+				}
+
+				const updatedProject = await retryConnect(() =>
+					prisma.project.update({
+						where: { id: input.id },
+						data: {
+							id_category: input.id_category ?? existingProject.id_category,
+							title: input.title ?? existingProject.title,
+							slug: updatedSlug,
+							content: input.content ?? existingProject.content,
+							is_archived: input.is_archived ?? existingProject.is_archived,
+							image1: input.image1 ?? existingProject.image1,
+							image2: input.image2 ?? existingProject.image2,
+							image3: input.image3 ?? existingProject.image3,
+							image4: input.image4 ?? existingProject.image4,
+							image5: input.image5 ?? existingProject.image5,
+							video: input.video ?? existingProject.video,
+						},
+					})
+				);
+
+				return updatedProject;
+			} catch (error) {
+				throw new Error("Error editing project: " + error);
 			}
 		}),
 });

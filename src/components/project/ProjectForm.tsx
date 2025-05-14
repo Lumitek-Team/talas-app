@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { CategoryType, ProjectOneType } from "@/lib/type";
 import { useState } from "react";
-import { convertIframeToOembed, convertOembedToIframe } from "@/lib/utils";
+import { convertIframeToOembed, convertOembedToIframe, getPublicUrl } from "@/lib/utils";
 import RichEditor from "./ckeditor";
 import { Separator } from "../ui/separator";
 import { trpc } from "@/app/_trpc/client";
@@ -86,6 +86,8 @@ const defaultContent = convertIframeToOembed(`
         `);
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) => {
+    console.log("ProjectForm", project);
+
     const [loading, setLoading] = useState(false);
     const [submittedTitle, setSubmittedTitle] = useState("");
     const [submittedContent, setSubmittedContent] = useState("");
@@ -162,12 +164,34 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                 }
 
                 const data = await res.json();
-                console.log("Project created:", data.project.slug);
                 setLoading(false);
                 router.push(`/project/${data.project.slug}`);
             } catch (err) {
                 setLoading(false);
                 console.error("Error creating project:", err);
+            }
+        } else if (mode === "edit") {
+            formData.append("id", project?.id || "");
+
+            try {
+                const res = await fetch("/api/project/edit", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error("Server response:", errorText);
+                    throw new Error("Failed to edit project");
+                }
+
+                const data = await res.json();
+                console.log("Project edited:", data.project.slug);
+                setLoading(false);
+                router.push(`/project/${data.project.slug}`);
+            } catch (err) {
+                setLoading(false);
+                console.error("Error editing project:", err);
             }
         }
     }
@@ -249,11 +273,20 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                                         <FormLabel>featured Image</FormLabel>
                                         <FormControl>
                                             <div>
+                                                {croppedImage && (
+                                                    <Image
+                                                        src={URL.createObjectURL(croppedImage)}
+                                                        alt="Current Image"
+                                                        className="w-1/2 h-auto rounded mb-2 aspect-video"
+                                                        width={480}
+                                                        height={480}
+                                                    />
+                                                )}
                                                 {project?.image1 && !croppedImage && (
                                                     <Image
-                                                        src={project.image1}
+                                                        src={getPublicUrl(project?.image1)}
                                                         alt="Current Image"
-                                                        className="w-full h-auto rounded mb-2 aspect-video"
+                                                        className="w-1/2 h-auto rounded mb-2 aspect-video"
                                                         width={480}
                                                         height={480}
                                                     />

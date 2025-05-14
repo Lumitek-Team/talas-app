@@ -57,10 +57,10 @@ export async function POST(req: Request) {
 			title,
 			content,
 			image1: image1Path,
-            image2: imagePaths[0] || null,
-            image3: imagePaths[1] || null,
-            image4: imagePaths[2] || null,
-            image5: imagePaths[3] || null,
+			image2: imagePaths[0] || null,
+			image3: imagePaths[1] || null,
+			image4: imagePaths[2] || null,
+			image5: imagePaths[3] || null,
 		});
 
 		return Response.json({ success: true, project });

@@ -22,6 +22,7 @@ export interface ProjectOneType {
 	};
 	project_user: {
 		user: {
+			id: string;
 			name: string;
 			username: string;
 			photo_profile?: string;
