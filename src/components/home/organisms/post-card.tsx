@@ -20,7 +20,6 @@ interface PostCardProps {
 }
 
 export function PostCard({
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   id,
   username,
   userRole,
@@ -47,26 +46,26 @@ export function PostCard({
   };
 
   return (
-    <div className="bg-card rounded-lg p-4 mb-6 border border-border">
+    <div className="p-4">
       <PostHeader
         username={username}
         userRole={userRole}
         avatarSrc={avatarSrc}
         timestamp={timestamp}
       />
-
+      
       <div className="mb-4">
         <h2 className="text-lg font-medium mb-2">{content.split('\n')[0]}</h2>
         <p className="text-muted-foreground whitespace-pre-line">
           {content.split('\n').slice(1).join('\n')}
         </p>
       </div>
-
-      {images.length > 0 && (
+      
+      {images && images.length > 0 && (
         <div className="grid grid-cols-3 gap-2 mb-4">
           {images.map((image, index) => (
-            <div
-              key={index}
+            <div 
+              key={index} 
               className="aspect-video bg-muted rounded-md overflow-hidden relative"
             >
               <Image
@@ -79,14 +78,14 @@ export function PostCard({
           ))}
         </div>
       )}
-
+      
       <PostActions
         likes={likeCount}
         comments={comments}
         onLike={handleLike}
-        onComment={() => { }}
+        onComment={() => {}}
         onSave={() => setIsSaved(!isSaved)}
-        onShare={() => { }}
+        onShare={() => {}}
         isLiked={isLiked}
         isSaved={isSaved}
       />

@@ -1,7 +1,8 @@
 "use client";
 
 import { Avatar } from "@/components/ui/avatar";
-import { IconButton } from "@/components/ui/icon-button";
+// IconButton is no longer used in this simplified layout
+// import { IconButton } from "@/components/ui/icon-button"; 
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -9,9 +10,10 @@ interface PostComposerProps {
   avatarSrc: string;
   username: string;
   onSubmit: (content: string) => void;
+  className?: string;
 }
 
-export function PostComposer({ avatarSrc, username, onSubmit }: PostComposerProps) {
+export function PostComposer({ avatarSrc, username, onSubmit, className = "" }: PostComposerProps) {
   const [content, setContent] = useState("");
 
   const handleSubmit = () => {
@@ -22,42 +24,22 @@ export function PostComposer({ avatarSrc, username, onSubmit }: PostComposerProp
   };
 
   return (
-    <div className="bg-card rounded-lg p-4 mb-6 border border-border">
-      <div className="flex items-center gap-3 mb-4">
+    <div className={`p-4 ${className}`}>
+      <div className="flex items-center gap-3"> {/* Removed bg-accent and mb-4 as it's now a single line */}
         <Avatar src={avatarSrc} alt={username} />
         <div className="flex-1">
           <input
             type="text"
-            placeholder="What's going on today?"
+            placeholder="Apa yang baru?"
             className="w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground"
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
         </div>
-      </div>
-      
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          <IconButton>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-              <circle cx="9" cy="9" r="2" />
-              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-            </svg>
-          </IconButton>
-        </div>
-        
-        <Button onClick={handleSubmit}>
+        <Button
+          onClick={handleSubmit}
+          className="rounded-full px-6 bg-primary text-white hover:bg-primary-foreground ml-3" // Added ml-3 for spacing
+        >
           Post
         </Button>
       </div>
