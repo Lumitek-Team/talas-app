@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { CategoryType, ProjectOneType } from "@/lib/type";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { convertIframeToOembed, convertOembedToIframe } from "@/lib/utils";
 import RichEditor from "./ckeditor";
 import { Separator } from "../ui/separator";
@@ -40,15 +40,15 @@ const formSchema = z.object({
     title: z.string().min(2).max(50),
     category: z.string().min(2),
     content: z.string().min(2),
-    image1: z.any().nullable(),
+    image1: z.any(),
     image2: z.any().nullable(),
     image3: z.any().nullable(),
     image4: z.any().nullable(),
     image5: z.any().nullable(),
     video: z.any().nullable(),
     is_archived: z.boolean(),
-    link_figma: z.string().url().optional(),
-    link_github: z.string().url().optional(),
+    link_figma: z.string().nullable(),
+    link_github: z.string().nullable(),
 });
 
 const defaultContent = convertIframeToOembed(`
@@ -88,7 +88,6 @@ const defaultContent = convertIframeToOembed(`
         `);
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) => {
-
     const [loading, setLoading] = useState(false);
     const [submittedTitle, setSubmittedTitle] = useState("");
     const [submittedContent, setSubmittedContent] = useState("");
@@ -101,13 +100,22 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
 
     const router = useRouter();
 
+    const isMountedRef = useRef(true);
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: project?.title || "",
             category: project?.category.id || "",
-            content: defaultContent,
-            // content: project?.content ? convertIframeToOembed(project.content) : "Isi konten disini...",
+            // content: defaultContent,
+            content: project?.content ? convertIframeToOembed(project.content) : "Isi konten disini...",
             image1: project?.image1 || null,
             image2: project?.image2 || null,
             image3: project?.image3 || null,
@@ -148,8 +156,13 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
         formData.append("id_category", values.category);
         formData.append("title", values.title);
         formData.append("content", transformedContent);
-        formData.append("link_figma", values.link_figma || "");
-        formData.append("link_github", values.link_github || "");
+        if (values.link_figma) {
+            formData.append("link_figma", values.link_figma);
+        }
+
+        if (values.link_github) {
+            formData.append("link_github", values.link_github);
+        }
 
         if (croppedImage && mode === "create") {
             formData.append("image1", croppedImage);
@@ -169,11 +182,15 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                 }
 
                 const data = await res.json();
-                setLoading(false);
-                router.push(`/project/${data.project.slug}`);
+                if (isMountedRef.current) {
+                    setLoading(false);
+                    router.push(`/project/${data.project.slug}`);
+                }
             } catch (err) {
-                setLoading(false);
-                console.error("Error creating project:", err);
+                if (isMountedRef.current) {
+                    setLoading(false);
+                    console.error("Error creating project:", err);
+                }
             }
         } else if (mode === "edit") {
             formData.append("id", project?.id || "");
@@ -191,11 +208,15 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                 }
 
                 const data = await res.json();
-                setLoading(false);
-                router.push(`/project/${data.project.slug}`);
+                if (isMountedRef.current) {
+                    setLoading(false);
+                    router.push(`/project/${data.project.slug}`);
+                }
             } catch (err) {
-                setLoading(false);
-                console.error("Error editing project:", err);
+                if (isMountedRef.current) {
+                    setLoading(false);
+                    console.error("Error editing project:", err);
+                }
             }
         }
     }
@@ -292,6 +313,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                                                             type="file"
                                                             accept="image/*"
                                                             onChange={handleImageChange}
+                                                            required
                                                         />
                                                         {croppedImage && (
                                                             <Button
@@ -349,7 +371,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                                     <FormItem>
                                         <FormLabel>Link Figma</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="https://www.figma.com/file/..." {...field} />
+                                            <Input placeholder="https://www.figma.com/file/..." {...field} value={field.value ?? ""} />
                                         </FormControl>
                                         <FormDescription>
                                             This is your link figma.
@@ -367,7 +389,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                                     <FormItem>
                                         <FormLabel>Link Github</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="https://www.github.com/..." {...field} />
+                                            <Input placeholder="https://www.github.com/..." {...field} value={field.value ?? ""} />
                                         </FormControl>
                                         <FormDescription>
                                             This is your link github.
