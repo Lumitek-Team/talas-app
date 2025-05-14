@@ -9,10 +9,10 @@ export function Sidebar() {
     <aside className="w-[250px] h-screen bg-black fixed left-0 top-0 flex flex-col justify-between py-12 px-4">
       {/* Logo section */}
       <SidebarLogo />
-      
+
       {/* Navigation section */}
       <SidebarNav />
-      
+
       {/* More button section */}
       <SidebarMore />
     </aside>
