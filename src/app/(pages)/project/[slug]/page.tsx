@@ -22,7 +22,6 @@ const ProjectPage = () => {
     if (isLoading) return (<div> <h1>Loading...</h1> </div>);
     const project: ProjectOneType = data;
 
-    console.log("project user", project.project_user[0].user.id);
 
     return (
         <div>
@@ -31,7 +30,8 @@ const ProjectPage = () => {
                     <Link href={`/project/${slug}/edit`} className={buttonVariants({ variant: "default" })}>edit</Link>
                 </div>
             )}
-            <h1>{project.title}</h1>
+            <h1 className="text-xl font-semibold">{project.title}</h1>
+            <p>{project.category.title}</p>
             <div className="flex gap-2 flex-wrap w-full">
                 {project.image1 && (
                     <>

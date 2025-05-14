@@ -31,6 +31,7 @@ export const projectRouter = router({
 							],
 						},
 						select: {
+							id: true,
 							title: true,
 							slug: true,
 							content: true,
@@ -273,13 +274,6 @@ export const projectRouter = router({
 				id_category: z.string().optional(),
 				title: z.string().optional(),
 				content: z.string().optional(),
-				is_archived: z.boolean().optional(),
-				image1: z.any().optional(),
-				image2: z.any().optional(),
-				image3: z.any().optional(),
-				image4: z.any().optional(),
-				image5: z.any().optional(),
-				video: z.any().optional(),
 			})
 		)
 		.mutation(async ({ input }) => {
@@ -346,13 +340,6 @@ export const projectRouter = router({
 							title: input.title ?? existingProject.title,
 							slug: updatedSlug,
 							content: input.content ?? existingProject.content,
-							is_archived: input.is_archived ?? existingProject.is_archived,
-							image1: input.image1 ?? existingProject.image1,
-							image2: input.image2 ?? existingProject.image2,
-							image3: input.image3 ?? existingProject.image3,
-							image4: input.image4 ?? existingProject.image4,
-							image5: input.image5 ?? existingProject.image5,
-							video: input.video ?? existingProject.video,
 						},
 					})
 				);

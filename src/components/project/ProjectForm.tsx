@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { CategoryType, ProjectOneType } from "@/lib/type";
 import { useState } from "react";
-import { convertIframeToOembed, convertOembedToIframe, getPublicUrl } from "@/lib/utils";
+import { convertIframeToOembed, convertOembedToIframe } from "@/lib/utils";
 import RichEditor from "./ckeditor";
 import { Separator } from "../ui/separator";
 import { trpc } from "@/app/_trpc/client";
@@ -86,7 +86,6 @@ const defaultContent = convertIframeToOembed(`
         `);
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) => {
-    console.log("ProjectForm", project);
 
     const [loading, setLoading] = useState(false);
     const [submittedTitle, setSubmittedTitle] = useState("");
@@ -146,7 +145,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
         formData.append("title", values.title);
         formData.append("content", transformedContent);
 
-        if (croppedImage) {
+        if (croppedImage && mode === "create") {
             formData.append("image1", croppedImage);
         }
 
@@ -186,7 +185,6 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                 }
 
                 const data = await res.json();
-                console.log("Project edited:", data.project.slug);
                 setLoading(false);
                 router.push(`/project/${data.project.slug}`);
             } catch (err) {
@@ -264,60 +262,53 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                                 )}
                             />
                         </div>
-                        <div className="col-span-1">
-                            <FormField
-                                control={form.control}
-                                name="image1"
-                                render={() => (
-                                    <FormItem>
-                                        <FormLabel>featured Image</FormLabel>
-                                        <FormControl>
-                                            <div>
-                                                {croppedImage && (
-                                                    <Image
-                                                        src={URL.createObjectURL(croppedImage)}
-                                                        alt="Current Image"
-                                                        className="w-1/2 h-auto rounded mb-2 aspect-video"
-                                                        width={480}
-                                                        height={480}
-                                                    />
-                                                )}
-                                                {project?.image1 && !croppedImage && (
-                                                    <Image
-                                                        src={getPublicUrl(project?.image1)}
-                                                        alt="Current Image"
-                                                        className="w-1/2 h-auto rounded mb-2 aspect-video"
-                                                        width={480}
-                                                        height={480}
-                                                    />
-                                                )}
-                                                <div className="flex gap-2">
-                                                    <Input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={handleImageChange}
-                                                    />
+                        {mode === "create" && (
+                            <div className="col-span-1">
+                                <FormField
+                                    control={form.control}
+                                    name="image1"
+                                    render={() => (
+                                        <FormItem>
+                                            <FormLabel>featured Image</FormLabel>
+                                            <FormControl>
+                                                <div>
                                                     {croppedImage && (
-                                                        <Button
-                                                            type="button"
-                                                            variant="secondary"
-                                                            className="w-fit"
-                                                            onClick={() => setOpenCropper(true)}
-                                                        >
-                                                            Edit Image
-                                                        </Button>
+                                                        <Image
+                                                            src={URL.createObjectURL(croppedImage)}
+                                                            alt="Current Image"
+                                                            className="w-1/2 h-auto rounded mb-2 aspect-video"
+                                                            width={480}
+                                                            height={480}
+                                                        />
                                                     )}
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={handleImageChange}
+                                                        />
+                                                        {croppedImage && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="secondary"
+                                                                className="w-fit"
+                                                                onClick={() => setOpenCropper(true)}
+                                                            >
+                                                                Edit Image
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </FormControl>
-                                        <FormDescription>
-                                            This is your Thumbnail image.
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+                                            </FormControl>
+                                            <FormDescription>
+                                                This is your Thumbnail image.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        )}
 
                         <div className="col-span-2">
                             <FormField
