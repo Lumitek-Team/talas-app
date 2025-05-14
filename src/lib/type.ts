@@ -13,6 +13,8 @@ export interface ProjectOneType {
 	video?: string;
 	count_likes: number;
 	count_comments: number;
+	link_figma: string;
+	link_github: string;
 	created_at: string;
 	updated_at: string;
 	category: {

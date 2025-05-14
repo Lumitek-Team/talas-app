@@ -44,6 +44,8 @@ export const projectRouter = router({
 							count_likes: true,
 							count_comments: true,
 							is_archived: true,
+							link_figma: true,
+							link_github: true,
 							created_at: true,
 							updated_at: true,
 							category: {
@@ -108,6 +110,8 @@ export const projectRouter = router({
 							video: true,
 							count_likes: true,
 							count_comments: true,
+							link_figma: true,
+							link_github: true,
 							created_at: true,
 							updated_at: true,
 							category: {
@@ -186,6 +190,8 @@ export const projectRouter = router({
 				image4: z.any().optional(),
 				image5: z.any().optional(),
 				video: z.any().optional(),
+				link_figma: z.string().optional(),
+				link_github: z.string().optional(),
 			})
 		)
 		.mutation(async ({ input }) => {
@@ -221,6 +227,8 @@ export const projectRouter = router({
 							image4: input.image4,
 							image5: input.image5,
 							video: input.video,
+							link_figma: input.link_figma,
+							link_github: input.link_github,
 						},
 					})
 				);
@@ -274,6 +282,8 @@ export const projectRouter = router({
 				id_category: z.string().optional(),
 				title: z.string().optional(),
 				content: z.string().optional(),
+				link_figma: z.string().optional(),
+				link_github: z.string().optional(),
 			})
 		)
 		.mutation(async ({ input }) => {
@@ -340,6 +350,8 @@ export const projectRouter = router({
 							title: input.title ?? existingProject.title,
 							slug: updatedSlug,
 							content: input.content ?? existingProject.content,
+							link_figma: input.link_figma ?? existingProject.link_figma,
+							link_github: input.link_github ?? existingProject.link_github,
 						},
 					})
 				);

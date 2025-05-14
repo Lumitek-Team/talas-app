@@ -31,6 +31,21 @@ const ProjectPage = () => {
                 </div>
             )}
             <h1 className="text-xl font-semibold">{project.title}</h1>
+            <div className="flex gap-4">
+                {project.link_figma && (
+                    <Link href={project.link_figma} target="_blank" className="text-sm text-accent-green hover:text-accent-green/80 transition-colors duration-200">
+                        Figma
+                    </Link>
+                )}
+                {project.link_github && (
+                    <Link href={project.link_github} target="_blank" className="text-sm text-accent-green hover:text-accent-green/80 transition-colors duration-200">
+                        Github
+                    </Link>
+                )}
+
+            </div>
+
+
             <p>{project.category.title}</p>
             <div className="flex gap-2 flex-wrap w-full">
                 {project.image1 && (

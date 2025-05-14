@@ -71,6 +71,8 @@ model Project {
   image4         String?
   image5         String?
   video          String?
+  link_github    String?
+  link_figma     String?
   count_likes    Int           @default(0)
   count_comments Int           @default(0)
   created_at     DateTime      @default(now())

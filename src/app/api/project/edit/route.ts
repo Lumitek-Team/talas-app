@@ -10,6 +10,8 @@ export async function POST(req: Request) {
 	const id_category = formData.get("id_category")?.toString();
 	const title = formData.get("title")?.toString();
 	const content = formData.get("content")?.toString();
+	const link_figma = formData.get("link_figma")?.toString();
+	const link_github = formData.get("link_github")?.toString();
 
 	if (!id || !id_user) {
 		return new Response("Project ID and user ID are required", { status: 400 });
@@ -30,6 +32,8 @@ export async function POST(req: Request) {
 			id_category,
 			title,
 			content,
+			link_figma,
+			link_github,
 		});
 
 		return Response.json({ success: true, project: updatedProject });

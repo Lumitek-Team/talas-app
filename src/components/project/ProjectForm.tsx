@@ -47,6 +47,8 @@ const formSchema = z.object({
     image5: z.any().nullable(),
     video: z.any().nullable(),
     is_archived: z.boolean(),
+    link_figma: z.string().url().optional(),
+    link_github: z.string().url().optional(),
 });
 
 const defaultContent = convertIframeToOembed(`
@@ -113,6 +115,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
             image5: project?.image5 || null,
             video: project?.video || null,
             is_archived: project?.is_archived || false,
+            link_figma: project?.link_figma || "",
+            link_github: project?.link_github || "",
         },
     });
 
@@ -144,6 +148,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
         formData.append("id_category", values.category);
         formData.append("title", values.title);
         formData.append("content", transformedContent);
+        formData.append("link_figma", values.link_figma || "");
+        formData.append("link_github", values.link_github || "");
 
         if (croppedImage && mode === "create") {
             formData.append("image1", croppedImage);
@@ -328,6 +334,43 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                                         </FormControl>
                                         <FormDescription>
                                             This is your content blog.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <div className="col-span-2">
+                            <FormField
+                                control={form.control}
+                                name="link_figma"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Link Figma</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="https://www.figma.com/file/..." {...field} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            This is your link figma.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <FormField
+                                control={form.control}
+                                name="link_github"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Link Github</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="https://www.github.com/..." {...field} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            This is your link github.
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
