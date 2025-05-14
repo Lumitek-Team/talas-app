@@ -245,7 +245,7 @@ export const userRouter = router({
 				throw new Error("Error fetching photoProfile: " + error);
 			}
 		}),
-
+	
 	update: protectedProcedure
 		.input(
 			z.object({
