@@ -6,27 +6,40 @@ import { TechIcons } from "@/components/landing/techIcons";
 import { Preview } from "@/components/landing/preview";
 import { CTA } from "@/components/landing/CTA";
 import { Footer } from "@/components/layout/footer";
+import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 export default function LandingPage() {
   return (
-    <main
+    <main 
       className="bg-bg-primary min-h-screen font-sans relative"
       style={{
         backgroundImage: "url('/img/landingPage-bg2.jpg')",
-        backgroundSize: "110%",
+        backgroundSize: "110%", 
         backgroundPosition: "top center",
         backgroundRepeat: "no-repeat"
       }}
     >
       <div className="absolute inset-0 bg-black/50 z-0"></div>
-
+      
       <div className="relative z-10">
         <Navbar />
         <div className="pt-28 md:pt-32">
-          <Hero />
-          <TechIcons />
-          <Preview />
-          <CTA />
+          <ScrollReveal delay={150}>
+            <Hero />
+          </ScrollReveal>
+          
+          <ScrollReveal delay={150}>
+            <TechIcons />
+          </ScrollReveal>
+          
+          <ScrollReveal delay={150} direction="right">
+            <Preview />
+          </ScrollReveal>
+          
+          <ScrollReveal delay={150} direction="up">
+            <CTA />
+          </ScrollReveal>
+          
           <Footer />
         </div>
       </div>

@@ -21,13 +21,13 @@ export function Navbar() {
         <div className="flex items-center gap-x-8">
           <Link
             href="/about"
-            className="text-text-primary hover:text-accent-green transition-colors duration-200 text-lg"
+            className="text-text-primary hover:text-primary transition-colors duration-200 text-lg"
           >
             About
           </Link>
           <SignedOut>
             <SignInButton>
-              <p className="text-text-primary hover:text-accent-green transition-colors duration-200 text-lg cursor-pointer">Login</p>
+              <p className="text-text-primary hover:text-primary transition-colors duration-200 text-lg cursor-pointer">Login</p>
             </SignInButton>
           </SignedOut>
           <SignedIn>
