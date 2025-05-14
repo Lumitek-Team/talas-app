@@ -18,25 +18,25 @@ export function Footer() {
           </div>
           
           {/* Right side - Navigation links */}
-          <div className="flex justify-end mt-6 md:mt-0"> {/* Removed space-x-10 from here */}
+          <div className="flex justify-end mt-6 md:mt-0"> 
             {/* First column of links */}
-            <div className="flex flex-col space-y-3 mr-10"> {/* Added mr-10 here, kept space-y-3 */}
-              <Link href="/" className="text-white hover:text-green-500">Home</Link>
-              <Link href="/about" className="text-white hover:text-green-500">About</Link>
-              <Link href="/login" className="text-white hover:text-green-500">Login</Link>
+            <div className="flex flex-col gap-4 mr-10"> 
+              <Link href="/" className="text-white hover:text-primary transition-colors duration-200">Home</Link>
+              <Link href="/about" className="text-white hover:text-primary transition-colors duration-200">About</Link>
+              <Link href="/login" className="text-white hover:text-primary transition-colors duration-200">Login</Link>
             </div>
             
             {/* Second column of links */}
-            <div className="flex flex-col space-y-3"> {/* Kept space-y-3 */}
-              <Link href="/privacy-policy" className="text-white hover:text-green-500">Privacy Policy</Link>
-              <Link href="/terms" className="text-white hover:text-green-500">Terms of Service</Link>
+            <div className="flex flex-col gap-4"> 
+              <Link href="/privacy-policy" className="text-white hover:text-primary transition-colors duration-200">Privacy Policy</Link>
+              <Link href="/terms" className="text-white hover:text-primary transition-colors duration-200">Terms of Service</Link>
             </div>
           </div>
         </div>
       </div>
       
       {/* Copyright bar */}
-      <div className="bg-green-500 text-white py-2 px-4 text-center"> {/* Changed py-3 to py-4 */}
+      <div className="bg-primary text-white py-2 px-4 text-center"> 
         <p className="text-sm">© 2025 Talas. All rights reserved</p>
       </div>
     </footer>
