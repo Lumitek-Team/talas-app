@@ -184,6 +184,37 @@ export const userRouter = router({
 			}
 		}),
 
+	updateFollower: protectedProcedure
+		.input(
+			z.object({
+				id_user : z.string(),
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				const followersCount = await prisma.follow.count({
+					where: {
+						id_following: input.id_user
+					}
+				})
+
+				const updatedSummary = await prisma.count_summary.update({
+					where: {
+						id_user: input.id_user,
+					},
+					data: {
+						count_follower: followersCount,
+					},
+					select: {
+						count_follower: true,
+					}
+				})
+
+				return updatedSummary
+			} catch (error) {
+				throw new Error("Error updating follower: " + error)
+			}
+		}),
 	getAllFollowing: protectedProcedure
 		.input(
 			z.object({
@@ -244,7 +275,7 @@ export const userRouter = router({
 				throw new Error("Error fetching photoProfile: " + error)
 			}
 		}),
-
+	
 	update: protectedProcedure
 		.input(
 			z.object({
