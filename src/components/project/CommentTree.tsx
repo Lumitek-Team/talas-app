@@ -14,6 +14,7 @@ interface componentProps {
 
 const CommentTree: React.FC<componentProps> = ({ comments, id_project, onCommentAdded }) => {
     const [replyingId, setReplyingId] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null); // state untuk edit
     const { user } = useUser();
 
     const deleteMutation = trpc.comment.deleteById.useMutation({
@@ -68,7 +69,34 @@ const CommentTree: React.FC<componentProps> = ({ comments, id_project, onComment
                             >
                                 {replyingId === comment.id ? "Batal" : "Balas"}
                             </Button>
+                            {user?.id === comment.user.id && (
+                                <Button
+                                    variant="link"
+                                    onClick={() =>
+                                        setEditingId(editingId === comment.id ? null : comment.id)
+                                    }
+                                    className="text-blue-400"
+                                >
+                                    {editingId === comment.id ? "Batal" : "Edit"}
+                                </Button>
+                            )}
                         </div>
+                        {/* muncul jika klik edit */}
+                        {editingId === comment.id && (
+                            <CommentForm
+                                mode="edit"
+                                id_project={id_project}
+                                parent_id={comment.parent_id}
+                                id_comment={comment.id}
+                                oldContent={comment.content}
+                                onSuccess={() => {
+                                    setEditingId(null);
+                                    if (onCommentAdded) onCommentAdded();
+                                }}
+                                onCancel={() => setEditingId(null)}
+                            />
+                        )}
+                        {/* muncul jika klik reply */}
                         {replyingId === comment.id && (
                             <div>
                                 <CommentForm
@@ -76,7 +104,7 @@ const CommentTree: React.FC<componentProps> = ({ comments, id_project, onComment
                                     parent_id={comment.id}
                                     onSuccess={() => {
                                         setReplyingId(null);
-                                        if (onCommentAdded) onCommentAdded(); // trigger refetch
+                                        if (onCommentAdded) onCommentAdded();
                                     }}
                                 />
                             </div>

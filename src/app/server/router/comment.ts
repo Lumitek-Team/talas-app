@@ -73,6 +73,42 @@ export const commentRouter = router({
 			}
 		}),
 
+	edit: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				content: z.string().min(2).max(500),
+				id_user: z.string(),
+			})
+		)
+		.mutation(async ({ input }) => {
+			const userId = (await currentUser())?.id;
+			if (!userId) {
+				throw new Error("User not authenticated");
+			}
+			if (userId !== input.id_user) {
+				throw new Error("You are not the owner of this comment");
+			}
+			if (!input.id || !input.content || !input.id_user) {
+				throw new Error("Field is empty");
+			}
+			try {
+				const comment = await retryConnect(() =>
+					prisma.comment.update({
+						where: {
+							id: input.id,
+						},
+						data: {
+							content: input.content,
+						},
+					})
+				);
+				return comment;
+			} catch (error) {
+				throw new Error("Error updating comment: " + error);
+			}
+		}),
+
 	deleteById: protectedProcedure
 		.input(
 			z.object({

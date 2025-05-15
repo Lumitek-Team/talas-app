@@ -15,7 +15,7 @@ import {
 import { Textarea } from "../ui/textarea"
 import { useState } from "react"
 import { trpc } from "@/app/_trpc/client"
-import { useRouter } from "next/navigation"
+import { useUser } from "@clerk/nextjs"
 
 const formSchema = z.object({
     content: z.string().min(2).max(500),
@@ -25,20 +25,23 @@ const formSchema = z.object({
 interface CommentFormProps {
     id_project: string
     parent_id?: string | null
-    onSuccess?: () => void // tambahkan prop ini
+    mode?: "create" | "edit"
+    onSuccess?: () => void
+    onCancel?: () => void // tambahkan ini
+    id_comment?: string
+    oldContent?: string
 }
 
-const CommentForm: React.FC<CommentFormProps> = ({ id_project, parent_id, onSuccess }) => {
+const CommentForm: React.FC<CommentFormProps> = ({ id_project, parent_id, mode = "create", onSuccess, onCancel, id_comment, oldContent }) => {
     const [isLoading, setIsLoading] = useState(false)
-    const router = useRouter()
+    const id_user = useUser().user?.id
 
-    // Panggil hook di sini (level atas komponen)
-    const mutation = trpc.comment.create.useMutation({
+    const createMutation = trpc.comment.create.useMutation({
         onSuccess: () => {
             setIsLoading(false)
-            form.reset() // reset form setelah submit
-            router.refresh()
-            if (onSuccess) onSuccess() // panggil callback jika ada
+            form.reset()
+            // router.refresh() // HAPUS agar tidak refresh halaman
+            if (onSuccess) onSuccess()
         },
         onError: (error) => {
             setIsLoading(false)
@@ -46,24 +49,48 @@ const CommentForm: React.FC<CommentFormProps> = ({ id_project, parent_id, onSucc
         },
     });
 
-    // 1. Define your form.
+    const editMutation = trpc.comment.edit.useMutation({
+        onSuccess: () => {
+            setIsLoading(false)
+            form.reset()
+            // router.refresh() // HAPUS agar tidak refresh halaman
+            if (onSuccess) onSuccess()
+        },
+        onError: (error) => {
+            setIsLoading(false)
+            alert(`Failed to edit comment: ${error.message}`)
+        },
+    });
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            content: "",
+            content: oldContent ?? "",
             parent_id: parent_id ?? null,
         },
     })
 
-    // 2. Define a submit handler.
     function onSubmit(values: z.infer<typeof formSchema>) {
-        setIsLoading(true)
-        console.log("values dari form", values)
-        mutation.mutate({
-            id_project,
-            content: values.content,
-            parent_id: parent_id ?? null,
-        })
+        if (mode === "create") {
+            setIsLoading(true)
+            createMutation.mutate({
+                id_project,
+                content: values.content,
+                parent_id: parent_id ?? null,
+            })
+        } else if (mode === "edit") {
+            if (!id_comment) {
+                alert("Comment ID is required for editing.");
+                setIsLoading(false);
+                return;
+            }
+            setIsLoading(true)
+            editMutation.mutate({
+                id: id_comment,
+                content: values.content,
+                id_user: id_user ?? "",
+            })
+        }
     }
 
     return (
@@ -82,9 +109,16 @@ const CommentForm: React.FC<CommentFormProps> = ({ id_project, parent_id, onSucc
                         </FormItem>
                     )}
                 />
-                <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Loading..." : "Submit"}
-                </Button>
+                <div className="flex gap-x-4">
+                    {onCancel && (
+                        <Button type="button" variant={"outline"} onClick={onCancel}>
+                            Batal
+                        </Button>
+                    )}
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading ? "Loading..." : "Submit"}
+                    </Button>
+                </div>
             </form>
         </Form>
     )
