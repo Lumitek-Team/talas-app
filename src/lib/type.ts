@@ -17,6 +17,7 @@ export interface ProjectOneType {
 	link_github: string;
 	created_at: string;
 	updated_at: string;
+	is_bookmarked?: boolean;
 	category: {
 		id: string;
 		title: string;

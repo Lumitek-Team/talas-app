@@ -87,11 +87,12 @@ export const projectRouter = router({
 			z.object({
 				limit: z.number().min(1).max(100).nullish(),
 				cursor: z.string().nullish(),
+				id_user: z.string().optional(), // add id_user
 			})
 		)
 		.query(async ({ input }) => {
 			const limit = input.limit ?? 50;
-			const { cursor } = input;
+			const { cursor, id_user } = input;
 
 			try {
 				const projects = await retryConnect(() =>
@@ -138,6 +139,12 @@ export const projectRouter = router({
 									created_at: "asc",
 								},
 							},
+							bookmarks: id_user
+								? {
+										where: { id_user },
+										select: { id: true },
+								  }
+								: false,
 						},
 						orderBy: {
 							created_at: "desc",
@@ -146,6 +153,7 @@ export const projectRouter = router({
 						cursor: cursor ? { id: cursor } : undefined,
 					})
 				);
+
 				let nextCursor: typeof cursor | undefined = undefined;
 
 				if (projects.length > limit) {
@@ -153,8 +161,16 @@ export const projectRouter = router({
 					nextCursor = nextItem!.id;
 				}
 
+				// Add is_bookmarked property
+				const projectsWithBookmark = projects.map((p: any) => ({
+					...p,
+					is_bookmarked: id_user
+						? p.bookmarks && p.bookmarks.length > 0
+						: false,
+				}));
+
 				return {
-					projects,
+					projects: projectsWithBookmark,
 					nextCursor,
 				};
 			} catch (error) {

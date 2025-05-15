@@ -1,3 +1,4 @@
+import { bookmarkRouter } from "./router/bookmark";
 import { categoryRouter } from "./router/category";
 import { commentRouter } from "./router/comment";
 import { followRouter } from "./router/follow";
@@ -11,6 +12,7 @@ export const appRouter = router({
 	project: projectRouter,
 	follow: followRouter,
 	comment: commentRouter,
+	bookmark: bookmarkRouter,
 });
 
 export type AppRouter = typeof appRouter;
