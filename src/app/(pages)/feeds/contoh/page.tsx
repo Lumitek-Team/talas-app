@@ -60,6 +60,7 @@ const FeedsPage = () => {
                             <div className="col-span-2 flex flex-col gap-2">
                                 <Link className="text-lg font-semibold" href={`/project/${project.slug}`}>{project.title}</Link>
                                 <Link href={`/feeds/?category=${project.category.slug}`}>{project.category.title}</Link>
+                                <p>komentar: {project.count_comments}</p>
 
                             </div>
                         </div>

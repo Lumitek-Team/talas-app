@@ -404,6 +404,9 @@ export const projectRouter = router({
 						prisma.project.delete({
 							where: { id: input.id },
 						}),
+						prisma.comment.deleteMany({
+							where: { id_project: input.id },
+						}),
 						prisma.category.update({
 							where: { id: existingProject.category.id }, // Ensure id_category is valid
 							data: { count_projects: { decrement: 1 } },

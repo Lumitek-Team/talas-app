@@ -7,18 +7,21 @@ import { Comment } from "@prisma/client";
 
 // Fungsi rekursif untuk mengambil semua id turunan komentar
 type PrismaClientType = typeof prisma;
-async function getAllDescendantCommentIds(prisma: PrismaClientType, parentId: string): Promise<string[]> {
-  const children = await prisma.comment.findMany({
-    where: { parent_id: parentId },
-    select: { id: true },
-  });
-  let allIds: string[] = [];
-  for (const child of children) {
-    allIds.push(child.id);
-    const descendants = await getAllDescendantCommentIds(prisma, child.id);
-    allIds = allIds.concat(descendants);
-  }
-  return allIds;
+async function getAllDescendantCommentIds(
+	prisma: PrismaClientType,
+	parentId: string
+): Promise<string[]> {
+	const children = await prisma.comment.findMany({
+		where: { parent_id: parentId },
+		select: { id: true },
+	});
+	let allIds: string[] = [];
+	for (const child of children) {
+		allIds.push(child.id);
+		const descendants = await getAllDescendantCommentIds(prisma, child.id);
+		allIds = allIds.concat(descendants);
+	}
+	return allIds;
 }
 
 export const commentRouter = router({
@@ -92,7 +95,10 @@ export const commentRouter = router({
 
 			try {
 				// Ambil semua id turunan (anak, cucu, dst)
-				const descendantIds = await getAllDescendantCommentIds(prisma, input.id);
+				const descendantIds = await getAllDescendantCommentIds(
+					prisma,
+					input.id
+				);
 				// Hapus semua komentar (root + semua turunan)
 				await retryConnect(() =>
 					prisma.$transaction([
