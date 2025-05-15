@@ -1,6 +1,6 @@
 "use client";
 
-import { Sidebar } from "@/components/home/organisms/sidebar";
+import { Sidebar } from "@/components/layout/sidebar";
 import { PostComposer } from "@/components/home/organisms/post-composer";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
@@ -96,7 +96,7 @@ export default function HomePage() {
 
   return (
     <>
-      <Sidebar />
+      <Sidebar activeItem="Home" />
       <PageContainer title="Home">
         {/* Continuous feed container with single card appearance */}
         <div className="bg-card rounded-3xl overflow-hidden border border-white/10">

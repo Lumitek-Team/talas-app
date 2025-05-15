@@ -11,9 +11,10 @@ interface NavItem {
 
 interface SidebarNavProps {
   isCollapsed: boolean;
+  activeItem?: string;
 }
 
-export function SidebarNav({ isCollapsed }: SidebarNavProps) {
+export function SidebarNav({ isCollapsed, activeItem }: SidebarNavProps) {
   const pathname = usePathname();
   
   const navItems: NavItem[] = [
@@ -28,13 +29,19 @@ export function SidebarNav({ isCollapsed }: SidebarNavProps) {
     <nav>
       <ul className="flex flex-col gap-y-2">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          // Check if this item is active based on either:
+          // 1. The explicitly passed activeItem prop, or
+          // 2. The current pathname if no activeItem is provided
+          const isActive = activeItem 
+            ? item.label.toLowerCase() === activeItem.toLowerCase() 
+            : pathname === item.href;
+            
           return (
             <li key={item.label}>
               <Link
                 href={item.href}
                 className={`flex items-center ${isCollapsed ? "justify-center" : ""} gap-3 w-full px-6 py-4 text-base font-medium transition-colors ${
-                  isActive ? "text-green-500" : "text-white hover:bg-white/10"
+                  isActive ? "text-primary" : "text-white hover:bg-white/10"
                 } rounded-md`}
                 title={isCollapsed ? item.label : ""}
               >

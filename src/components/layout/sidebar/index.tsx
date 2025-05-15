@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SidebarLogo } from "../molecules/sidebar-logo";
-import { SidebarNav } from "../molecules/sidebar-nav";
-import { SidebarMore } from "../molecules/sidebar-more";
+import { SidebarLogo } from "./sidebar-logo";
+import { SidebarNav } from "./sidebar-nav";
+import { SidebarMore } from "./sidebar-more";
 
-export function Sidebar() {
+interface SidebarProps {
+  activeItem?: string;
+}
+
+export function Sidebar({ activeItem }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
@@ -36,7 +40,7 @@ export function Sidebar() {
       <SidebarLogo isCollapsed={isCollapsed} />
 
       {/* Navigation section */}
-      <SidebarNav isCollapsed={isCollapsed} />
+      <SidebarNav isCollapsed={isCollapsed} activeItem={activeItem} />
 
       {/* More button section */}
       <SidebarMore isCollapsed={isCollapsed} />

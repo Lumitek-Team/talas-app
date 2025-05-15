@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
 
 interface SidebarLogoProps {
@@ -10,7 +9,7 @@ interface SidebarLogoProps {
 export function SidebarLogo({ isCollapsed }: SidebarLogoProps) {
   return (
     <div className={isCollapsed ? "flex justify-center" : "px-6"}>
-      <Link href="/" className="flex items-center gap-x-3">
+      <div className="flex items-center gap-x-3">
         <Image 
           src="/logo/talas-logo.png"
           alt="Talas Logo"
@@ -23,7 +22,7 @@ export function SidebarLogo({ isCollapsed }: SidebarLogoProps) {
             talas
           </span>
         )}
-      </Link>
+      </div>
     </div>
   );
 }
