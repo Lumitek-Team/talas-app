@@ -181,10 +181,16 @@ export async function uploadImage(file: File, folder: string): Promise<string> {
 	return fileName;
 }
 
+export async function deleteImage(path: string): Promise<void> {
+	const { error } = await supabase.storage.from("talas-image").remove([path]);
+
+	if (error) {
+		throw new Error(`Failed to delete image: ${error.message}`);
+	}
+}
+
 export function getPublicUrl(path: string) {
-	const { data } = supabase.storage
-		.from("talas-image")
-		.getPublicUrl(path);
+	const { data } = supabase.storage.from("talas-image").getPublicUrl(path);
 
 	if (!data.publicUrl) {
 		console.error("Error getting public URL");

@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { CategoryType, ProjectOneType } from "@/lib/type";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { convertIframeToOembed, convertOembedToIframe } from "@/lib/utils";
 import RichEditor from "./ckeditor";
 import { Separator } from "../ui/separator";
@@ -40,50 +40,52 @@ const formSchema = z.object({
     title: z.string().min(2).max(50),
     category: z.string().min(2),
     content: z.string().min(2),
-    image1: z.any().nullable(),
+    image1: z.any(),
     image2: z.any().nullable(),
     image3: z.any().nullable(),
     image4: z.any().nullable(),
     image5: z.any().nullable(),
     video: z.any().nullable(),
     is_archived: z.boolean(),
+    link_figma: z.string().nullable(),
+    link_github: z.string().nullable(),
 });
 
-const defaultContent = convertIframeToOembed(`
-    <h2>📌 Informasi Penting</h2>
-    <p>Ini adalah <strong>konten demo</strong> yang memanfaatkan fitur-fitur utama dari editor CKEditor:</p>
-    <ul>
-      <li><strong>Bold</strong>, <em>Italic</em>, <u>Underline</u>, <s>Strikethrough</s></li>
-      <li><sub>Subscript</sub> dan <sup>Superscript</sup>, serta <code>Inline code</code></li>
-      <li><a href="https://example.com" target="_blank">Link ke situs eksternal</a></li>
-      <li>Special Character: © ™ ∞ ☕ ★</li>
-    </ul>
-    <hr>
-    <h3>📋 List & Alignment</h3>
-    <p style="text-align: left;">Ini teks rata kiri</p>
-    <p style="text-align: center;">Ini teks rata tengah</p>
-    <p style="text-align: right;">Ini teks rata kanan</p>
-    <ol>
-      <li>Langkah pertama</li>
-      <li>Langkah kedua</li>
-    </ol>
-    <blockquote>"Kutipan penting yang ingin disorot."</blockquote>
-    <pre><code class="language-js">function helloWorld() {
-        console.log("Hello, world!");
-    }</code></pre>
-    <h3>📺 Media & Tabel</h3>
-    <figure class="media"><iframe class="mx-auto mt-2 w-3/4 aspect-video" src="https://www.youtube.com/embed/Y78JLjlXP7g?si=ZMLaNEBeZ6MPmoOg" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="true"></iframe></figure>
-    <p>Contoh tabel:</p>
-    <table>
-      <thead>
-        <tr><th>Nama</th><th>Umur</th><th>Kota</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>Ana</td><td>23</td><td>Bandung</td></tr>
-        <tr><td>Budi</td><td>30</td><td>Surabaya</td></tr>
-      </tbody>
-    </table>
-        `);
+// const defaultContent = convertIframeToOembed(`
+//     <h2>📌 Informasi Penting</h2>
+//     <p>Ini adalah <strong>konten demo</strong> yang memanfaatkan fitur-fitur utama dari editor CKEditor:</p>
+//     <ul>
+//       <li><strong>Bold</strong>, <em>Italic</em>, <u>Underline</u>, <s>Strikethrough</s></li>
+//       <li><sub>Subscript</sub> dan <sup>Superscript</sup>, serta <code>Inline code</code></li>
+//       <li><a href="https://example.com" target="_blank">Link ke situs eksternal</a></li>
+//       <li>Special Character: © ™ ∞ ☕ ★</li>
+//     </ul>
+//     <hr>
+//     <h3>📋 List & Alignment</h3>
+//     <p style="text-align: left;">Ini teks rata kiri</p>
+//     <p style="text-align: center;">Ini teks rata tengah</p>
+//     <p style="text-align: right;">Ini teks rata kanan</p>
+//     <ol>
+//       <li>Langkah pertama</li>
+//       <li>Langkah kedua</li>
+//     </ol>
+//     <blockquote>"Kutipan penting yang ingin disorot."</blockquote>
+//     <pre><code class="language-js">function helloWorld() {
+//         console.log("Hello, world!");
+//     }</code></pre>
+//     <h3>📺 Media & Tabel</h3>
+//     <figure class="media"><iframe class="mx-auto mt-2 w-3/4 aspect-video" src="https://www.youtube.com/embed/Y78JLjlXP7g?si=ZMLaNEBeZ6MPmoOg" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="true"></iframe></figure>
+//     <p>Contoh tabel:</p>
+//     <table>
+//       <thead>
+//         <tr><th>Nama</th><th>Umur</th><th>Kota</th></tr>
+//       </thead>
+//       <tbody>
+//         <tr><td>Ana</td><td>23</td><td>Bandung</td></tr>
+//         <tr><td>Budi</td><td>30</td><td>Surabaya</td></tr>
+//       </tbody>
+//     </table>
+//         `);
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) => {
     const [loading, setLoading] = useState(false);
@@ -98,13 +100,22 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
 
     const router = useRouter();
 
+    const isMountedRef = useRef(true);
+
+    useEffect(() => {
+        isMountedRef.current = true;
+        return () => {
+            isMountedRef.current = false;
+        };
+    }, []);
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: project?.title || "",
             category: project?.category.id || "",
-            content: defaultContent,
-            // content: project?.content ? convertIframeToOembed(project.content) : "Isi konten disini...",
+            // content: defaultContent,
+            content: project?.content ? convertIframeToOembed(project.content) : "Isi konten disini...",
             image1: project?.image1 || null,
             image2: project?.image2 || null,
             image3: project?.image3 || null,
@@ -112,6 +123,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
             image5: project?.image5 || null,
             video: project?.video || null,
             is_archived: project?.is_archived || false,
+            link_figma: project?.link_figma || "",
+            link_github: project?.link_github || "",
         },
     });
 
@@ -143,8 +156,15 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
         formData.append("id_category", values.category);
         formData.append("title", values.title);
         formData.append("content", transformedContent);
+        if (values.link_figma) {
+            formData.append("link_figma", values.link_figma);
+        }
 
-        if (croppedImage) {
+        if (values.link_github) {
+            formData.append("link_github", values.link_github);
+        }
+
+        if (croppedImage && mode === "create") {
             formData.append("image1", croppedImage);
         }
 
@@ -162,12 +182,41 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                 }
 
                 const data = await res.json();
-                console.log("Project created:", data.project.slug);
-                setLoading(false);
-                router.push(`/project/${data.project.slug}`);
+                if (isMountedRef.current) {
+                    setLoading(false);
+                    router.push(`/project/${data.project.slug}`);
+                }
             } catch (err) {
-                setLoading(false);
-                console.error("Error creating project:", err);
+                if (isMountedRef.current) {
+                    setLoading(false);
+                    console.error("Error creating project:", err);
+                }
+            }
+        } else if (mode === "edit") {
+            formData.append("id", project?.id || "");
+
+            try {
+                const res = await fetch("/api/project/edit", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    console.error("Server response:", errorText);
+                    throw new Error("Failed to edit project");
+                }
+
+                const data = await res.json();
+                if (isMountedRef.current) {
+                    setLoading(false);
+                    router.push(`/project/${data.project.slug}`);
+                }
+            } catch (err) {
+                if (isMountedRef.current) {
+                    setLoading(false);
+                    console.error("Error editing project:", err);
+                }
             }
         }
     }
@@ -240,51 +289,54 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                                 )}
                             />
                         </div>
-                        <div className="col-span-1">
-                            <FormField
-                                control={form.control}
-                                name="image1"
-                                render={() => (
-                                    <FormItem>
-                                        <FormLabel>featured Image</FormLabel>
-                                        <FormControl>
-                                            <div>
-                                                {project?.image1 && !croppedImage && (
-                                                    <Image
-                                                        src={project.image1}
-                                                        alt="Current Image"
-                                                        className="w-full h-auto rounded mb-2 aspect-video"
-                                                        width={480}
-                                                        height={480}
-                                                    />
-                                                )}
-                                                <div className="flex gap-2">
-                                                    <Input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={handleImageChange}
-                                                    />
+                        {mode === "create" && (
+                            <div className="col-span-1">
+                                <FormField
+                                    control={form.control}
+                                    name="image1"
+                                    render={() => (
+                                        <FormItem>
+                                            <FormLabel>featured Image</FormLabel>
+                                            <FormControl>
+                                                <div>
                                                     {croppedImage && (
-                                                        <Button
-                                                            type="button"
-                                                            variant="secondary"
-                                                            className="w-fit"
-                                                            onClick={() => setOpenCropper(true)}
-                                                        >
-                                                            Edit Image
-                                                        </Button>
+                                                        <Image
+                                                            src={URL.createObjectURL(croppedImage)}
+                                                            alt="Current Image"
+                                                            className="w-1/2 h-auto rounded mb-2 aspect-video"
+                                                            width={480}
+                                                            height={480}
+                                                        />
                                                     )}
+                                                    <div className="flex gap-2">
+                                                        <Input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={handleImageChange}
+                                                            required
+                                                        />
+                                                        {croppedImage && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="secondary"
+                                                                className="w-fit"
+                                                                onClick={() => setOpenCropper(true)}
+                                                            >
+                                                                Edit Image
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </FormControl>
-                                        <FormDescription>
-                                            This is your Thumbnail image.
-                                        </FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+                                            </FormControl>
+                                            <FormDescription>
+                                                This is your Thumbnail image.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        )}
 
                         <div className="col-span-2">
                             <FormField
@@ -304,6 +356,43 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                                         </FormControl>
                                         <FormDescription>
                                             This is your content blog.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        <div className="col-span-2">
+                            <FormField
+                                control={form.control}
+                                name="link_figma"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Link Figma</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="https://www.figma.com/file/..." {...field} value={field.value ?? ""} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            This is your link figma.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <FormField
+                                control={form.control}
+                                name="link_github"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Link Github</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="https://www.github.com/..." {...field} value={field.value ?? ""} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            This is your link github.
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>

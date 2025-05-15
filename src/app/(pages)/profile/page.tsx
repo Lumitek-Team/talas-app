@@ -18,7 +18,6 @@ export default function ProfilePage() {
     try {
       const result = await uploadFile('talas-image', filePath, file)
       const publicUrl = await getImageUrl('talas-image', result.path)
-      console.log(publicUrl)
       setImageUrl(publicUrl)
       setUploadStatus('Upload successful!')
     } catch (err) {

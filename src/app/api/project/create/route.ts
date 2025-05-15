@@ -17,6 +17,8 @@ export async function POST(req: Request) {
 	const image3 = formData.get("image3") as File | null;
 	const image4 = formData.get("image4") as File | null;
 	const image5 = formData.get("image5") as File | null;
+	const link_figma = formData.get("link_figma")?.toString();
+	const link_github = formData.get("link_github")?.toString();
 
 	if (!title || !id_category || !content || !image1 || !id_user) {
 		return new Response("Name, id_category and content are required", {
@@ -57,10 +59,12 @@ export async function POST(req: Request) {
 			title,
 			content,
 			image1: image1Path,
-            image2: imagePaths[0] || null,
-            image3: imagePaths[1] || null,
-            image4: imagePaths[2] || null,
-            image5: imagePaths[3] || null,
+			image2: imagePaths[0] || null,
+			image3: imagePaths[1] || null,
+			image4: imagePaths[2] || null,
+			image5: imagePaths[3] || null,
+			link_figma,
+			link_github,
 		});
 
 		return Response.json({ success: true, project });
