@@ -222,7 +222,9 @@
 .ck-character-info__code,
 .ck-character-info__name,
 .ck-balloon-panel,
-.ck-dropdown__panel {
+.ck-dropdown__panel,
+.ck-editor__top,
+.ck-menu-bar {
 	background: var(--background) !important;
 	color: var(--foreground) !important;
 }

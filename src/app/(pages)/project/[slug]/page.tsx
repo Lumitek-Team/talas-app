@@ -21,7 +21,6 @@ const ProjectPage = () => {
         id_user: user?.id || "",
     });
 
-
     const deleteMutation = trpc.project.delete.useMutation({
         onSuccess: () => {
             router.push("/feeds/contoh");
@@ -33,6 +32,19 @@ const ProjectPage = () => {
 
     if (isLoading || !isLoaded) return (<div> <h1>Loading...</h1> </div>);
     if (user === null && isLoaded) return router.push("/sign-in");
+
+    if (!data && !isLoading) {
+        // return 404
+        return (
+            <div>
+                <h1 className="text-3xl font-semibold">Project not found</h1>
+                <p className="text-muted-foreground">The project you are looking for does not exist.</p>
+                <Link href="/feeds/contoh" className={buttonVariants({ variant: "default" })}>
+                    Back to Feeds
+                </Link>
+            </div>
+        );
+    }
 
     const deleteProject = () => {
         if (confirm("Are you sure you want to delete this project?")) {

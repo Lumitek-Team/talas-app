@@ -57,10 +57,9 @@ const FeedsPage = () => {
                                     <div className="bg-gray-200 h-24 w-full"></div>
                                 )}
                             </div>
-                            <div className="col-span-2">
-                                <Link href={`/project/${project.slug}`}>
-                                    {project.title}
-                                </Link>
+                            <div className="col-span-2 flex flex-col gap-2">
+                                <Link className="text-lg font-semibold" href={`/project/${project.slug}`}>{project.title}</Link>
+                                <Link href={`/feeds/?category=${project.category.slug}`}>{project.category.title}</Link>
 
                             </div>
                         </div>
