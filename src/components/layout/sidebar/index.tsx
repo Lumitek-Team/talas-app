@@ -32,7 +32,7 @@ export function Sidebar({ activeItem }: SidebarProps) {
 
   return (
     <aside 
-      className={`h-screen bg-background fixed left-0 top-0 flex flex-col justify-between py-12 border-r border-white/10 ${
+      className={`h-screen bg-background fixed left-0 top-0 flex flex-col justify-between py-7 border-r border-white/10 ${
         isCollapsed ? "w-[70px] items-center px-0" : "w-[270px] px-4"
       }`}
     >
