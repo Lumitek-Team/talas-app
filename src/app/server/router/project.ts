@@ -72,11 +72,24 @@ export const projectRouter = router({
 									created_at: "asc",
 								},
 							},
+							bookmarks: input.id_user
+								? {
+										where: { id_user: input.id_user },
+										select: { id: true },
+								  }
+								: false,
 						},
 					})
 				);
 
-				return project;
+				if (!project) return null;
+
+				return {
+					...project,
+					is_bookmarked: input.id_user
+						? project.bookmarks && project.bookmarks.length > 0
+						: false,
+				};
 			} catch (error) {
 				throw new Error("Error fetching project: " + error);
 			}

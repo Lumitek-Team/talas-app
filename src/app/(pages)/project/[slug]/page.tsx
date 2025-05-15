@@ -12,11 +12,13 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import CommentForm from "@/components/project/CommentForm";
 import CommentTree from "@/components/project/CommentTree";
+import { useState } from "react";
 
 const ProjectPage = () => {
     const { slug } = useParams() as { slug: string };
     const { user, isLoaded } = useUser();
     const router = useRouter();
+    const [optimisticBookmark, setOptimisticBookmark] = useState<boolean | undefined>(undefined);
 
     if (user === null && isLoaded) {
         router.push("/sign-in");
@@ -36,6 +38,23 @@ const ProjectPage = () => {
         onError: (error) => {
             alert(`Failed to delete project: ${error.message}`);
         },
+    });
+
+    const bookmarkMutation = trpc.bookmark.create.useMutation({
+        onSuccess: () => {
+            setOptimisticBookmark(true);
+        },
+        onError: () => {
+            setOptimisticBookmark(false);
+        }
+    });
+    const unbookmarkMutation = trpc.bookmark.delete.useMutation({
+        onSuccess: () => {
+            setOptimisticBookmark(false);
+        },
+        onError: () => {
+            setOptimisticBookmark(true);
+        }
     });
 
     // Jalankan hanya jika project sudah ada dan tidak loading
@@ -67,6 +86,30 @@ const ProjectPage = () => {
         }
     };
 
+    const isBookmarked = optimisticBookmark !== undefined
+        ? optimisticBookmark
+        : project.is_bookmarked;
+
+    const handleBookmark = () => {
+        setOptimisticBookmark(true);
+        bookmarkMutation.mutate({
+            id_user: user.id,
+            id_project: project.id,
+        }, {
+            onError: () => setOptimisticBookmark(false),
+        });
+    };
+
+    const handleUnbookmark = () => {
+        setOptimisticBookmark(false);
+        unbookmarkMutation.mutate({
+            id_user: user.id,
+            id_project: project.id,
+        }, {
+            onError: () => setOptimisticBookmark(true),
+        });
+    };
+
     return (
         <div>
             {(user?.id === project.project_user[0].user.id) && (
@@ -93,6 +136,25 @@ const ProjectPage = () => {
 
             <p>{project.category.title}</p>
             <p>{project.project_user[0].user.name}</p>
+            <div className="flex gap-2 w-full">
+                {!isBookmarked ? (
+                    <Button
+                        variant="outline"
+                        className="w-fit"
+                        onClick={handleBookmark}
+                    >
+                        Bookmark
+                    </Button>
+                ) : (
+                    <Button
+                        variant="default"
+                        className="w-fit"
+                        onClick={handleUnbookmark}
+                    >
+                        Unbookmark
+                    </Button>
+                )}
+            </div>
             <div className="flex gap-2 flex-wrap w-full">
                 {project.image1 && (
                     <>
