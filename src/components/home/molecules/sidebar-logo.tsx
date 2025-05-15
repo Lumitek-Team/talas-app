@@ -3,9 +3,13 @@
 import Link from "next/link";
 import Image from "next/image";
 
-export function SidebarLogo() {
+interface SidebarLogoProps {
+  isCollapsed: boolean;
+}
+
+export function SidebarLogo({ isCollapsed }: SidebarLogoProps) {
   return (
-    <div className="px-6">
+    <div className={isCollapsed ? "flex justify-center" : "px-6"}>
       <Link href="/" className="flex items-center gap-x-3">
         <Image 
           src="/logo/talas-logo.png"
@@ -14,9 +18,11 @@ export function SidebarLogo() {
           height={35}
           className="object-contain"
         />
-        <span className="text-xl font-medium text-white">
-          talas
-        </span>
+        {!isCollapsed && (
+          <span className="text-xl font-medium text-white">
+            talas
+          </span>
+        )}
       </Link>
     </div>
   );

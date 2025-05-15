@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/home/organisms/sidebar";
 import { PostComposer } from "@/components/home/organisms/post-composer";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
+import { PageContainer } from "@/components/ui/page-container";
 import { useState } from "react";
 
 // Mock data for demonstration
@@ -94,12 +95,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="bg-background min-h-screen">
+    <>
       <Sidebar />
-
-      <main className="ml-[450px] max-w-[800px] mx-auto py-8 px-4">
-        <h1 className="text-l font-bold mb-6 text-center">Home</h1>
-
+      <PageContainer title="Home">
         {/* Continuous feed container with single card appearance */}
         <div className="bg-card rounded-3xl overflow-hidden border border-white/10">
           {/* Post composer integrated into the feed */}
@@ -120,10 +118,10 @@ export default function HomePage() {
             </div>
           ))}
         </div>
-      </main>
+      </PageContainer>
 
       {/* Floating Action Button */}
       <FloatingActionButton onClick={handleFabClick} />
-    </div>
+    </>
   );
 }

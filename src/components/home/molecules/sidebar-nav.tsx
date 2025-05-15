@@ -9,7 +9,11 @@ interface NavItem {
   href: string;
 }
 
-export function SidebarNav() {
+interface SidebarNavProps {
+  isCollapsed: boolean;
+}
+
+export function SidebarNav({ isCollapsed }: SidebarNavProps) {
   const pathname = usePathname();
   
   const navItems: NavItem[] = [
@@ -29,9 +33,10 @@ export function SidebarNav() {
             <li key={item.label}>
               <Link
                 href={item.href}
-                className={`flex items-center gap-3 w-full px-6 py-4 text-base font-medium transition-colors ${ // Added w-full
+                className={`flex items-center ${isCollapsed ? "justify-center" : ""} gap-3 w-full px-6 py-4 text-base font-medium transition-colors ${
                   isActive ? "text-green-500" : "text-white hover:bg-white/10"
                 } rounded-md`}
+                title={isCollapsed ? item.label : ""}
               >
                 {item.icon === "home" && (
                   <svg
@@ -116,7 +121,7 @@ export function SidebarNav() {
                     <circle cx="12" cy="7" r="4" />
                   </svg>
                 )}
-                <span>{item.label}</span>
+                {!isCollapsed && <span>{item.label}</span>}
               </Link>
             </li>
           );
