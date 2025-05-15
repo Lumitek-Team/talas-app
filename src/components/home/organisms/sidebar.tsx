@@ -28,8 +28,8 @@ export function Sidebar() {
 
   return (
     <aside 
-      className={`h-screen bg-background fixed left-0 top-0 flex flex-col justify-between py-12 px-4 border-r border-white/10 transition-all duration-300 ${
-        isCollapsed ? "w-[70px]" : "w-[270px]"
+      className={`h-screen bg-background fixed left-0 top-0 flex flex-col justify-between py-12 border-r border-white/10 ${
+        isCollapsed ? "w-[70px] items-center px-0" : "w-[270px] px-4"
       }`}
     >
       {/* Logo section */}
