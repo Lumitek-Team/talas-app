@@ -25,11 +25,10 @@ const ProjectPage = () => {
         return null;
     }
 
-    const { data, isLoading: projectLoading } = trpc.project.getOne.useQuery({
+    const { data: dataProject, isLoading: projectLoading } = trpc.project.getOne.useQuery({
         id: slug,
         id_user: user?.id || "",
     });
-    const project: ProjectOneType = data;
 
     const deleteMutation = trpc.project.delete.useMutation({
         onSuccess: () => {
@@ -57,6 +56,9 @@ const ProjectPage = () => {
         }
     });
 
+
+    const project = dataProject as ProjectOneType;
+
     // Jalankan hanya jika project sudah ada dan tidak loading
     const commentsQuery = trpc.project.getComments.useQuery(
         { id: project?.id ?? "" },
@@ -65,7 +67,7 @@ const ProjectPage = () => {
 
     if (projectLoading || !isLoaded) return (<div> <h1>Loading...</h1> </div>);
 
-    if (!project && !projectLoading) {
+    if (!dataProject && !projectLoading) {
         return (
             <div>
                 <h1 className="text-3xl font-semibold">Project not found</h1>
@@ -77,10 +79,13 @@ const ProjectPage = () => {
         );
     }
 
+
+
+
     const deleteProject = () => {
         if (confirm("Are you sure you want to delete this project?")) {
             deleteMutation.mutate({
-                id: data.id,
+                id: project.id,
                 id_user: user.id,
             });
         }

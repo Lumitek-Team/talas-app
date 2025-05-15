@@ -4,7 +4,11 @@ import { retryConnect, deleteImage } from "@/lib/utils";
 import { z } from "zod";
 import slugify from "slugify";
 import { getTrpcCaller } from "@/app/_trpc/server";
-import { CommentsInProjectType } from "@/lib/type";
+import {
+	CommentsInProjectType,
+	ProjectOneType,
+	ProjectWithBookmarks,
+} from "@/lib/type";
 
 export const projectRouter = router({
 	getOne: protectedProcedure
@@ -16,7 +20,7 @@ export const projectRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const project = await retryConnect(() =>
+				const data = await retryConnect(() =>
 					prisma.project.findFirst({
 						where: {
 							OR: [{ id: input.id }, { slug: input.id }],
@@ -82,14 +86,16 @@ export const projectRouter = router({
 					})
 				);
 
-				if (!project) return null;
+				if (!data) return null;
 
-				return {
-					...project,
+				const project: ProjectOneType = {
+					...data,
 					is_bookmarked: input.id_user
-						? project.bookmarks && project.bookmarks.length > 0
+						? data.bookmarks && data.bookmarks.length > 0
 						: false,
 				};
+
+				return project;
 			} catch (error) {
 				throw new Error("Error fetching project: " + error);
 			}
@@ -175,12 +181,14 @@ export const projectRouter = router({
 				}
 
 				// Add is_bookmarked property
-				const projectsWithBookmark = projects.map((p: any) => ({
-					...p,
-					is_bookmarked: id_user
-						? p.bookmarks && p.bookmarks.length > 0
-						: false,
-				}));
+				const projectsWithBookmark = projects.map(
+					(p: ProjectWithBookmarks) => ({
+						...p,
+						is_bookmarked: id_user
+							? p.bookmarks && p.bookmarks.length > 0
+							: false,
+					})
+				);
 
 				return {
 					projects: projectsWithBookmark,
@@ -425,7 +433,9 @@ export const projectRouter = router({
 				].filter(Boolean);
 
 				for (const imagePath of images) {
-					await deleteImage(imagePath);
+					if (imagePath) {
+						await deleteImage(imagePath);
+					}
 				}
 
 				await retryConnect(() =>
