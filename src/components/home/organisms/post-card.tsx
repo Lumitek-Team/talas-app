@@ -54,7 +54,7 @@ export function PostCard({
         timestamp={timestamp}
       />
       
-      <div className="mb-6"> {/* Changed from mb-2 to mb-6 to increase gap */}
+      <div className="mb-6">
         <h2 className="text-lg font-bold">{content.split('\n')[0]}</h2>
         <p className="text-white text-sm whitespace-pre-line">
           {content.split('\n').slice(1).join('\n')}
@@ -79,16 +79,18 @@ export function PostCard({
         </div>
       )}
       
-      <PostActions
-        likes={likeCount}
-        comments={comments}
-        onLike={handleLike}
-        onComment={() => {}}
-        onSave={() => setIsSaved(!isSaved)}
-        onShare={() => {}}
-        isLiked={isLiked}
-        isSaved={isSaved}
-      />
+      <div className="pt-2 border-t border-white/5">
+        <PostActions
+          likes={likeCount}
+          comments={comments}
+          onLike={handleLike}
+          onComment={() => {}}
+          onSave={() => setIsSaved(!isSaved)}
+          onShare={() => {}}
+          isLiked={isLiked}
+          isSaved={isSaved}
+        />
+      </div>
     </div>
   );
 }
