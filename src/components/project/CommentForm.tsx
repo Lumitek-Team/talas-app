@@ -51,13 +51,14 @@ const CommentForm: React.FC<CommentFormProps> = ({ id_project, parent_id, onSucc
         resolver: zodResolver(formSchema),
         defaultValues: {
             content: "",
-            parent_id: null,
+            parent_id: parent_id ?? null,
         },
     })
 
     // 2. Define a submit handler.
     function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true)
+        console.log("values dari form", values)
         mutation.mutate({
             id_project,
             content: values.content,
