@@ -4,6 +4,7 @@ import { retryConnect, deleteImage } from "@/lib/utils";
 import { z } from "zod";
 import slugify from "slugify";
 import { getTrpcCaller } from "@/app/_trpc/server";
+import { CommentsInProjectType } from "@/lib/type";
 
 export const projectRouter = router({
 	getOne: protectedProcedure
@@ -415,6 +416,81 @@ export const projectRouter = router({
 				);
 			} catch (error) {
 				throw new Error("Error deleting project: " + error);
+			}
+		}),
+
+	getComments: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+			})
+		)
+		.query(async ({ input }) => {
+			try {
+				const comments = await retryConnect(() =>
+					prisma.comment.findMany({
+						where: {
+							id_project: input.id,
+						},
+						select: {
+							id: true,
+							content: true,
+							created_at: true,
+							updated_at: true,
+							parent_id: true,
+							user: {
+								select: {
+									id: true,
+									name: true,
+									username: true,
+									photo_profile: true,
+								},
+							},
+						},
+						orderBy: {
+							created_at: "desc",
+						},
+					})
+				);
+
+				const commentMap: Record<string, CommentsInProjectType> = {};
+				const roots: CommentsInProjectType[] = [];
+
+				for (const comment of comments) {
+					const commentWithChildren: CommentsInProjectType = {
+						...comment,
+						children: commentMap[comment.id]?.children || [],
+					};
+					commentMap[comment.id] = commentWithChildren;
+
+					if (comment.parent_id) {
+						const parent = commentMap[comment.parent_id];
+						if (parent) {
+							parent.children.push(commentWithChildren);
+						} else {
+							commentMap[comment.parent_id] = {
+								id: comment.parent_id,
+								content: "",
+								created_at: "",
+								updated_at: "",
+								parent_id: null,
+								user: {
+									id: "",
+									name: "",
+									username: "",
+									photo_profile: null,
+								},
+								children: [commentWithChildren],
+							};
+						}
+					} else {
+						roots.push(commentWithChildren);
+					}
+				}
+
+				return roots;
+			} catch (error) {
+				throw new Error("Error fetching comments: " + error);
 			}
 		}),
 });

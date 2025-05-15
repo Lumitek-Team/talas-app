@@ -10,16 +10,24 @@ import { getPublicUrl } from "@/lib/utils";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import CommentForm from "@/components/project/CommentForm";
+import CommentTree from "@/components/project/CommentTree";
 
 const ProjectPage = () => {
     const { slug } = useParams() as { slug: string };
     const { user, isLoaded } = useUser();
     const router = useRouter();
 
-    const { data, isLoading } = trpc.project.getOne.useQuery({
+    if (user === null && isLoaded) {
+        router.push("/sign-in");
+        return null;
+    }
+
+    const { data, isLoading: projectLoading } = trpc.project.getOne.useQuery({
         id: slug,
         id_user: user?.id || "",
     });
+    const project: ProjectOneType = data;
 
     const deleteMutation = trpc.project.delete.useMutation({
         onSuccess: () => {
@@ -30,11 +38,15 @@ const ProjectPage = () => {
         },
     });
 
-    if (isLoading || !isLoaded) return (<div> <h1>Loading...</h1> </div>);
-    if (user === null && isLoaded) return router.push("/sign-in");
+    // Jalankan hanya jika project sudah ada dan tidak loading
+    const commentsQuery = trpc.project.getComments.useQuery(
+        { id: project?.id ?? "" },
+        { enabled: !!project && !projectLoading }
+    );
 
-    if (!data && !isLoading) {
-        // return 404
+    if (projectLoading || !isLoaded) return (<div> <h1>Loading...</h1> </div>);
+
+    if (!project && !projectLoading) {
         return (
             <div>
                 <h1 className="text-3xl font-semibold">Project not found</h1>
@@ -54,8 +66,6 @@ const ProjectPage = () => {
             });
         }
     };
-
-    const project: ProjectOneType = data;
 
     return (
         <div>
@@ -82,6 +92,7 @@ const ProjectPage = () => {
             </div>
 
             <p>{project.category.title}</p>
+            <p>{project.project_user[0].user.name}</p>
             <div className="flex gap-2 flex-wrap w-full">
                 {project.image1 && (
                     <>
@@ -92,6 +103,27 @@ const ProjectPage = () => {
             </div>
             <div>
                 <div dangerouslySetInnerHTML={{ __html: project.content }} />
+            </div>
+
+            {/* comments */}
+            <Separator className="mt-10 mb-4" />
+            <CommentForm
+                id_project={project.id}
+                onSuccess={() => commentsQuery.refetch()} // refetch komentar setelah submit
+            />
+            <Separator className="mb-10 mt-4" />
+            <div className="flex flex-col gap-4 py-8">
+                {commentsQuery.isLoading && <div>Loading comments...</div>}
+                {commentsQuery.data && commentsQuery.data.length === 0 && (
+                    <div className="text-muted-foreground">Belum ada komentar.</div>
+                )}
+                {commentsQuery.data && commentsQuery.data.length > 0 && (
+                    <CommentTree
+                        comments={commentsQuery.data}
+                        id_project={project.id}
+                        onCommentAdded={() => commentsQuery.refetch()} // pass ke tree
+                    />
+                )}
             </div>
         </div>
     );

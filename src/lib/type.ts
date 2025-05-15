@@ -38,3 +38,18 @@ export interface CategoryType {
 	title: string;
 	count_projects: number;
 }
+
+export type CommentsInProjectType = {
+	id: string;
+	content: string;
+	created_at: string;
+	updated_at: string;
+	parent_id: string | null;
+	user: {
+		id: string;
+		name: string;
+		username: string;
+		photo_profile: string | null;
+	};
+	children: CommentsInProjectType[];
+};

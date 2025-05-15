@@ -1,4 +1,5 @@
 import { categoryRouter } from "./router/category";
+import { commentRouter } from "./router/comment";
 import { followRouter } from "./router/follow";
 import { projectRouter } from "./router/project";
 import { userRouter } from "./router/user";
@@ -9,6 +10,7 @@ export const appRouter = router({
 	category: categoryRouter,
 	project: projectRouter,
 	follow: followRouter,
+	comment: commentRouter,
 });
 
 export type AppRouter = typeof appRouter;
