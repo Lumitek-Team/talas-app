@@ -140,26 +140,20 @@
 
 
 /* Custom Scrollbar Styling */
+/* Remove all scrollbar styling */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(128, 128, 128, 0.3);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(128, 128, 128, 0.5);
+  display: none;
 }
 
 /* For Firefox */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
+  scrollbar-width: none;
+  -ms-overflow-style: none;  /* For Internet Explorer and Edge */
+}
+
+/* Remove the previous scrollbar styles */
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb:hover {
+  display: none;
 }
