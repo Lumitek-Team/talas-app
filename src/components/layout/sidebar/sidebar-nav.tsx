@@ -12,9 +12,10 @@ interface NavItem {
 interface SidebarNavProps {
   isCollapsed: boolean;
   activeItem?: string;
+  isMobile?: boolean;
 }
 
-export function SidebarNav({ isCollapsed, activeItem }: SidebarNavProps) {
+export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: SidebarNavProps) {
   const pathname = usePathname();
   
   const navItems: NavItem[] = [
@@ -24,6 +25,116 @@ export function SidebarNav({ isCollapsed, activeItem }: SidebarNavProps) {
     { icon: "bell", label: "Notification", href: "/notifications" },
     { icon: "user", label: "Profile", href: "/profile" },
   ];
+
+  if (isMobile) {
+    return (
+      <nav className="w-full">
+        <ul className="flex justify-evenly w-full">
+          {navItems.map((item) => {
+            const isActive = activeItem 
+              ? item.label.toLowerCase() === activeItem.toLowerCase() 
+              : pathname === item.href;
+              
+            return (
+              <li key={item.label}>
+                <Link
+                  href={item.href}
+                  className={`flex items-center justify-center p-2 rounded-md transition-colors ${
+                    isActive ? "text-primary" : "text-white hover:bg-white/10"
+                  }`}
+                  title={item.label}
+                >
+                  {item.icon === "home" && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill={isActive ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-6 h-6"
+                    >
+                      <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    </svg>
+                  )}
+                  {item.icon === "bookmark" && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill={isActive ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-6 h-6"
+                    >
+                      <path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+                    </svg>
+                  )}
+                  {item.icon === "search" && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill={isActive ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-6 h-6"
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.3-4.3" />
+                    </svg>
+                  )}
+                  {item.icon === "bell" && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill={isActive ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-6 h-6"
+                    >
+                      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                    </svg>
+                  )}
+                  {item.icon === "user" && (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill={isActive ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-6 h-6"
+                    >
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    );
+  }
 
   return (
     <nav>

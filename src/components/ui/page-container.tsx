@@ -15,11 +15,14 @@ export function PageContainer({
   title 
 }: PageContainerProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Function to check window width and update sidebar state
     const handleResize = () => {
-      setIsCollapsed(window.innerWidth <= 990);
+      const width = window.innerWidth;
+      setIsCollapsed(width <= 990);
+      setIsMobile(width <= 690);
     };
 
     // Set initial state
@@ -38,10 +41,15 @@ export function PageContainer({
     <div className="bg-background min-h-screen">
       <div className={cn(
         "w-full flex justify-center transition-all duration-300",
-        isCollapsed ? "pl-[70px]" : "pl-[280px]"
+        isMobile ? "pt-16 pb-16 px-0" : (isCollapsed ? "pl-[65px]" : "pl-[100px]")
       )}>
-        <main className={cn("w-full max-w-3xl py-8 px-4", className)}>
-          <h1 className="text-l font-bold mb-6 text-center">{title}</h1>
+        <main className={cn(
+          "w-full py-8",
+          isMobile ? "max-w-full px-0" : "max-w-3xl px-4",
+          className
+        )}>
+          {/* Hide title on mobile */}
+          {!isMobile && <h1 className="text-l font-bold mb-6 text-center">{title}</h1>}
           {children}
         </main>
       </div>

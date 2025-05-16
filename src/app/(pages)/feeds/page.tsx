@@ -5,7 +5,7 @@ import { PostComposer } from "@/components/home/organisms/post-composer";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { PageContainer } from "@/components/ui/page-container";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Mock data for demonstration
 const MOCK_POSTS = [
@@ -69,6 +69,20 @@ const MOCK_POSTS = [
 export default function HomePage() {
   const [posts, setPosts] = useState(MOCK_POSTS);
   const [showComposer, setShowComposer] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 690);
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   const handleNewPost = (content: string) => {
     const newPost = {
@@ -98,15 +112,17 @@ export default function HomePage() {
     <>
       <Sidebar activeItem="Home" />
       <PageContainer title="Home">
-        {/* Continuous feed container with single card appearance */}
-        <div className="bg-card rounded-3xl overflow-hidden border border-white/10">
-          {/* Post composer integrated into the feed */}
-          <PostComposer 
-            avatarSrc="/img/dummy/profile-photo-dummy.jpg"
-            username="You"
-            onSubmit={handleNewPost}
-            className="border-b border-white/10"
-          />
+        {/* Continuous feed container with seamless background on mobile */}
+        <div className={`overflow-hidden ${isMobile ? 'bg-background' : 'bg-card rounded-3xl border border-white/10'}`}>
+          {/* Post composer - hidden on mobile */}
+          {!isMobile && (
+            <PostComposer 
+              avatarSrc="/img/dummy/profile-photo-dummy.jpg"
+              username="You"
+              onSubmit={handleNewPost}
+              className="border-b border-white/10"
+            />
+          )}
           
           {/* Posts */}
           {posts.map((post, index) => (

@@ -11,11 +11,14 @@ interface SidebarProps {
 
 export function Sidebar({ activeItem }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Function to check window width and update sidebar state
     const handleResize = () => {
-      setIsCollapsed(window.innerWidth <= 990);
+      const width = window.innerWidth;
+      setIsCollapsed(width <= 1180);
+      setIsMobile(width <= 690);
     };
 
     // Set initial state
@@ -30,9 +33,31 @@ export function Sidebar({ activeItem }: SidebarProps) {
     };
   }, []);
 
+  if (isMobile) {
+    return (
+      <>
+        {/* Top bar for mobile - simplified with just a border */}
+        <div className="fixed top-0 left-0 right-0 h-16 bg-background flex items-center justify-between px-4 z-50 border-b-2 border-white/10">
+          <div className="flex-1"></div>
+          <div className="flex justify-center">
+            <SidebarLogo isCollapsed={true} />
+          </div>
+          <div className="flex-1 flex justify-end">
+            <SidebarMore isCollapsed={true} />
+          </div>
+        </div>
+        
+        {/* Bottom navigation for mobile - simplified with just a border */}
+        <div className="fixed bottom-0 left-0 right-0 h-16 bg-background flex items-center justify-evenly z-50 border-t-2 border-white/10">
+          <SidebarNav isCollapsed={true} activeItem={activeItem} isMobile={true} />
+        </div>
+      </>
+    );
+  }
+
   return (
     <aside 
-      className={`h-screen bg-background fixed left-0 top-0 flex flex-col justify-between py-7 border-r border-white/10 ${
+      className={`h-screen bg-background fixed left-0 top-0 flex flex-col justify-between py-7 ${
         isCollapsed ? "w-[70px] items-center px-0" : "w-[270px] px-4"
       }`}
     >

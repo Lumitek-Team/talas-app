@@ -3,7 +3,7 @@
 import { PostHeader } from "../molecules/post-header";
 import { PostActions } from "../molecules/post-actions";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface PostCardProps {
   id: string;
@@ -35,6 +35,20 @@ export function PostCard({
   const [isLiked, setIsLiked] = useState(initialLiked);
   const [isSaved, setIsSaved] = useState(initialSaved);
   const [likeCount, setLikeCount] = useState(likes);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 690);
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   const handleLike = () => {
     if (isLiked) {
@@ -46,7 +60,7 @@ export function PostCard({
   };
 
   return (
-    <div className="p-4">
+    <div className={`p-4 ${isMobile ? 'bg-background' : ''}`}>
       <PostHeader
         username={username}
         userRole={userRole}
@@ -79,7 +93,7 @@ export function PostCard({
         </div>
       )}
       
-      <div className="pt-2 border-t border-white/5">
+      <div className="pt-2">
         <PostActions
           likes={likeCount}
           comments={comments}
