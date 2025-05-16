@@ -16,7 +16,6 @@ interface PostCardProps {
   likes: number;
   comments: number;
   initialLiked?: boolean;
-  initialSaved?: boolean;
 }
 
 export function PostCard({
@@ -30,10 +29,8 @@ export function PostCard({
   likes,
   comments,
   initialLiked = false,
-  initialSaved = false,
 }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(initialLiked);
-  const [isSaved, setIsSaved] = useState(initialSaved);
   const [likeCount, setLikeCount] = useState(likes);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -95,14 +92,13 @@ export function PostCard({
       
       <div className="pt-2">
         <PostActions
+          postId={id}
           likes={likeCount}
           comments={comments}
           onLike={handleLike}
           onComment={() => {}}
-          onSave={() => setIsSaved(!isSaved)}
           onShare={() => {}}
           isLiked={isLiked}
-          isSaved={isSaved}
         />
       </div>
     </div>

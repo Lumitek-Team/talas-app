@@ -1,28 +1,36 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { usePostsStore } from "@/lib/store/posts-store";
 
 interface PostActionsProps {
+  postId: string;
   likes: number;
   comments: number;
   onLike: () => void;
   onComment: () => void;
-  onSave: () => void;
   onShare: () => void;
   isLiked?: boolean;
-  isSaved?: boolean;
 }
 
 export function PostActions({
+  postId,
   likes,
   comments,
   onLike,
   onComment,
-  onSave,
   onShare,
   isLiked = false,
-  isSaved = false,
 }: PostActionsProps) {
+  // Get save state and toggle function from our store
+  const isPostSaved = usePostsStore(state => state.isPostSaved(postId));
+  const toggleSavePost = usePostsStore(state => state.toggleSavePost);
+
+  const handleSave = () => {
+    toggleSavePost(postId);
+    // This could be replaced with a direct API call in the future
+  };
+
   return (
     <div className="flex justify-between items-center">
       <ActionButton 
@@ -73,7 +81,7 @@ export function PostActions({
             width="20"
             height="20"
             viewBox="0 0 24 24"
-            fill={isSaved ? "currentColor" : "none"}
+            fill={isPostSaved ? "currentColor" : "none"}
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
@@ -83,8 +91,8 @@ export function PostActions({
           </svg>
         }
         label="Save"
-        onClick={onSave}
-        active={isSaved}
+        onClick={handleSave}
+        active={isPostSaved}
       />
       
       <ActionButton 

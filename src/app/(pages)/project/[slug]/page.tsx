@@ -18,9 +18,8 @@ const ProjectPage = () => {
 
     const { data, isLoading } = trpc.project.getOne.useQuery({
         id: slug,
-        id_user: user?.id || "",
+        id_user: user?.id || "dev_user_123", // Use a default ID for development
     });
-
 
     const deleteMutation = trpc.project.delete.useMutation({
         onSuccess: () => {
@@ -31,23 +30,21 @@ const ProjectPage = () => {
         },
     });
 
-    if (isLoading || !isLoaded) return (<div> <h1>Loading...</h1> </div>);
-    if (user === null && isLoaded) return router.push("/sign-in");
-
-    const deleteProject = () => {
-        if (confirm("Are you sure you want to delete this project?")) {
-            deleteMutation.mutate({
-                id: slug,
-                id_user: user.id,
-            });
-        }
-    };
+    if (isLoading) return (<div> <h1>Loading...</h1> </div>);
+    
+    // DEVELOPMENT ONLY - Authentication check disabled
+    // In production, uncomment this line:
+    // if (user === null && isLoaded) return router.push("/sign-in");
+    // Comment: Authentication check disabled for development purposes
 
     const project: ProjectOneType = data;
 
+    // Check if we have project data
+    if (!project) return (<div> <h1>Project not found</h1> </div>);
+
     return (
         <div>
-            {(user?.id === project.project_user[0].user.id) && (
+            {(user?.id === project.project_user[0]?.user?.id) && (
                 <div className="flex justify-end gap-4 items-center">
                     <Link href={`/project/${slug}/edit`} className={buttonVariants({ variant: "default" })}>edit</Link>
                     <Button variant="destructive" onClick={deleteProject}>
