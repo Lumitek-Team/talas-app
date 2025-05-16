@@ -44,11 +44,10 @@ export function PageContainer({
         isMobile ? "pt-16 pb-16 px-0" : (isCollapsed ? "pl-[65px]" : "pl-[100px]")
       )}>
         <main className={cn(
-          "w-full py-8",
+          "w-full py-8 font-inter", // Added font-inter class here
           isMobile ? "max-w-full px-0" : "max-w-3xl px-4",
           className
         )}>
-          {/* Hide title on mobile */}
           {!isMobile && <h1 className="text-l font-bold mb-6 text-center">{title}</h1>}
           {children}
         </main>

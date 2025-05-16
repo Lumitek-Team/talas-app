@@ -1,7 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @tailwind utilities;
 @import "tailwindcss/preflight";
 @import "tailwindcss";
 @import "tw-animate-css";
+
 
 @custom-variant dark (&:is(.dark *));
 
@@ -121,6 +123,11 @@
   body {
     @apply bg-background text-foreground;
     @apply font-sans;
+  }
+  
+  /* Define the font-inter class */
+  .font-inter {
+    font-family: 'Inter', sans-serif;
   }
 }
 
