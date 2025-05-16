@@ -25,7 +25,7 @@ const ProjectPage = () => {
         return null;
     }
 
-    const { data: dataProject, isLoading: projectLoading } = trpc.project.getOne.useQuery({
+    const { data: dataProject, isLoading: projectLoading, refetch: refetchProject } = trpc.project.getOne.useQuery({
         id: slug,
         id_user: user?.id || "",
     });
@@ -56,6 +56,19 @@ const ProjectPage = () => {
         }
     });
 
+    // Archive/unarchive mutations
+    const archiveMutation = trpc.project.archive.useMutation({
+        onSuccess: () => {
+            refetchProject();
+        },
+        onError: (err) => alert("Failed to archive: " + err.message),
+    });
+    const unarchiveMutation = trpc.project.unarchive.useMutation({
+        onSuccess: () => {
+            refetchProject();
+        },
+        onError: (err) => alert("Failed to unarchive: " + err.message),
+    });
 
     const project = dataProject as ProjectOneType;
 
@@ -78,9 +91,6 @@ const ProjectPage = () => {
             </div>
         );
     }
-
-
-
 
     const deleteProject = () => {
         if (confirm("Are you sure you want to delete this project?")) {
@@ -115,10 +125,45 @@ const ProjectPage = () => {
         });
     };
 
+    const handleArchive = () => {
+        if (confirm("Archive this project?")) {
+            archiveMutation.mutate({
+                id: project.id,
+                id_user: user.id,
+            });
+        }
+    };
+
+    const handleUnarchive = () => {
+        if (confirm("Unarchive this project?")) {
+            unarchiveMutation.mutate({
+                id: project.id,
+                id_user: user.id,
+            });
+        }
+    };
+
     return (
         <div>
             {(user?.id === project.project_user[0].user.id) && (
                 <div className="flex justify-end gap-4 items-center">
+                    {project.is_archived ? (
+                        <Button
+                            variant="outline"
+                            onClick={handleUnarchive}
+                            disabled={unarchiveMutation.isPending}
+                        >
+                            {unarchiveMutation.isPending ? "Unarchiving..." : "Unarchive"}
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            onClick={handleArchive}
+                            disabled={archiveMutation.isPending}
+                        >
+                            {archiveMutation.isPending ? "Archiving..." : "Archive"}
+                        </Button>
+                    )}
                     <Link href={`/project/${slug}/edit`} className={buttonVariants({ variant: "default" })}>edit</Link>
                     <Button variant="destructive" onClick={deleteProject}>
                         Delete

@@ -535,6 +535,101 @@ export const projectRouter = router({
 				throw new Error("Error fetching comments: " + error);
 			}
 		}),
+
+	archive: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				id_user: z.string(),
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				const existingProject = await retryConnect(() =>
+					prisma.project.findFirst({
+						where: {
+							id: input.id,
+						},
+						select: {
+							id: true,
+							project_user: {
+								select: {
+									id_user: true,
+								},
+								orderBy: {
+									created_at: "asc",
+								},
+								take: 1,
+							},
+						},
+					})
+				);
+
+				if (
+					!existingProject ||
+					!existingProject.project_user.length ||
+					existingProject.project_user[0].id_user !== input.id_user
+				) {
+					throw new Error("Project not found or access denied.");
+				}
+
+				await retryConnect(() =>
+					prisma.project.update({
+						where: { id: input.id },
+						data: { is_archived: true },
+					})
+				);
+			} catch (error) {
+				throw new Error("Error archiving project: " + error);
+			}
+		}),
+	unarchive: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				id_user: z.string(),
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				const existingProject = await retryConnect(() =>
+					prisma.project.findFirst({
+						where: {
+							id: input.id,
+						},
+						select: {
+							id: true,
+							project_user: {
+								select: {
+									id_user: true,
+								},
+								orderBy: {
+									created_at: "asc",
+								},
+								take: 1,
+							},
+						},
+					})
+				);
+
+				if (
+					!existingProject ||
+					!existingProject.project_user.length ||
+					existingProject.project_user[0].id_user !== input.id_user
+				) {
+					throw new Error("Project not found or access denied.");
+				}
+
+				await retryConnect(() =>
+					prisma.project.update({
+						where: { id: input.id },
+						data: { is_archived: false },
+					})
+				);
+			} catch (error) {
+				throw new Error("Error unarchiving project: " + error);
+			}
+		}),
 });
 
 export type UserRouter = typeof projectRouter;
