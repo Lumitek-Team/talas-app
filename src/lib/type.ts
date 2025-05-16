@@ -89,3 +89,28 @@ export type CommentsInProjectType = {
 	};
 	children: CommentsInProjectType[];
 };
+
+export type BookmarkType = {
+	id: string;
+	id_user: string;
+	project: {
+		id: string;
+		title: string;
+		slug: string;
+		image1?: string;
+		image2?: string;
+		image3?: string;
+		image4?: string;
+		image5?: string;
+		created_at: string;
+		updated_at: string;
+		project_user: {
+			user: {
+				id: string;
+				username: string;
+				name: string;
+				photo_profile?: string;
+			};
+		}[];
+	};
+};
