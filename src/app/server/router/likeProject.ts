@@ -77,6 +77,66 @@ export const likeProjectRouter = router({
                 });
             }
         }),
+
+    unlike: protectedProcedure
+        .input(
+            z.object({
+                id_user: z.string(),
+                id_project: z.string(),
+            })
+        )
+        .mutation(async ({ input }) => {
+            try {
+                // Check if the like exists
+                const like = await prisma.likeProject.findFirst({
+                    where: {
+                        id_user: input.id_user,
+                        id_project: input.id_project,
+                    },
+                });
+
+                if (!like) {
+                    throw new TRPCError({
+                        code: "NOT_FOUND",
+                        message: "Like not found"
+                    });
+                }
+
+                // Delete the like
+                await prisma.likeProject.delete({
+                    where: {
+                        id: like.id
+                    },
+                });
+
+                // Update like count for the project
+                const updatedProject = await prisma.project.update({
+                    where: { id: input.id_project },
+                    data: {
+                        count_likes: {
+                            decrement: 1
+                        }
+                    },
+                    select: {
+                        count_likes: true
+                    }
+                });
+
+                return {
+                    success: true,
+                    message: "Project unliked successfully",
+                    count_likes: updatedProject.count_likes
+                };
+            } catch (error) {
+                if (error instanceof TRPCError) throw error;
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: `Failed to unlike project: ${
+                        error instanceof Error ? error.message : "Unknown error"
+                    }`
+                });
+            }
+        })
 });
 
 export type LikeProjectRouter = typeof likeProjectRouter;
