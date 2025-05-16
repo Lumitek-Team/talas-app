@@ -199,6 +199,96 @@ export const projectRouter = router({
 			}
 		}),
 
+	getArchived: protectedProcedure
+		.input(
+			z.object({
+				limit: z.number().min(1).max(100).nullish(),
+				cursor: z.string().nullish(),
+				id_user: z.string().optional(),
+			})
+		)
+		.query(async ({ input }) => {
+			const limit = input.limit ?? 50;
+			const { cursor, id_user } = input;
+
+			try {
+				const projects = await retryConnect(() =>
+					prisma.project.findMany({
+						where: {
+							is_archived: true,
+						},
+						select: {
+							id: true,
+							title: true,
+							slug: true,
+							content: true,
+							image1: true,
+							image2: true,
+							image3: true,
+							image4: true,
+							image5: true,
+							video: true,
+							count_likes: true,
+							count_comments: true,
+							link_figma: true,
+							link_github: true,
+							created_at: true,
+							updated_at: true,
+							category: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+								},
+							},
+							project_user: {
+								select: {
+									user: {
+										select: {
+											id: true,
+											name: true,
+											username: true,
+											photo_profile: true,
+										},
+									},
+								},
+								orderBy: {
+									created_at: "asc",
+								},
+							},
+						},
+						orderBy: {
+							created_at: "desc",
+						},
+						take: limit + 1,
+						cursor: cursor ? { id: cursor } : undefined,
+					})
+				);
+
+				const filteredProjects = id_user
+					? projects.filter(
+							(p: ProjectOneType) =>
+								p.project_user.length > 0 &&
+								p.project_user[0].user.id === id_user
+					  )
+					: projects;
+
+				let nextCursor: typeof cursor | undefined = undefined;
+
+				if (filteredProjects.length > limit) {
+					const nextItem = filteredProjects.pop();
+					nextCursor = nextItem!.id;
+				}
+
+				return {
+					projects: filteredProjects,
+					nextCursor,
+				};
+			} catch (error) {
+				throw new Error("Error fetching archived projects: " + error);
+			}
+		}),
+
 	checkSlug: protectedProcedure.input(z.string()).query(async ({ input }) => {
 		try {
 			const project = await retryConnect(() =>
