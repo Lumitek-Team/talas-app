@@ -56,6 +56,47 @@ notificationRouter = router({
                 });
             }
         }),
+
+    // Mark all notifications as read
+    makeReaded: protectedProcedure
+        .input(
+            z.object({
+                id_user: z.string(),
+            })
+        )
+        .mutation(async ({ input }) => {
+            try {
+                // Update all unread notifications for this user
+                const result = await prisma.notification.updateMany({
+                    where: {
+                        id_user: input.id_user,
+                        is_read: false,
+                    },
+                    data: {
+                        is_read: true,
+                    },
+                });
+
+                // Also update the count_summary to reflect all notifications read
+                await prisma.count_summary.update({
+                    where: { id_user: input.id_user },
+                    data: { all_notif_read: true },
+                });
+
+                return {
+                    success: true,
+                    message: "All notifications marked as read",
+                    count: result.count,
+                };
+            } catch (error) {
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                    message: `Failed to mark notifications as read: ${
+                        error instanceof Error ? error.message : "Unknown error"
+                    }`
+                });
+            }
+        })
 });
 
 export type NotificationRouter = typeof notificationRouter;
