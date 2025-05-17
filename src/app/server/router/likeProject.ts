@@ -13,9 +13,14 @@ export const likeProjectRouter = router({
         )
         .mutation(async ({ input }) => {
             try {
-                // Check if the project exists
+                // Check if the project exists and get project owner
                 const project = await prisma.project.findUnique({
                     where: { id: input.id_project }
+                });
+
+                // Get project owner and collaborators
+                const projectUsers = await prisma.projectUser.findMany({
+                    where: { id_project: input.id_project }
                 });
 
                 if (!project) {
@@ -24,7 +29,7 @@ export const likeProjectRouter = router({
                         message: "Project not found"
                     });
                 }
-
+                
                 // Check if user already liked this project
                 const existingLike = await prisma.likeProject.findFirst({
                     where: {
@@ -57,10 +62,60 @@ export const likeProjectRouter = router({
                         }
                     },
                     select: {
-                        count_likes: true
+                        count_likes: true,
+                        title: true,
                     }
                 });
-
+                
+                // Create notification for project owner and collaborators (if not self-like)
+                try {
+                    // Get information about the user who liked the project
+                    const liker = await prisma.user.findUnique({
+                        where: { id: input.id_user },
+                        select: { username: true, name: true }
+                    });
+                    
+                    const likerName = liker?.name || liker?.username || 'Someone';
+                    
+                    // Get project owner details from projectUsers
+                    const projectOwners = await prisma.projectUser.findMany({
+                        where: { 
+                            id_project: input.id_project,
+                        }
+                    });
+                    
+                    // Prepare notifications for all project users except the liker
+                    const notifications = projectUsers
+                        .filter(pu => pu.id_user !== input.id_user) // Skip if the user liking is the same as the project user
+                        .map(pu => {
+                            const isOwner = projectOwners.some(owner => owner.id_user === pu.id_user);
+                            const notificationTitle = isOwner 
+                                ? `${likerName} liked your project "${project.title}"`
+                                : `${likerName} liked a project you collaborate on: "${project.title}"`;
+                                
+                            return {
+                                id_user: pu.id_user,
+                                title: notificationTitle,
+                                is_read: false,
+                                type: "LIKE_PROJECT" as const
+                            };
+                        });
+                    
+                    // Create all notifications at once if there are any recipients
+                    if (notifications.length > 0) {
+                        await prisma.notification.createMany({
+                            data: notifications
+                        });
+                    }
+                } catch (notifError) {
+                    // Log but don't fail the main operation
+                    console.error("Failed to create notifications:", notifError);
+                    throw new TRPCError({
+                        code: "INTERNAL_SERVER_ERROR",
+                        message: "Failed to create notifications"
+                    });
+                }
+                
                 return {
                     success: true,
                     message: "Project liked successfully",
