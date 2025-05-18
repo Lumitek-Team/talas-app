@@ -8,18 +8,6 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum genderType {
-  MALE
-  FEMALE
-}
-
-enum notifType {
-  FOLLOW
-  LIKE_PROJECT
-  LIKE_COMMENT
-  COMMENT
-}
-
 model User {
   id            String         @id @default(ulid())
   name          String
@@ -50,11 +38,6 @@ model User {
 model Project {
   id             String        @id @default(ulid())
   id_category    String
-  category       Category      @relation(fields: [id_category], references: [id], onDelete: Cascade)
-  Comment        Comment[]
-  project_user   ProjectUser[]
-  bookmarks      Bookmark[]
-  LikeProject    LikeProject[]
   slug           String        @unique
   title          String
   content        String
@@ -71,9 +54,14 @@ model Project {
   count_comments Int           @default(0)
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
+  bookmarks      Bookmark[]
+  Comment        Comment[]
+  LikeProject    LikeProject[]
+  category       Category      @relation(fields: [id_category], references: [id], onDelete: Cascade)
+  project_user   ProjectUser[]
 
-  @@index([id_category], name: "idx_category")
-  @@index([slug], name: "idx_slug_project")
+  @@index([id_category], map: "idx_category")
+  @@index([slug], map: "idx_slug_project")
 }
 
 model Comment {
@@ -111,8 +99,8 @@ model Category {
   slug           String    @unique
   title          String
   count_projects Int       @default(0)
-  projects       Project[]
   created_at     DateTime  @default(now())
+  projects       Project[]
 }
 
 model count_summary {
@@ -142,43 +130,55 @@ model Follow {
 model ProjectUser {
   id         String   @id @default(ulid())
   id_user    String
-  user       User     @relation(fields: [id_user], references: [id])
   id_project String
-  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
   created_at DateTime @default(now())
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [id_user], references: [id])
 
-  @@index([id_user, id_project], name: "idx_user_project")
+  @@index([id_user, id_project], map: "idx_user_project")
 }
 
 model Bookmark {
   id         String   @id @default(ulid())
   id_user    String
-  user       User     @relation(fields: [id_user], references: [id])
   id_project String
-  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
   created_at DateTime @default(now())
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [id_user], references: [id])
 
-  @@index([id_user, id_project], name: "idx_user_project_bookmark")
+  @@index([id_user, id_project], map: "idx_user_project_bookmark")
 }
 
 model LikeProject {
   id         String   @id @default(ulid())
   id_user    String
-  user       User     @relation(fields: [id_user], references: [id])
   id_project String
-  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
   created_at DateTime @default(now())
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [id_user], references: [id])
 
-  @@index([id_user, id_project], name: "idx_user_project_like")
+  @@index([id_user, id_project], map: "idx_user_project_like")
 }
 
 model LikeComment {
   id         String   @id @default(ulid())
   id_user    String
-  user       User     @relation(fields: [id_user], references: [id])
   id_comment String
-  comment    Comment  @relation(fields: [id_comment], references: [id])
   created_at DateTime @default(now())
+  comment    Comment  @relation(fields: [id_comment], references: [id])
+  user       User     @relation(fields: [id_user], references: [id])
 
-  @@index([id_user, id_comment], name: "idx_user_comment_like")
+  @@index([id_user, id_comment], map: "idx_user_comment_like")
+}
+
+enum genderType {
+  MALE
+  FEMALE
+}
+
+enum notifType {
+  FOLLOW
+  LIKE_PROJECT
+  LIKE_COMMENT
+  COMMENT
 }

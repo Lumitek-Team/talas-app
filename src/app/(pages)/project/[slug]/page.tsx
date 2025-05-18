@@ -30,6 +30,7 @@ const ProjectPage = () => {
         id_user: user?.id || "",
     });
 
+
     const deleteMutation = trpc.project.delete.useMutation({
         onSuccess: () => {
             router.push("/feeds/contoh");
