@@ -81,56 +81,58 @@ const FeedsPage = () => {
         <div className={cn("flex flex-col gap-4")}>
             {data?.pages.map((page, pageIndex) => (
                 <div key={pageIndex}>
-                    {page.projects.map((project: ProjectOneType) => {
-                        const isBookmarked = optimisticBookmarks[project.id] !== undefined
-                            ? optimisticBookmarks[project.id]
-                            : project.is_bookmarked
+                    {
+                        page.projects.map((project: ProjectOneType) => {
+                            const isBookmarked = optimisticBookmarks[project.id] !== undefined
+                                ? optimisticBookmarks[project.id]
+                                : project.is_bookmarked
 
-                        return (
-                            <div
-                                key={project.id}
-                                className="grid grid-cols-3 gap-4 mb-4"
-                            >
-                                <div className="col-span-1">
-                                    {/* Replace with actual image */}
-                                    {project.image1 ? (
-                                        <Image width={800} height={450} src={getPublicUrl(project.image1)} alt={project.slug + " image"} />
-                                    ) : (
-                                        <div className="bg-gray-200 h-24 w-full"></div>
-                                    )}
-                                </div>
-                                <div className="col-span-2 flex flex-col gap-2">
-                                    <Link className="text-lg font-semibold" href={`/project/${project.slug}`}>{project.title}</Link>
-                                    <Link href={`/feeds/?category=${project.category.slug}`}>{project.category.title}</Link>
-                                    <p>komentar: {project.count_comments}</p>
-
-                                    <div className="flex gap-2 w-full">
-                                        {!isBookmarked ? (
-                                            <Button
-                                                variant="outline"
-                                                className="w-fit"
-                                                onClick={() => handleBookmark(project)}
-                                            >
-                                                Bookmark
-                                            </Button>
+                            return (
+                                <div
+                                    key={project.id}
+                                    className="grid grid-cols-3 gap-4 mb-4"
+                                >
+                                    <div className="col-span-1">
+                                        {/* Replace with actual image */}
+                                        {project.image1 ? (
+                                            <Image width={800} height={450} src={getPublicUrl(project.image1)} alt={project.slug + " image"} />
                                         ) : (
-                                            <Button
-                                                variant="default"
-                                                className="w-fit"
-                                                onClick={() => handleUnbookmark(project)}
-                                            >
-                                                Unbookmark
-                                            </Button>
+                                            <div className="bg-gray-200 h-24 w-full"></div>
                                         )}
                                     </div>
+                                    <div className="col-span-2 flex flex-col gap-2">
+                                        <Link className="text-lg font-semibold" href={`/project/${project.slug}`}>{project.title}</Link>
+                                        <Link href={`/feeds/?category=${project.category.slug}`}>{project.category.title}</Link>
+                                        <p>komentar: {project.count_comments}</p>
+
+                                        <div className="flex gap-2 w-full">
+                                            {!isBookmarked ? (
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-fit"
+                                                    onClick={() => handleBookmark(project)}
+                                                >
+                                                    Bookmark
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    variant="default"
+                                                    className="w-fit"
+                                                    onClick={() => handleUnbookmark(project)}
+                                                >
+                                                    Unbookmark
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        )
-                    })}
-                </div>
+                            )
+                        })
+                    }
+                </div >
             ))}
             {isFetchingNextPage && <p>Loading more...</p>}
-        </div>
+        </div >
     )
 }
 
