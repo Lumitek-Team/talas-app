@@ -37,7 +37,7 @@ interface ProjectFormProps {
 }
 
 const formSchema = z.object({
-    title: z.string().min(2).max(50),
+    title: z.string().min(2).max(100),
     category: z.string().min(2),
     content: z.string().min(2),
     image1: z.any(),

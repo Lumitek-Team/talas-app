@@ -4,6 +4,11 @@ import { retryConnect, deleteImage } from "@/lib/utils";
 import { z } from "zod";
 import slugify from "slugify";
 import { getTrpcCaller } from "@/app/_trpc/server";
+import {
+	CommentsInProjectType,
+	ProjectOneType,
+	ProjectWithBookmarks,
+} from "@/lib/type";
 
 export const projectRouter = router({
 	getOne: protectedProcedure
@@ -15,7 +20,7 @@ export const projectRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const project = await retryConnect(() =>
+				const data = await retryConnect(() =>
 					prisma.project.findFirst({
 						where: {
 							OR: [{ id: input.id }, { slug: input.id }],
@@ -71,9 +76,24 @@ export const projectRouter = router({
 									created_at: "asc",
 								},
 							},
+							bookmarks: input.id_user
+								? {
+										where: { id_user: input.id_user },
+										select: { id: true },
+								  }
+								: false,
 						},
 					})
 				);
+
+				if (!data) return null;
+
+				const project: ProjectOneType = {
+					...data,
+					is_bookmarked: input.id_user
+						? data.bookmarks && data.bookmarks.length > 0
+						: false,
+				};
 
 				return project;
 			} catch (error) {
@@ -86,17 +106,116 @@ export const projectRouter = router({
 			z.object({
 				limit: z.number().min(1).max(100).nullish(),
 				cursor: z.string().nullish(),
+				id_user: z.string().optional(), // add id_user
 			})
 		)
 		.query(async ({ input }) => {
 			const limit = input.limit ?? 50;
-			const { cursor } = input;
+			const { cursor, id_user } = input;
 
 			try {
 				const projects = await retryConnect(() =>
 					prisma.project.findMany({
 						where: {
 							is_archived: false,
+						},
+						select: {
+							id: true,
+							title: true,
+							slug: true,
+							content: true,
+							image1: true,
+							image2: true,
+							image3: true,
+							image4: true,
+							image5: true,
+							video: true,
+							count_likes: true,
+							count_comments: true,
+							link_figma: true,
+							link_github: true,
+							created_at: true,
+							updated_at: true,
+							category: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+								},
+							},
+							project_user: {
+								select: {
+									user: {
+										select: {
+											id: true,
+											name: true,
+											username: true,
+											photo_profile: true,
+										},
+									},
+								},
+								orderBy: {
+									created_at: "asc",
+								},
+							},
+							bookmarks: id_user
+								? {
+										where: { id_user },
+										select: { id: true },
+								  }
+								: false,
+						},
+						orderBy: {
+							created_at: "desc",
+						},
+						take: limit + 1,
+						cursor: cursor ? { id: cursor } : undefined,
+					})
+				);
+
+				let nextCursor: typeof cursor | undefined = undefined;
+
+				if (projects.length > limit) {
+					const nextItem = projects.pop();
+					nextCursor = nextItem!.id;
+				}
+
+				// Add is_bookmarked property
+				const projectsWithBookmark = projects.map(
+					(p: ProjectWithBookmarks) => ({
+						...p,
+						is_bookmarked: id_user
+							? p.bookmarks && p.bookmarks.length > 0
+							: false,
+					})
+				);
+
+				return {
+					projects: projectsWithBookmark,
+					nextCursor,
+				};
+			} catch (error) {
+				throw new Error("Error fetching projects: " + error);
+			}
+		}),
+
+	getArchived: protectedProcedure
+		.input(
+			z.object({
+				limit: z.number().min(1).max(100).nullish(),
+				cursor: z.string().nullish(),
+				id_user: z.string().optional(),
+			})
+		)
+		.query(async ({ input }) => {
+			const limit = input.limit ?? 50;
+			const { cursor, id_user } = input;
+
+			try {
+				const projects = await retryConnect(() =>
+					prisma.project.findMany({
+						where: {
+							is_archived: true,
 						},
 						select: {
 							id: true,
@@ -145,19 +264,28 @@ export const projectRouter = router({
 						cursor: cursor ? { id: cursor } : undefined,
 					})
 				);
+
+				const filteredProjects = id_user
+					? projects.filter(
+							(p: ProjectOneType) =>
+								p.project_user.length > 0 &&
+								p.project_user[0].user.id === id_user
+					  )
+					: projects;
+
 				let nextCursor: typeof cursor | undefined = undefined;
 
-				if (projects.length > limit) {
-					const nextItem = projects.pop();
+				if (filteredProjects.length > limit) {
+					const nextItem = filteredProjects.pop();
 					nextCursor = nextItem!.id;
 				}
 
 				return {
-					projects,
+					projects: filteredProjects,
 					nextCursor,
 				};
 			} catch (error) {
-				throw new Error("Error fetching projects: " + error);
+				throw new Error("Error fetching archived projects: " + error);
 			}
 		}),
 
@@ -395,13 +523,18 @@ export const projectRouter = router({
 				].filter(Boolean);
 
 				for (const imagePath of images) {
-					await deleteImage(imagePath);
+					if (imagePath) {
+						await deleteImage(imagePath);
+					}
 				}
 
 				await retryConnect(() =>
 					prisma.$transaction([
 						prisma.project.delete({
 							where: { id: input.id },
+						}),
+						prisma.comment.deleteMany({
+							where: { id_project: input.id },
 						}),
 						prisma.category.update({
 							where: { id: existingProject.category.id }, // Ensure id_category is valid
@@ -415,6 +548,176 @@ export const projectRouter = router({
 				);
 			} catch (error) {
 				throw new Error("Error deleting project: " + error);
+			}
+		}),
+
+	getComments: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+			})
+		)
+		.query(async ({ input }) => {
+			try {
+				const comments = await retryConnect(() =>
+					prisma.comment.findMany({
+						where: {
+							id_project: input.id,
+						},
+						select: {
+							id: true,
+							content: true,
+							created_at: true,
+							updated_at: true,
+							parent_id: true,
+							user: {
+								select: {
+									id: true,
+									name: true,
+									username: true,
+									photo_profile: true,
+								},
+							},
+						},
+						orderBy: {
+							created_at: "desc",
+						},
+					})
+				);
+
+				const commentMap: Record<string, CommentsInProjectType> = {};
+				const roots: CommentsInProjectType[] = [];
+
+				for (const comment of comments) {
+					const commentWithChildren: CommentsInProjectType = {
+						...comment,
+						children: commentMap[comment.id]?.children || [],
+					};
+					commentMap[comment.id] = commentWithChildren;
+
+					if (comment.parent_id) {
+						const parent = commentMap[comment.parent_id];
+						if (parent) {
+							parent.children.push(commentWithChildren);
+						} else {
+							commentMap[comment.parent_id] = {
+								id: comment.parent_id,
+								content: "",
+								created_at: "",
+								updated_at: "",
+								parent_id: null,
+								user: {
+									id: "",
+									name: "",
+									username: "",
+									photo_profile: null,
+								},
+								children: [commentWithChildren],
+							};
+						}
+					} else {
+						roots.push(commentWithChildren);
+					}
+				}
+
+				return roots;
+			} catch (error) {
+				throw new Error("Error fetching comments: " + error);
+			}
+		}),
+
+	archive: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				id_user: z.string(),
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				const existingProject = await retryConnect(() =>
+					prisma.project.findFirst({
+						where: {
+							id: input.id,
+						},
+						select: {
+							id: true,
+							project_user: {
+								select: {
+									id_user: true,
+								},
+								orderBy: {
+									created_at: "asc",
+								},
+								take: 1,
+							},
+						},
+					})
+				);
+
+				if (
+					!existingProject ||
+					!existingProject.project_user.length ||
+					existingProject.project_user[0].id_user !== input.id_user
+				) {
+					throw new Error("Project not found or access denied.");
+				}
+
+				await retryConnect(() =>
+					prisma.project.update({
+						where: { id: input.id },
+						data: { is_archived: true },
+					})
+				);
+			} catch (error) {
+				throw new Error("Error archiving project: " + error);
+			}
+		}),
+	unarchive: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				id_user: z.string(),
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				const existingProject = await retryConnect(() =>
+					prisma.project.findFirst({
+						where: {
+							id: input.id,
+						},
+						select: {
+							id: true,
+							project_user: {
+								select: {
+									id_user: true,
+								},
+								orderBy: {
+									created_at: "asc",
+								},
+								take: 1,
+							},
+						},
+					})
+				);
+
+				if (
+					!existingProject ||
+					!existingProject.project_user.length ||
+					existingProject.project_user[0].id_user !== input.id_user
+				) {
+					throw new Error("Project not found or access denied.");
+				}
+
+				await retryConnect(() =>
+					prisma.project.update({
+						where: { id: input.id },
+						data: { is_archived: false },
+					})
+				);
+			} catch (error) {
+				throw new Error("Error unarchiving project: " + error);
 			}
 		}),
 });
