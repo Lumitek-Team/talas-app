@@ -245,7 +245,7 @@ export const userRouter = router({
 				throw new Error("Error fetching photoProfile: " + error);
 			}
 		}),
-	
+
 	update: protectedProcedure
 		.input(
 			z.object({
@@ -300,6 +300,75 @@ export const userRouter = router({
 				return updatedUser;
 			} catch (error) {
 				throw new Error("Error updating user: " + error);
+			}
+		}),
+
+	// use infinite query
+	getBookmarked: protectedProcedure
+		.input(
+			z.object({
+				id: z.string(),
+				limit: z.number().min(1).max(100).nullish(),
+				cursor: z.string().nullish(),
+			})
+		)
+		.query(async ({ input }) => {
+			const limit = input.limit ?? 12;
+			const { cursor } = input;
+			try {
+				const bookmarks = await retryConnect(() =>
+					prisma.bookmark.findMany({
+						where: {
+							id_user: input.id,
+						},
+						take: limit + 1,
+						cursor: cursor ? { id: cursor } : undefined,
+						orderBy: {
+							created_at: "desc",
+						},
+						select: {
+							id: true,
+							id_user: true,
+							project: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+									image1: true,
+									image2: true,
+									image3: true,
+									image4: true,
+									image5: true,
+									created_at: true,
+									updated_at: true,
+									project_user: {
+										orderBy: { created_at: "asc" },
+										take: 1,
+										select: {
+											user: {
+												select: {
+													id: true,
+													username: true,
+													name: true,
+													photo_profile: true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					})
+				);
+
+				const hasNextPage = bookmarks.length > limit;
+				const items = hasNextPage ? bookmarks.slice(0, -1) : bookmarks;
+				return {
+					items,
+					nextCursor: hasNextPage ? items[items.length - 1].id : null,
+				};
+			} catch (error) {
+				throw new Error("Error fetching bookmarks: " + error);
 			}
 		}),
 });
