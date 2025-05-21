@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { PlusIcon } from "@heroicons/react/24/outline";
 
 interface FloatingActionButtonProps {
   onClick: () => void;
@@ -34,21 +35,7 @@ export function FloatingActionButton({
         isMobile ? "bottom-20 right-4 w-14 h-14 rounded-full" : "bottom-8 right-8 w-20 h-16"
       }`}
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="28"
-        height="28"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-white"
-      >
-        <path d="M5 12h14" />
-        <path d="M12 5v14" />
-      </svg>
+      <PlusIcon className="w-7 h-7 text-white" />
     </button>
   );
 }

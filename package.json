@@ -12,6 +12,7 @@
     "@ckeditor/ckeditor5-react": "^9.5.0",
     "@clerk/nextjs": "^6.19.4",
     "@clerk/themes": "^2.2.38",
+    "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.0.1",
     "@prisma/client": "^6.7.0",
     "@radix-ui/react-dialog": "^1.1.11",
