@@ -92,14 +92,19 @@ function ActionButton({ icon, label, onClick, active = false }: ActionButtonProp
     <button
       onClick={onClick}
       className={cn(
-        "flex items-center gap-1 px-2 py-1 rounded-md transition-colors cursor-pointer",
-        "hover:bg-gray-700/20 focus:outline-none",
-        "text-xs",
+        "flex items-center gap-1 px-2 py-1 rounded-md transition-all duration-200",
+        "hover:bg-gray-700/20 cursor-pointer focus:outline-none active:scale-90",
+        "text-xs transform",
         active ? "text-primary" : "text-white/70"
       )}
       aria-label={label}
     >
-      <span className={active ? "text-primary" : "text-white/70"}>{icon}</span>
+      <span className={cn(
+        "transition-transform duration-200",
+        active ? "text-primary" : "text-white/70"
+      )}>
+        {icon}
+      </span>
       <span className="font-medium">{label}</span>
     </button>
   );

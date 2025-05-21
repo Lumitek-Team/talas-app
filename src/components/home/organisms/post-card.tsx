@@ -29,6 +29,10 @@ interface PostCardProps {
   link_figma?: string;
   link_github?: string;
   initialLiked?: boolean;
+  category?: {
+    slug: string;
+    title: string;
+  };
 }
 
 export function PostCard({
@@ -53,6 +57,7 @@ export function PostCard({
   link_figma,
   link_github,
   initialLiked = false,
+  category,
 }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(initialLiked);
   const [likeCount, setLikeCount] = useState(likes || count_likes || 0);
@@ -102,6 +107,9 @@ export function PostCard({
       
       <div className="mb-6">
         <h2 className="text-lg font-bold">{displayTitle}</h2>
+        {category && (
+          <p className="text-sm text-muted-foreground mb-3">{category.title}</p>
+        )}
         <p className="text-white text-sm whitespace-pre-line">
           {displayContent}
         </p>
@@ -114,9 +122,9 @@ export function PostCard({
                 href={link_figma} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 text-white transition-colors"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 text-white transition-all duration-200 transform active:scale-90"
               >
-                <Figma size={16} className="w-4 h-4" />
+                <Figma size={16} className="w-4 h-4 transition-transform duration-200" />
                 <span>Figma</span>
               </Link>
             )}
@@ -126,9 +134,9 @@ export function PostCard({
                 href={link_github} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 text-white transition-colors"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 text-white transition-all duration-200 transform active:scale-90"
               >
-                <Github size={16} className="w-4 h-4" />
+                <Github size={16} className="w-4 h-4 transition-transform duration-200" />
                 <span>GitHub</span>
               </Link>
             )}
@@ -137,20 +145,34 @@ export function PostCard({
       </div>
       
       {allImages.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          {allImages.map((image, index) => (
-            <div 
-              key={index} 
-              className="aspect-video bg-muted rounded-md overflow-hidden relative"
-            >
-              <Image
-                src={image}
-                alt={`Post image ${index + 1}`}
-                fill
-                className="object-cover"
-              />
-            </div>
-          ))}
+        <div className={`grid gap-2 mb-4 ${
+          allImages.length === 1 ? 'grid-cols-1' : 
+          allImages.length === 2 ? 'grid-cols-2' :
+          allImages.length === 3 ? 'grid-cols-3' :
+          allImages.length === 4 ? 'grid-cols-2' : 'grid-cols-3'
+        }`}>
+          {allImages.map((image, index) => {
+            // For 4 images: 2x2 grid
+            // For 5 images: first row has 3 images, second row has 2 images
+            const spanFull = allImages.length === 4 ? false : 
+                            (allImages.length === 5 && index > 2);
+            
+            return (
+              <div 
+                key={index} 
+                className={`aspect-video bg-muted rounded-md overflow-hidden relative ${
+                  spanFull ? 'col-span-1 md:col-span-1.5' : ''
+                }`}
+              >
+                <Image
+                  src={image}
+                  alt={`Post image ${index + 1}`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            );
+          })}
         </div>
       )}
       

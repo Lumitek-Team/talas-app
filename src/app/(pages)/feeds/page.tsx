@@ -72,7 +72,7 @@ export default function HomePage() {
         </div>
       </PageContainer>
 
-      <FloatingActionButton onClick={handleFabClick} />
+      <FloatingActionButton/>
     </>
   );
 }

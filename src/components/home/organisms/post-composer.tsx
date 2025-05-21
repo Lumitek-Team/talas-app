@@ -1,26 +1,20 @@
 "use client";
 
 import { Avatar } from "@/components/ui/avatar";
-// IconButton is no longer used in this simplified layout
-// import { IconButton } from "@/components/ui/icon-button"; 
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface PostComposerProps {
   avatarSrc: string;
   username: string;
-  onSubmit: (content: string) => void;
   className?: string;
 }
 
-export function PostComposer({ avatarSrc, username, onSubmit, className = "" }: PostComposerProps) {
-  const [content, setContent] = useState("");
+export function PostComposer({ avatarSrc, username, className = "" }: PostComposerProps) {
+  const router = useRouter();
 
-  const handleSubmit = () => {
-    if (content.trim()) {
-      onSubmit(content);
-      setContent("");
-    }
+  const handleRedirect = () => {
+    router.push("/create-project");
   };
 
   return (
@@ -31,13 +25,13 @@ export function PostComposer({ avatarSrc, username, onSubmit, className = "" }: 
           <input
             type="text"
             placeholder="What's your new creation?"
-            className="w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
+            className="w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground cursor-pointer"
+            onClick={handleRedirect}
+            readOnly
           />
         </div>
         <Button
-          onClick={handleSubmit}
+          onClick={handleRedirect}
           className="rounded-full px-6 bg-primary text-white hover:bg-primary-foreground ml-3" 
         >
           Post

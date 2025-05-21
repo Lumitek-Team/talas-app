@@ -10,7 +10,7 @@ export function SidebarMore({ isCollapsed }: SidebarMoreProps) {
   return (
     <div className={isCollapsed ? "flex justify-center" : ""}>
       <button 
-        className={`flex items-center ${isCollapsed ? "justify-center" : ""} gap-3 w-full px-6 py-4 text-base font-medium text-white transition-colors hover:bg-white/10 rounded-md`}
+        className={`flex items-center ${isCollapsed ? "justify-center" : ""} gap-3 w-full px-6 py-4 text-base font-medium text-white hover:bg-white/10 rounded-md cursor-pointer transition-all duration-200 active:scale-90`}
         title={isCollapsed ? "More" : ""}
       >
         <EllipsisHorizontalIcon className="w-6 h-6" />

@@ -61,7 +61,7 @@ export default function SavedProjectsPage() {
         </div>
       </PageContainer>
 
-      <FloatingActionButton onClick={() => window.location.href = "/"} />
+      <FloatingActionButton />
     </>
   );
 }
