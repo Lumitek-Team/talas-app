@@ -17,6 +17,7 @@ export function FloatingActionButton({
   const router = useRouter();
 
   useEffect(() => {
+    // Move all window-related code inside useEffect to avoid hydration mismatch
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 690);
     };

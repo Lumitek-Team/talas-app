@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Github, Figma } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface PostCardProps {
   id: string;
@@ -59,6 +60,7 @@ export function PostCard({
   initialLiked = false,
   category,
 }: PostCardProps) {
+  const router = useRouter();
   const [isLiked, setIsLiked] = useState(initialLiked);
   const [likeCount, setLikeCount] = useState(likes || count_likes || 0);
   const [isMobile, setIsMobile] = useState(false);
@@ -93,11 +95,23 @@ export function PostCard({
     setIsLiked(!isLiked);
   };
 
+  const handleCardClick = () => {
+    router.push(`/project/${id}`);
+  };
+
+  const handleCommentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/project/${id}`);
+  };
+
   const displayTitle = title || (content ? content.split('\n')[0] : '');
   const displayContent = title ? content : (content ? content.split('\n').slice(1).join('\n') : '');
 
   return (
-    <div className={`p-4 ${isMobile ? 'bg-background' : ''}`}>
+    <div 
+      className={`p-4 ${isMobile ? 'bg-background' : ''} cursor-pointer`}
+      onClick={handleCardClick}
+    >
       <PostHeader
         username={username}
         userRole={userRole}
@@ -116,7 +130,7 @@ export function PostCard({
         
         {/* External Links Section */}
         {(link_figma || link_github) && (
-          <div className="flex gap-3 mt-3">
+          <div className="flex gap-3 mt-3" onClick={e => e.stopPropagation()}>
             {link_figma && (
               <Link 
                 href={link_figma} 
@@ -145,12 +159,15 @@ export function PostCard({
       </div>
       
       {allImages.length > 0 && (
-        <div className={`grid gap-2 mb-4 ${
-          allImages.length === 1 ? 'grid-cols-1' : 
-          allImages.length === 2 ? 'grid-cols-2' :
-          allImages.length === 3 ? 'grid-cols-3' :
-          allImages.length === 4 ? 'grid-cols-2' : 'grid-cols-3'
-        }`}>
+        <div 
+          className={`grid gap-2 mb-4 ${
+            allImages.length === 1 ? 'grid-cols-1' : 
+            allImages.length === 2 ? 'grid-cols-2' :
+            allImages.length === 3 ? 'grid-cols-3' :
+            allImages.length === 4 ? 'grid-cols-2' : 'grid-cols-3'
+          }`}
+          onClick={e => e.stopPropagation()}
+        >
           {allImages.map((image, index) => {
             // For 4 images: 2x2 grid
             // For 5 images: first row has 3 images, second row has 2 images
@@ -176,13 +193,13 @@ export function PostCard({
         </div>
       )}
       
-      <div className="pt-2">
+      <div className="pt-2" onClick={e => e.stopPropagation()}>
         <PostActions
           postId={id}
           likes={likeCount}
           comments={comments || count_comments || 0}
           onLike={handleLike}
-          onComment={() => {}}
+          onComment={handleCommentClick}
           onShare={() => {}}
           isLiked={isLiked}
         />
