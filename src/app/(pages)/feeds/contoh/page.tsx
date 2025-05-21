@@ -12,6 +12,7 @@ import { useUser } from "@clerk/nextjs"
 const FeedsPage = () => {
     const { user, isLoaded } = useUser()
     const [optimisticBookmarks, setOptimisticBookmarks] = useState<Record<string, boolean>>({})
+    const [optimisticLikes, setOptimisticLikes] = useState<Record<string, boolean>>({})
 
     const {
         data,
@@ -34,6 +35,13 @@ const FeedsPage = () => {
         onSuccess: () => refetch(),
     })
     const unbookmarkMutation = trpc.bookmark.delete.useMutation({
+        onSuccess: () => refetch(),
+    })
+
+    const likeMutation = trpc.likeProject.like.useMutation({
+        onSuccess: () => refetch(),
+    })
+    const unlikeMutation = trpc.likeProject.unlike.useMutation({
         onSuccess: () => refetch(),
     })
 
@@ -77,6 +85,26 @@ const FeedsPage = () => {
         })
     }
 
+    const handleLike = (project: ProjectOneType) => {
+        setOptimisticLikes((prev) => ({ ...prev, [project.id]: true }))
+        likeMutation.mutate({
+            id_user: user.id,
+            id_project: project.id,
+        }, {
+            onError: () => setOptimisticLikes((prev) => ({ ...prev, [project.id]: false })),
+        })
+    }
+
+    const handleUnlike = (project: ProjectOneType) => {
+        setOptimisticLikes((prev) => ({ ...prev, [project.id]: false }))
+        unlikeMutation.mutate({
+            id_user: user.id,
+            id_project: project.id,
+        }, {
+            onError: () => setOptimisticLikes((prev) => ({ ...prev, [project.id]: true })),
+        })
+    }
+
     return (
         <div className={cn("flex flex-col gap-4")}>
             {data?.pages.map((page, pageIndex) => (
@@ -86,6 +114,10 @@ const FeedsPage = () => {
                             const isBookmarked = optimisticBookmarks[project.id] !== undefined
                                 ? optimisticBookmarks[project.id]
                                 : project.is_bookmarked
+
+                            const isLiked = optimisticLikes[project.id] !== undefined
+                                ? optimisticLikes[project.id]
+                                : project.is_liked
 
                             return (
                                 <div
@@ -121,6 +153,23 @@ const FeedsPage = () => {
                                                     onClick={() => handleUnbookmark(project)}
                                                 >
                                                     Unbookmark
+                                                </Button>
+                                            )}
+                                            {!isLiked ? (
+                                                <Button
+                                                    variant="outline"
+                                                    className="w-fit"
+                                                    onClick={() => handleLike(project)}
+                                                >
+                                                    Like
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    variant="default"
+                                                    className="w-fit"
+                                                    onClick={() => handleUnlike(project)}
+                                                >
+                                                    Unlike
                                                 </Button>
                                             )}
                                         </div>

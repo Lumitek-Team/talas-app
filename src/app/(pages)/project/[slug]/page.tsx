@@ -19,6 +19,7 @@ const ProjectPage = () => {
     const { user, isLoaded } = useUser();
     const router = useRouter();
     const [optimisticBookmark, setOptimisticBookmark] = useState<boolean | undefined>(undefined);
+    const [optimisticLike, setOptimisticLike] = useState<boolean | undefined>(undefined);
 
     if (user === null && isLoaded) {
         router.push("/sign-in");
@@ -54,6 +55,24 @@ const ProjectPage = () => {
         },
         onError: () => {
             setOptimisticBookmark(true);
+        }
+    });
+
+    // Like/Unlike mutations
+    const likeMutation = trpc.likeProject.like.useMutation({
+        onSuccess: () => {
+            setOptimisticLike(true);
+        },
+        onError: () => {
+            setOptimisticLike(false);
+        }
+    });
+    const unlikeMutation = trpc.likeProject.unlike.useMutation({
+        onSuccess: () => {
+            setOptimisticLike(false);
+        },
+        onError: () => {
+            setOptimisticLike(true);
         }
     });
 
@@ -106,6 +125,10 @@ const ProjectPage = () => {
         ? optimisticBookmark
         : project.is_bookmarked;
 
+    const isLiked = optimisticLike !== undefined
+        ? optimisticLike
+        : project.is_liked;
+
     const handleBookmark = () => {
         setOptimisticBookmark(true);
         bookmarkMutation.mutate({
@@ -123,6 +146,26 @@ const ProjectPage = () => {
             id_project: project.id,
         }, {
             onError: () => setOptimisticBookmark(true),
+        });
+    };
+
+    const handleLike = () => {
+        setOptimisticLike(true);
+        likeMutation.mutate({
+            id_user: user.id,
+            id_project: project.id,
+        }, {
+            onError: () => setOptimisticLike(false),
+        });
+    };
+
+    const handleUnlike = () => {
+        setOptimisticLike(false);
+        unlikeMutation.mutate({
+            id_user: user.id,
+            id_project: project.id,
+        }, {
+            onError: () => setOptimisticLike(true),
         });
     };
 
@@ -188,6 +231,7 @@ const ProjectPage = () => {
             <p>{project.category.title}</p>
             <p>{project.project_user[0].user.name}</p>
             <div className="flex gap-2 w-full">
+                {/* Bookmark Button */}
                 {!isBookmarked ? (
                     <Button
                         variant="outline"
@@ -203,6 +247,26 @@ const ProjectPage = () => {
                         onClick={handleUnbookmark}
                     >
                         Unbookmark
+                    </Button>
+                )}
+                {/* Like Button */}
+                {!isLiked ? (
+                    <Button
+                        variant="outline"
+                        className="w-fit"
+                        onClick={handleLike}
+                        disabled={likeMutation.isPending}
+                    >
+                        {likeMutation.isPending ? "Liking..." : "Like"}
+                    </Button>
+                ) : (
+                    <Button
+                        variant="default"
+                        className="w-fit"
+                        onClick={handleUnlike}
+                        disabled={unlikeMutation.isPending}
+                    >
+                        {unlikeMutation.isPending ? "Unliking..." : "Unlike"}
                     </Button>
                 )}
             </div>

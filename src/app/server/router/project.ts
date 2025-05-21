@@ -82,6 +82,12 @@ export const projectRouter = router({
 										select: { id: true },
 								  }
 								: false,
+							LikeProject: input.id_user
+								? {
+										where: { id_user: input.id_user },
+										select: { id: true },
+								  }
+								: false,
 						},
 					})
 				);
@@ -92,6 +98,9 @@ export const projectRouter = router({
 					...data,
 					is_bookmarked: input.id_user
 						? data.bookmarks && data.bookmarks.length > 0
+						: false,
+					is_liked: input.id_user
+						? data.LikeProject && data.LikeProject.length > 0
 						: false,
 				};
 

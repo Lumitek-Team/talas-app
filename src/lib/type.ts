@@ -53,6 +53,7 @@ export interface ProjectOneType {
 	created_at: string;
 	updated_at: string;
 	is_bookmarked?: boolean;
+	is_liked?: boolean;
 	category: {
 		id: string;
 		title: string;
