@@ -18,6 +18,11 @@ export const followRouter = router({
                 const [follower, following] = await Promise.all([
                     prisma.user.findUnique({
                         where: { id: input.id_follower },
+                        select: {
+                            id: true,
+                            name: true,
+                            username: true,
+                        }
                     }),
                     prisma.user.findUnique({
                         where: { id: input.id_following },
@@ -75,6 +80,21 @@ export const followRouter = router({
                         },
                     }),
                 ]);
+
+                // Create notification for the followed user
+                try {
+                    await prisma.notification.create({
+                        data: {
+                            id_user: input.id_following,
+                            title: `${follower.username || follower.name || 'Someone'} started following you`,
+                            is_read: false,
+                            type: "FOLLOW",
+                        }
+                    });
+                } catch (notifError) {
+                    // Log but don't fail the main operation
+                    console.error("Failed to create follow notification:", notifError);
+                }
 
                 return {
                     success: true,
