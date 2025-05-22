@@ -22,6 +22,9 @@ export default async function SignedInLayout({
     }
     return (
         <div>
+            <div className="w-full bg-white text-zinc-900 text-center py-2">
+                <p className="font-semibold">Halo, {user?.emailAddresses[0].emailAddress}</p>
+            </div>
             {children}
         </div>
     )

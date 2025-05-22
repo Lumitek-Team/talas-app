@@ -32,17 +32,25 @@ const FeedsPage = () => {
     )
 
     const bookmarkMutation = trpc.bookmark.create.useMutation({
-        onSuccess: () => refetch(),
+        onSuccess: () => {
+            refetch()
+        },
     })
     const unbookmarkMutation = trpc.bookmark.delete.useMutation({
-        onSuccess: () => refetch(),
+        onSuccess: () => {
+            refetch()
+        },
     })
 
     const likeMutation = trpc.likeProject.like.useMutation({
-        onSuccess: () => refetch(),
+        onSuccess: () => {
+            refetch()
+        },
     })
     const unlikeMutation = trpc.likeProject.unlike.useMutation({
-        onSuccess: () => refetch(),
+        onSuccess: () => {
+            refetch()
+        },
     })
 
     useEffect(() => {
@@ -105,6 +113,7 @@ const FeedsPage = () => {
         })
     }
 
+
     return (
         <div className={cn("flex flex-col gap-4")}>
             {data?.pages.map((page, pageIndex) => (
@@ -118,6 +127,8 @@ const FeedsPage = () => {
                             const isLiked = optimisticLikes[project.id] !== undefined
                                 ? optimisticLikes[project.id]
                                 : project.is_liked
+
+                            console.log(project.title, isBookmarked, isLiked)
 
                             return (
                                 <div

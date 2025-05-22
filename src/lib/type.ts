@@ -1,6 +1,6 @@
 import { collabStatusType, ownershipType } from "@prisma/client";
 
-export interface ProjectWithBookmarks {
+export interface ProjectWithInteractionsType {
 	id: string;
 	id_category: string;
 	slug: string;
@@ -33,6 +33,7 @@ export interface ProjectWithBookmarks {
 		};
 	}[];
 	bookmarks?: { id: string }[];
+	LikeProject?: { id: string }[];
 }
 
 export interface ProjectOneType {
@@ -68,8 +69,8 @@ export interface ProjectOneType {
 			username: string;
 			photo_profile?: string;
 		};
-		ownershipType: ownershipType;
-		collabStatusType: collabStatusType;
+		ownership: ownershipType;
+		collabStatus: collabStatusType;
 	}[];
 }
 
@@ -153,3 +154,11 @@ export type BookmarkType = {
 		}[];
 	};
 };
+
+export interface FollowerType {
+	follower: {
+		username: string;
+		name: string;
+		photo_profile: string | null;
+	};
+}

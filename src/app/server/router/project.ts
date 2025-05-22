@@ -8,7 +8,7 @@ import {
 	ProjectOnArchiveType,
 	ProjectOneType,
 	ProjectOnMutationType,
-	ProjectWithBookmarks,
+	ProjectWithInteractionsType,
 } from "@/lib/type";
 
 export const projectRouter = router({
@@ -30,8 +30,17 @@ export const projectRouter = router({
 									OR: [
 										{ is_archived: false },
 										{
-											is_archived: true,
-											project_user: { some: { id_user: input.id_user } },
+											AND: [
+												{ is_archived: true },
+												{
+													project_user: {
+														some: {
+															id_user: input.id_user,
+															ownership: "OWNER",
+														},
+													},
+												},
+											],
 										},
 									],
 								},
@@ -72,6 +81,7 @@ export const projectRouter = router({
 											photo_profile: true,
 										},
 									},
+									ownership: true,
 								},
 								orderBy: {
 									created_at: "asc",
@@ -116,7 +126,7 @@ export const projectRouter = router({
 			z.object({
 				limit: z.number().min(1).max(100).nullish(),
 				cursor: z.string().nullish(),
-				id_user: z.string().optional(), // add id_user
+				id_user: z.string().optional(),
 			})
 		)
 		.query(async ({ input }) => {
@@ -170,7 +180,13 @@ export const projectRouter = router({
 							},
 							bookmarks: id_user
 								? {
-										where: { id_user },
+										where: { id_user: id_user },
+										select: { id: true },
+								  }
+								: false,
+							LikeProject: id_user
+								? {
+										where: { id_user: id_user },
 										select: { id: true },
 								  }
 								: false,
@@ -191,17 +207,20 @@ export const projectRouter = router({
 				}
 
 				// Add is_bookmarked property
-				const projectsWithBookmark = projects.map(
-					(p: ProjectWithBookmarks) => ({
+				const ProjectWithInteractionsType = projects.map(
+					(p: ProjectWithInteractionsType) => ({
 						...p,
 						is_bookmarked: id_user
 							? p.bookmarks && p.bookmarks.length > 0
+							: false,
+						is_liked: id_user
+							? p.LikeProject && p.LikeProject.length > 0
 							: false,
 					})
 				);
 
 				return {
-					projects: projectsWithBookmark,
+					projects: ProjectWithInteractionsType,
 					nextCursor,
 				};
 			} catch (error) {
@@ -226,6 +245,12 @@ export const projectRouter = router({
 					prisma.project.findMany({
 						where: {
 							is_archived: true,
+							project_user: {
+								some: {
+									id_user: id_user,
+									ownership: "OWNER",
+								},
+							},
 						},
 						select: {
 							id: true,
@@ -275,23 +300,15 @@ export const projectRouter = router({
 					})
 				);
 
-				const filteredProjects = id_user
-					? projects.filter(
-							(p: ProjectOneType) =>
-								p.project_user.length > 0 &&
-								p.project_user[0].user.id === id_user
-					  )
-					: projects;
-
 				let nextCursor: typeof cursor | undefined = undefined;
 
-				if (filteredProjects.length > limit) {
-					const nextItem = filteredProjects.pop();
+				if (projects.length > limit) {
+					const nextItem = projects.pop();
 					nextCursor = nextItem!.id;
 				}
 
 				return {
-					projects: filteredProjects,
+					projects: projects,
 					nextCursor,
 				};
 			} catch (error) {
@@ -352,59 +369,53 @@ export const projectRouter = router({
 			}
 
 			try {
-				const newProject = await retryConnect(() =>
-					prisma.project.create({
-						data: {
-							id_category: input.id_category,
-							title: input.title,
-							slug: slug,
-							is_archived: input.is_archived,
-							content: input.content,
-							image1: input.image1,
-							image2: input.image2,
-							image3: input.image3,
-							image4: input.image4,
-							image5: input.image5,
-							video: input.video,
-							link_figma: input.link_figma,
-							link_github: input.link_github,
-						},
-					})
-				);
-
-				await retryConnect(() =>
-					prisma.projectUser.create({
-						data: {
-							id_user: input.id_user,
-							id_project: newProject.id,
-						},
-					})
-				);
-
-				await retryConnect(() =>
-					prisma.category.update({
-						where: {
-							id: input.id_category,
-						},
-						data: {
-							count_projects: {
-								increment: 1,
+				const [newProject, , ,] = await retryConnect(() =>
+					prisma.$transaction([
+						prisma.project.create({
+							data: {
+								id_category: input.id_category,
+								title: input.title,
+								slug: slug,
+								is_archived: input.is_archived,
+								content: input.content,
+								image1: input.image1,
+								image2: input.image2,
+								image3: input.image3,
+								image4: input.image4,
+								image5: input.image5,
+								video: input.video,
+								link_figma: input.link_figma,
+								link_github: input.link_github,
 							},
-						},
-					})
-				);
+						}),
 
-				await retryConnect(() =>
-					prisma.count_summary.update({
-						where: {
-							id_user: input.id_user,
-						},
-						data: {
-							count_project: {
-								increment: 1,
+						prisma.projectUser.create({
+							data: {
+								id_user: input.id_user,
+								id_project: newProject.id,
 							},
-						},
-					})
+						}),
+						prisma.category.update({
+							where: {
+								id: input.id_category,
+							},
+							data: {
+								count_projects: {
+									increment: 1,
+								},
+							},
+						}),
+						prisma.count_summary.update({
+							where: {
+								id_user: input.id_user,
+							},
+							data: {
+								count_project: {
+									increment: 1,
+								},
+							},
+						}),
+					])
 				);
 
 				return newProject;
@@ -437,7 +448,7 @@ export const projectRouter = router({
 								select: {
 									id_user: true,
 									ownership: true,
-									collabStatusType: true,
+									collabStatus: true,
 								},
 							},
 						},
@@ -533,7 +544,7 @@ export const projectRouter = router({
 								select: {
 									id_user: true,
 									ownership: true,
-									collabStatusType: true,
+									collabStatus: true,
 								},
 							},
 						},

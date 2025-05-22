@@ -47,6 +47,13 @@ const ArchivePage = () => {
     if (!user) return <div>Silakan login untuk melihat arsip.</div>
     if (!data) return <div>Loading...</div>
 
+    const isEmpty =
+        !data.pages ||
+        data.pages.length === 0 ||
+        data.pages.every((page) => !page.projects || page.projects.length === 0);
+
+    if (isEmpty) return <div>data not found</div>;
+
     return (
         <div className={cn("flex flex-col gap-4")}>
             {data?.pages.map((page, pageIndex) => (

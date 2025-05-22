@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { notifType } from "@prisma/client"; // import enum dari Prisma Client
+import { retryConnect } from "@/lib/utils";
 
 export const notificationRouter = router({
 	// Create notification endpoint
@@ -18,9 +19,11 @@ export const notificationRouter = router({
 		.mutation(async ({ input }) => {
 			try {
 				// Check if user exists
-				const user = await prisma.user.findUnique({
-					where: { id: input.id_user },
-				});
+				const user = await retryConnect(() =>
+					prisma.user.findUnique({
+						where: { id: input.id_user },
+					})
+				);
 
 				if (!user) {
 					throw new TRPCError({
@@ -30,14 +33,16 @@ export const notificationRouter = router({
 				}
 
 				// Create notification
-				const notification = await prisma.notification.create({
-					data: {
-						id_user: input.id_user,
-						title: input.title,
-						is_read: input.is_read,
-						type: input.type,
-					},
-				});
+				const notification = await retryConnect(() =>
+					prisma.notification.create({
+						data: {
+							id_user: input.id_user,
+							title: input.title,
+							is_read: input.is_read,
+							type: input.type,
+						},
+					})
+				);
 
 				return {
 					id: notification.id,
@@ -66,22 +71,24 @@ export const notificationRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				// Update all unread notifications for this user
-				const result = await prisma.notification.updateMany({
-					where: {
-						id_user: input.id_user,
-						is_read: false,
-					},
-					data: {
-						is_read: true,
-					},
-				});
+				const [result] = await retryConnect(() =>
+					prisma.$transaction([
+						prisma.notification.updateMany({
+							where: {
+								id_user: input.id_user,
+								is_read: false,
+							},
+							data: {
+								is_read: true,
+							},
+						}),
 
-				// Also update the count_summary to reflect all notifications read
-				await prisma.count_summary.update({
-					where: { id_user: input.id_user },
-					data: { all_notif_read: true },
-				});
+						prisma.count_summary.update({
+							where: { id_user: input.id_user },
+							data: { all_notif_read: true },
+						}),
+					])
+				);
 
 				return {
 					success: true,

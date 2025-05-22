@@ -110,7 +110,7 @@ model count_summary {
   count_following Int      @default(0)
   count_follower  Int      @default(0)
   created_at      DateTime @default(now())
-  all_notif_read  Boolean  @default(false)
+  all_notif_read  Boolean  @default(true)
   user            User     @relation(fields: [id_user], references: [id])
 
   @@index([id_user], map: "idx_user_count_summary")
@@ -128,14 +128,14 @@ model Follow {
 }
 
 model ProjectUser {
-  id               String            @id @default(ulid())
-  id_user          String
-  id_project       String
-  ownership        ownershipType     @default(OWNER)
-  collabStatusType collabStatusType?
-  created_at       DateTime          @default(now())
-  project          Project           @relation(fields: [id_project], references: [id], onDelete: Cascade)
-  user             User              @relation(fields: [id_user], references: [id])
+  id           String            @id @default(ulid())
+  id_user      String
+  id_project   String
+  ownership    ownershipType     @default(OWNER)
+  collabStatus collabStatusType?
+  created_at   DateTime          @default(now())
+  project      Project           @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  user         User              @relation(fields: [id_user], references: [id])
 
   @@index([id_user, id_project], map: "idx_user_project")
 }

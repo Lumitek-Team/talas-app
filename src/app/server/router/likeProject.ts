@@ -2,6 +2,8 @@ import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { retryConnect } from "@/lib/utils";
+import { ProjectUser } from "@prisma/client";
 
 export const likeProjectRouter = router({
 	like: protectedProcedure
@@ -13,23 +15,37 @@ export const likeProjectRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				const project = await prisma.project.findUnique({
-					where: { id: input.id_project },
-					include: {
-						project_user: true,
-					},
-				});
+				const [project, liker, existingLike] = await Promise.all([
+					retryConnect(() =>
+						prisma.project.findUnique({
+							where: { id: input.id_project },
+							include: {
+								project_user: true,
+							},
+						})
+					),
+					retryConnect(() =>
+						prisma.user.findUnique({
+							where: { id: input.id_user },
+							select: { username: true, name: true },
+						})
+					),
+					retryConnect(() =>
+						prisma.likeProject.findFirst({
+							where: {
+								id_user: input.id_user,
+								id_project: input.id_project,
+							},
+						})
+					),
+				]);
+
 				if (!project) {
 					throw new TRPCError({
 						code: "NOT_FOUND",
 						message: "Project not found",
 					});
 				}
-
-				const liker = await prisma.user.findUnique({
-					where: { id: input.id_user },
-					select: { username: true, name: true },
-				});
 				if (!liker) {
 					throw new TRPCError({
 						code: "NOT_FOUND",
@@ -37,21 +53,13 @@ export const likeProjectRouter = router({
 					});
 				}
 
-				const projectUsers = project.project_user;
+				const projectUsers: ProjectUser[] = project.project_user;
 				if (!projectUsers || projectUsers.length === 0) {
 					throw new TRPCError({
 						code: "NOT_FOUND",
 						message: "Project has no owner or collaborators",
 					});
 				}
-
-				// Check if user already liked this project
-				const existingLike = await prisma.likeProject.findFirst({
-					where: {
-						id_user: input.id_user,
-						id_project: input.id_project,
-					},
-				});
 
 				if (existingLike) {
 					throw new TRPCError({
@@ -80,29 +88,31 @@ export const likeProjectRouter = router({
 						};
 					});
 
-				const [, updatedProject] = await prisma.$transaction([
-					prisma.likeProject.create({
-						data: {
-							id_user: input.id_user,
-							id_project: input.id_project,
-						},
-					}),
-					prisma.project.update({
-						where: { id: input.id_project },
-						data: {
-							count_likes: {
-								increment: 1,
+				const [, updatedProject] = await retryConnect(() =>
+					prisma.$transaction([
+						prisma.likeProject.create({
+							data: {
+								id_user: input.id_user,
+								id_project: input.id_project,
 							},
-						},
-						select: {
-							count_likes: true,
-							title: true,
-						},
-					}),
-					prisma.notification.createMany({
-						data: notifications,
-					}),
-				]);
+						}),
+						prisma.project.update({
+							where: { id: input.id_project },
+							data: {
+								count_likes: {
+									increment: 1,
+								},
+							},
+							select: {
+								count_likes: true,
+								title: true,
+							},
+						}),
+						prisma.notification.createMany({
+							data: notifications,
+						}),
+					])
+				);
 
 				return {
 					success: true,
@@ -129,13 +139,14 @@ export const likeProjectRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				// Check if the like exists
-				const like = await prisma.likeProject.findFirst({
-					where: {
-						id_user: input.id_user,
-						id_project: input.id_project,
-					},
-				});
+				const like = await retryConnect(() =>
+					prisma.likeProject.findFirst({
+						where: {
+							id_user: input.id_user,
+							id_project: input.id_project,
+						},
+					})
+				);
 
 				if (!like) {
 					throw new TRPCError({
@@ -145,24 +156,26 @@ export const likeProjectRouter = router({
 				}
 
 				// Transaksi: hapus like dan update count
-				const [, updatedProject] = await prisma.$transaction([
-					prisma.likeProject.delete({
-						where: {
-							id: like.id,
-						},
-					}),
-					prisma.project.update({
-						where: { id: input.id_project },
-						data: {
-							count_likes: {
-								decrement: 1,
+				const [, updatedProject] = await retryConnect(() =>
+					prisma.$transaction([
+						prisma.likeProject.delete({
+							where: {
+								id: like.id,
 							},
-						},
-						select: {
-							count_likes: true,
-						},
-					}),
-				]);
+						}),
+						prisma.project.update({
+							where: { id: input.id_project },
+							data: {
+								count_likes: {
+									decrement: 1,
+								},
+							},
+							select: {
+								count_likes: true,
+							},
+						}),
+					])
+				);
 
 				return {
 					success: true,

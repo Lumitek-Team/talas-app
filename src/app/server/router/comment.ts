@@ -1,29 +1,11 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { retryConnect } from "@/lib/utils";
+import { getAllDescendantCommentIds, retryConnect } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
 import { Comment, Project } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-
-// Fungsi rekursif untuk mengambil semua id turunan komentar
-type PrismaClientType = typeof prisma;
-async function getAllDescendantCommentIds(
-	prisma: PrismaClientType,
-	parentId: string
-): Promise<string[]> {
-	const children = await prisma.comment.findMany({
-		where: { parent_id: parentId },
-		select: { id: true },
-	});
-	let allIds: string[] = [];
-	for (const child of children) {
-		allIds.push(child.id);
-		const descendants = await getAllDescendantCommentIds(prisma, child.id);
-		allIds = allIds.concat(descendants);
-	}
-	return allIds;
-}
+import { ProjectOneType } from "@/lib/type";
 
 export const commentRouter = router({
 	create: protectedProcedure
@@ -44,12 +26,14 @@ export const commentRouter = router({
 				throw new Error("Field is empty");
 			}
 
-			const project = await prisma.project.findUnique({
-				where: { id: input.id_project },
-				include: {
-					project_user: true,
-				},
-			});
+			const project: ProjectOneType = await retryConnect(() =>
+				prisma.project.findUnique({
+					where: { id: input.id_project },
+					include: {
+						project_user: true,
+					},
+				})
+			);
 			if (!project) {
 				throw new TRPCError({
 					code: "NOT_FOUND",
@@ -65,20 +49,19 @@ export const commentRouter = router({
 				});
 			}
 
-			const ownerUserId = projectUsers.find(
-				(pu) => pu.ownership === "OWNER"
-			)?.id_user;
+			const ownerUserId = projectUsers.find((pu) => pu.ownership === "OWNER")
+				?.user.id;
 
 			const notifications = projectUsers
-				.filter((pu) => pu.id_user !== user.id)
+				.filter((pu) => pu.user.id !== user.id)
 				.map((pu) => {
 					const notificationTitle =
-						pu.id_user === ownerUserId
+						pu.user.id === ownerUserId
 							? `${user.username} comment on your project "${project.title}"`
 							: `${user.username} comment on project you collaborate on: "${project.title}"`;
 
 					return {
-						id_user: pu.id_user,
+						id_user: pu.user.id,
 						title: notificationTitle,
 						is_read: false,
 						type: "LIKE_PROJECT" as const,
