@@ -67,6 +67,50 @@ export const commentRouter = router({
 					])
 				);
 
+				try {
+					// Get project info for the notification
+					const project = await prisma.project.findUnique({
+						where: { id: id_project },
+						include: {
+							project_user: {
+								select: {
+									id_user: true,
+								},
+							},
+						},
+					});
+
+					// Get commenter info
+					const commenter = await prisma.user.findUnique({
+						where: { id: userId },
+						select: { name: true, username: true },
+					});
+
+					if (project) {
+						// Get notification recipients (project owners who aren't the commenter)
+						const recipientIds = project.project_user
+							.map((pu) => pu.id_user)
+							.filter((id) => id !== userId);
+
+						if (recipientIds.length > 0) {
+							// Create notifications
+							await prisma.notification.createMany({
+								data: recipientIds.map((recipientId) => ({
+									id_user: recipientId,
+									title: `${
+										commenter?.username || commenter?.name || "Someone"
+									} commented on your project`,
+									is_read: false,
+									type: "COMMENT",
+								})),
+							});
+						}
+					}
+				} catch (notifError) {
+					// Just log the error, don't affect the main flow
+					console.error("Failed to create comment notification:", notifError);
+				}
+
 				return comment;
 			} catch (error) {
 				throw new Error("Error creating comment: " + error);
