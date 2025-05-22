@@ -4,139 +4,160 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
 export const likeCommentRouter = router({
-    like: protectedProcedure
-        .input(
-            z.object({
-                id_user: z.string(),
-                id_comment: z.string(),
-            })
-        )
-        .mutation(async ({ input }) => {
-            try {
-                // Check if the comment exists
-                const comment = await prisma.comment.findUnique({
-                    where: { id: input.id_comment }
-                });
+	like: protectedProcedure
+		.input(
+			z.object({
+				id_user: z.string(),
+				id_comment: z.string(),
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				// Ambil data komentar beserta user-nya
+				const comment = await prisma.comment.findUnique({
+					where: { id: input.id_comment },
+					include: { user: true, project: { select: { title: true } } },
+				});
 
-                if (!comment) {
-                    throw new TRPCError({
-                        code: "NOT_FOUND",
-                        message: "Comment not found"
-                    });
-                }
+				if (!comment) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Comment not found",
+					});
+				}
 
-                // Check if user already liked this comment
-                const existingLike = await prisma.likeComment.findFirst({
-                    where: {
-                        id_user: input.id_user,
-                        id_comment: input.id_comment,
-                    },
-                });
+				// Check if user already liked this comment
+				const existingLike = await prisma.likeComment.findFirst({
+					where: {
+						id_user: input.id_user,
+						id_comment: input.id_comment,
+					},
+				});
 
-                if (existingLike) {
-                    throw new TRPCError({
-                        code: "CONFLICT",
-                        message: "User already liked this comment"
-                    });
-                }
+				if (existingLike) {
+					throw new TRPCError({
+						code: "CONFLICT",
+						message: "User already liked this comment",
+					});
+				}
 
-                // Create the like relationship
-                const like = await prisma.likeComment.create({
-                    data: {
-                        id_user: input.id_user,
-                        id_comment: input.id_comment,
-                    },
-                });
+				// Ambil data user yang melakukan like
+				const liker = await prisma.user.findUnique({
+					where: { id: input.id_user },
+					select: { username: true },
+				});
 
-                // Update like count for the comment
-                const updatedComment = await prisma.comment.update({
-                    where: { id: input.id_comment },
-                    data: {
-                        count_like: {
-                            increment: 1
-                        }
-                    },
-                    select: {
-                        count_like: true
-                    }
-                });
+				// Siapkan notifikasi jika yang like bukan pemilik komentar
+				let notificationData = null;
+				if (comment.user.id !== input.id_user) {
+					notificationData = {
+						id_user: comment.user.id,
+						title: `${liker?.username} liked your comment on project "${comment.project.title}"`,
+						is_read: false,
+						type: "LIKE_COMMENT" as const,
+					};
+				}
 
-                return {
-                    success: true,
-                    message: "Comment liked successfully",
-                    data: like,
-                    count_like: updatedComment.count_like
-                };
-            } catch (error) {
-                if (error instanceof TRPCError) throw error;
-                throw new TRPCError({
-                    code: "INTERNAL_SERVER_ERROR",
-                    message: `Failed to like project: ${
-                        error instanceof Error ? error.message : "Unknown error"
-                    }`
-                });
-            }
-        }),
+				// Transaksi: create like, update count_like, create notifikasi (jika perlu)
+				const [like, updatedComment] = await prisma.$transaction([
+					prisma.likeComment.create({
+						data: {
+							id_user: input.id_user,
+							id_comment: input.id_comment,
+						},
+					}),
+					prisma.comment.update({
+						where: { id: input.id_comment },
+						data: {
+							count_like: {
+								increment: 1,
+							},
+						},
+						select: {
+							count_like: true,
+						},
+					}),
+					...(notificationData
+						? [prisma.notification.create({ data: notificationData })]
+						: []),
+				]);
 
-    unlike: protectedProcedure
-        .input(
-            z.object({
-                id_user: z.string(),
-                id_comment: z.string(),
-            })
-        )
-        .mutation(async ({ input }) => {
-            try {
-                // Check if the like exists
-                const like = await prisma.likeComment.findFirst({
-                    where: {
-                        id_user: input.id_user,
-                        id_comment: input.id_comment,
-                    },
-                });
+				return {
+					success: true,
+					message: "Comment liked successfully",
+					data: like,
+					count_like: updatedComment.count_like,
+				};
+			} catch (error) {
+				if (error instanceof TRPCError) throw error;
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: `Failed to like comment: ${
+						error instanceof Error ? error.message : "Unknown error"
+					}`,
+				});
+			}
+		}),
 
-                if (!like) {
-                    throw new TRPCError({
-                        code: "NOT_FOUND",
-                        message: "Like not found"
-                    });
-                }
+	unlike: protectedProcedure
+		.input(
+			z.object({
+				id_user: z.string(),
+				id_comment: z.string(),
+			})
+		)
+		.mutation(async ({ input }) => {
+			try {
+				// Check if the like exists
+				const like = await prisma.likeComment.findFirst({
+					where: {
+						id_user: input.id_user,
+						id_comment: input.id_comment,
+					},
+				});
 
-                // Delete the like
-                await prisma.likeComment.delete({
-                    where: {
-                        id: like.id
-                    },
-                });
+				if (!like) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Like not found",
+					});
+				}
 
-                // Update like count for the comment
-                const updatedComment = await prisma.comment.update({
-                    where: { id: input.id_comment },
-                    data: {
-                        count_like: {
-                            decrement: 1
-                        }
-                    },
-                    select: {
-                        count_like: true
-                    }
-                });
+				// Transaksi: hapus like dan update count_like
+				const [, updatedComment] = await prisma.$transaction([
+					prisma.likeComment.delete({
+						where: {
+							id: like.id,
+						},
+					}),
+					prisma.comment.update({
+						where: { id: input.id_comment },
+						data: {
+							count_like: {
+								decrement: 1,
+							},
+						},
+						select: {
+							count_like: true,
+						},
+					}),
+				]);
 
-                return {
-                    success: true,
-                    message: "Comment unliked successfully",
-                    count_like: updatedComment.count_like
-                };
-            } catch (error) {
-                if (error instanceof TRPCError) throw error;
-                throw new TRPCError({
-                    code: "INTERNAL_SERVER_ERROR",
-                    message: `Failed to unlike project: ${
-                        error instanceof Error ? error.message : "Unknown error"
-                    }`
-                });
-            }
-        })
+				return {
+					success: true,
+					message: "Comment unliked successfully",
+					count_like: updatedComment.count_like,
+				};
+			} catch (error) {
+				if (error instanceof TRPCError) throw error;
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: `Failed to unlike comment: ${
+						error instanceof Error ? error.message : "Unknown error"
+					}`,
+				});
+			}
+		}),
 });
 
 export type likeCommentRouter = typeof likeCommentRouter;
