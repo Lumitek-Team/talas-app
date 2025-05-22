@@ -3,10 +3,11 @@ import prisma from "@/lib/prisma";
 import { retryConnect, deleteImage } from "@/lib/utils";
 import { z } from "zod";
 import slugify from "slugify";
-import { getTrpcCaller } from "@/app/_trpc/server";
 import {
 	CommentsInProjectType,
+	ProjectOnArchiveType,
 	ProjectOneType,
+	ProjectOnMutationType,
 	ProjectWithBookmarks,
 } from "@/lib/type";
 
@@ -426,18 +427,32 @@ export const projectRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				const existingProject = await retryConnect(() =>
+				const existingProject: ProjectOnMutationType = await retryConnect(() =>
 					prisma.project.findFirst({
 						where: {
 							id: input.id,
+						},
+						include: {
 							project_user: {
-								some: { id_user: input.id_user },
+								select: {
+									id_user: true,
+									ownership: true,
+									collabStatusType: true,
+								},
 							},
 						},
 					})
 				);
 
-				if (!existingProject) {
+				const ownerUser = existingProject?.project_user.find(
+					(pu) => pu.ownership === "OWNER"
+				);
+
+				if (
+					!existingProject ||
+					!ownerUser ||
+					ownerUser.id_user !== input.id_user
+				) {
 					throw new Error("Project not found or access denied.");
 				}
 
@@ -508,18 +523,33 @@ export const projectRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				const existingProject = await (
-					await getTrpcCaller()
-				).project.getOne({
-					id: input.id,
-					id_user: input.id_user,
-				});
+				const existingProject: ProjectOnMutationType = await retryConnect(() =>
+					prisma.project.findFirst({
+						where: {
+							id: input.id,
+						},
+						include: {
+							project_user: {
+								select: {
+									id_user: true,
+									ownership: true,
+									collabStatusType: true,
+								},
+							},
+						},
+					})
+				);
 
-				if (!existingProject) {
-					throw new Error("Project not found.");
-				}
-				if (existingProject.project_user[0].user.id !== input.id_user) {
-					throw new Error("Project access denied.");
+				const ownerUser = existingProject?.project_user.find(
+					(pu) => pu.ownership === "OWNER"
+				);
+
+				if (
+					!existingProject ||
+					!ownerUser ||
+					ownerUser.id_user !== input.id_user
+				) {
+					throw new Error("Project not found or access denied.");
 				}
 
 				// delete all images in this project from storage
@@ -546,7 +576,7 @@ export const projectRouter = router({
 							where: { id_project: input.id },
 						}),
 						prisma.category.update({
-							where: { id: existingProject.category.id }, // Ensure id_category is valid
+							where: { id: existingProject.id_category },
 							data: { count_projects: { decrement: 1 } },
 						}),
 						prisma.count_summary.update({
@@ -644,7 +674,7 @@ export const projectRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				const existingProject = await retryConnect(() =>
+				const existingProject: ProjectOnArchiveType = await retryConnect(() =>
 					prisma.project.findFirst({
 						where: {
 							id: input.id,
@@ -654,20 +684,21 @@ export const projectRouter = router({
 							project_user: {
 								select: {
 									id_user: true,
+									ownership: true,
 								},
-								orderBy: {
-									created_at: "asc",
-								},
-								take: 1,
 							},
 						},
 					})
 				);
 
+				const ownerUser = existingProject?.project_user.find(
+					(pu) => pu.ownership === "OWNER"
+				);
+
 				if (
 					!existingProject ||
-					!existingProject.project_user.length ||
-					existingProject.project_user[0].id_user !== input.id_user
+					!ownerUser ||
+					ownerUser.id_user !== input.id_user
 				) {
 					throw new Error("Project not found or access denied.");
 				}
@@ -691,7 +722,7 @@ export const projectRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				const existingProject = await retryConnect(() =>
+				const existingProject: ProjectOnArchiveType = await retryConnect(() =>
 					prisma.project.findFirst({
 						where: {
 							id: input.id,
@@ -701,20 +732,21 @@ export const projectRouter = router({
 							project_user: {
 								select: {
 									id_user: true,
+									ownership: true,
 								},
-								orderBy: {
-									created_at: "asc",
-								},
-								take: 1,
 							},
 						},
 					})
 				);
 
+				const ownerUser = existingProject?.project_user.find(
+					(pu) => pu.ownership === "OWNER"
+				);
+
 				if (
 					!existingProject ||
-					!existingProject.project_user.length ||
-					existingProject.project_user[0].id_user !== input.id_user
+					!ownerUser ||
+					ownerUser.id_user !== input.id_user
 				) {
 					throw new Error("Project not found or access denied.");
 				}

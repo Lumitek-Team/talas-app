@@ -3,7 +3,8 @@ import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { retryConnect } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
-import { Comment } from "@prisma/client";
+import { Comment, Project } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
 // Fungsi rekursif untuk mengambil semua id turunan komentar
 type PrismaClientType = typeof prisma;
@@ -35,39 +36,89 @@ export const commentRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			const { id_project, content, parent_id } = input;
-			const userId = (await currentUser())?.id;
-			if (!userId) {
+			const user = await currentUser();
+			if (!user) {
 				throw new Error("User not authenticated");
 			}
 			if (!id_project || !content) {
 				throw new Error("Field is empty");
 			}
 
-			try {
-				const [comment]: [Comment] = await retryConnect(() =>
-					prisma.$transaction([
-						prisma.comment.create({
-							data: {
-								id_project,
-								content,
-								parent_id,
-								id_user: userId,
-							},
-						}),
-						prisma.project.update({
-							where: {
-								id: id_project,
-							},
-							data: {
-								count_comments: {
-									increment: 1,
-								},
-							},
-						}),
-					])
-				);
+			const project = await prisma.project.findUnique({
+				where: { id: input.id_project },
+				include: {
+					project_user: true,
+				},
+			});
+			if (!project) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Project not found",
+				});
+			}
 
-				return comment;
+			const projectUsers = project?.project_user;
+			if (!projectUsers || projectUsers.length === 0) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Project has no owner or collaborators",
+				});
+			}
+
+			const ownerUserId = projectUsers.find(
+				(pu) => pu.ownership === "OWNER"
+			)?.id_user;
+
+			const notifications = projectUsers
+				.filter((pu) => pu.id_user !== user.id)
+				.map((pu) => {
+					const notificationTitle =
+						pu.id_user === ownerUserId
+							? `${user.username} comment on your project "${project.title}"`
+							: `${user.username} comment on project you collaborate on: "${project.title}"`;
+
+					return {
+						id_user: pu.id_user,
+						title: notificationTitle,
+						is_read: false,
+						type: "LIKE_PROJECT" as const,
+					};
+				});
+
+			try {
+				const [comment, updatedProject]: [Comment, Project] =
+					await retryConnect(() =>
+						prisma.$transaction([
+							prisma.comment.create({
+								data: {
+									id_project,
+									content,
+									parent_id,
+									id_user: user.id,
+								},
+							}),
+							prisma.project.update({
+								where: {
+									id: id_project,
+								},
+								data: {
+									count_comments: {
+										increment: 1,
+									},
+								},
+							}),
+							prisma.notification.createMany({
+								data: notifications,
+							}),
+						])
+					);
+
+				return {
+					success: true,
+					message: "Comment successfully",
+					comment: comment,
+					count_likes: updatedProject.count_comments,
+				};
 			} catch (error) {
 				throw new Error("Error creating comment: " + error);
 			}

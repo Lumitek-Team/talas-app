@@ -128,12 +128,14 @@ model Follow {
 }
 
 model ProjectUser {
-  id         String   @id @default(ulid())
-  id_user    String
-  id_project String
-  created_at DateTime @default(now())
-  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [id_user], references: [id])
+  id               String            @id @default(ulid())
+  id_user          String
+  id_project       String
+  ownership        ownershipType     @default(OWNER)
+  collabStatusType collabStatusType?
+  created_at       DateTime          @default(now())
+  project          Project           @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [id_user], references: [id])
 
   @@index([id_user, id_project], map: "idx_user_project")
 }
@@ -181,4 +183,15 @@ enum notifType {
   LIKE_PROJECT
   LIKE_COMMENT
   COMMENT
+}
+
+enum ownershipType {
+  OWNER
+  COLLABORATOR
+}
+
+enum collabStatusType {
+  PENDING
+  ACCEPTED
+  REJECTED
 }

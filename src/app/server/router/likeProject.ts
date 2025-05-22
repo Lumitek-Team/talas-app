@@ -37,7 +37,7 @@ export const likeProjectRouter = router({
 					});
 				}
 
-				const projectUsers = project?.project_user;
+				const projectUsers = project.project_user;
 				if (!projectUsers || projectUsers.length === 0) {
 					throw new TRPCError({
 						code: "NOT_FOUND",
@@ -60,11 +60,10 @@ export const likeProjectRouter = router({
 					});
 				}
 
-				const ownerUserId = projectUsers.reduce((earliest, pu) => {
-					if (!earliest || pu.created_at < earliest.created_at) return pu;
-					return earliest;
-				}, null as (typeof projectUsers)[0] | null)?.id_user;
-
+				// Cari id_user yang ownership-nya OWNER
+				const ownerUserId = projectUsers.find(
+					(pu) => pu.ownership === "OWNER"
+				)?.id_user;
 				const notifications = projectUsers
 					.filter((pu) => pu.id_user !== input.id_user)
 					.map((pu) => {
@@ -81,7 +80,7 @@ export const likeProjectRouter = router({
 						};
 					});
 
-				const [like, updatedProject] = await prisma.$transaction([
+				const [, updatedProject] = await prisma.$transaction([
 					prisma.likeProject.create({
 						data: {
 							id_user: input.id_user,
@@ -108,7 +107,6 @@ export const likeProjectRouter = router({
 				return {
 					success: true,
 					message: "Project liked successfully",
-					data: like,
 					count_likes: updatedProject.count_likes,
 				};
 			} catch (error) {

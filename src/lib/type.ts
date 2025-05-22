@@ -1,3 +1,5 @@
+import { collabStatusType, ownershipType } from "@prisma/client";
+
 export interface ProjectWithBookmarks {
 	id: string;
 	id_category: string;
@@ -66,6 +68,42 @@ export interface ProjectOneType {
 			username: string;
 			photo_profile?: string;
 		};
+		ownershipType: ownershipType;
+		collabStatusType: collabStatusType;
+	}[];
+}
+
+export interface ProjectOnMutationType {
+	id: string;
+	id_category: string;
+	slug: string;
+	title: string;
+	content: string;
+	is_archived: boolean;
+	image1?: string;
+	image2?: string;
+	image3?: string;
+	image4?: string;
+	image5?: string;
+	video?: string;
+	link_github: string;
+	link_figma: string;
+	count_likes: number;
+	count_comments: number;
+	created_at: string;
+	updated_at: string;
+	project_user: {
+		id_user: string;
+		ownership: ownershipType;
+		collabStatusType?: collabStatusType;
+	}[];
+}
+
+export interface ProjectOnArchiveType {
+	id: string;
+	project_user: {
+		id_user: string;
+		ownership: string;
 	}[];
 }
 
