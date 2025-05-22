@@ -3,6 +3,7 @@ import { twMerge } from "tailwind-merge";
 import imageCompression from "browser-image-compression";
 import { supabase } from "./supabase/client";
 import { randomUUID } from "crypto";
+import prisma from "./prisma";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -198,4 +199,22 @@ export function getPublicUrl(path: string) {
 	}
 
 	return data.publicUrl;
+}
+
+type PrismaClientType = typeof prisma;
+export async function getAllDescendantCommentIds(
+	prisma: PrismaClientType,
+	parentId: string
+): Promise<string[]> {
+	const children = await prisma.comment.findMany({
+		where: { parent_id: parentId },
+		select: { id: true },
+	});
+	let allIds: string[] = [];
+	for (const child of children) {
+		allIds.push(child.id);
+		const descendants = await getAllDescendantCommentIds(prisma, child.id);
+		allIds = allIds.concat(descendants);
+	}
+	return allIds;
 }

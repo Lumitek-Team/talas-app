@@ -3,11 +3,12 @@ import prisma from "@/lib/prisma";
 import { retryConnect, deleteImage } from "@/lib/utils";
 import { z } from "zod";
 import slugify from "slugify";
-import { getTrpcCaller } from "@/app/_trpc/server";
 import {
 	CommentsInProjectType,
+	ProjectOnArchiveType,
 	ProjectOneType,
-	ProjectWithBookmarks,
+	ProjectOnMutationType,
+	ProjectWithInteractionsType,
 } from "@/lib/type";
 
 export const projectRouter = router({
@@ -29,8 +30,17 @@ export const projectRouter = router({
 									OR: [
 										{ is_archived: false },
 										{
-											is_archived: true,
-											project_user: { some: { id_user: input.id_user } },
+											AND: [
+												{ is_archived: true },
+												{
+													project_user: {
+														some: {
+															id_user: input.id_user,
+															ownership: "OWNER",
+														},
+													},
+												},
+											],
 										},
 									],
 								},
@@ -71,12 +81,19 @@ export const projectRouter = router({
 											photo_profile: true,
 										},
 									},
+									ownership: true,
 								},
 								orderBy: {
 									created_at: "asc",
 								},
 							},
 							bookmarks: input.id_user
+								? {
+										where: { id_user: input.id_user },
+										select: { id: true },
+								  }
+								: false,
+							LikeProject: input.id_user
 								? {
 										where: { id_user: input.id_user },
 										select: { id: true },
@@ -93,6 +110,9 @@ export const projectRouter = router({
 					is_bookmarked: input.id_user
 						? data.bookmarks && data.bookmarks.length > 0
 						: false,
+					is_liked: input.id_user
+						? data.LikeProject && data.LikeProject.length > 0
+						: false,
 				};
 
 				return project;
@@ -106,7 +126,7 @@ export const projectRouter = router({
 			z.object({
 				limit: z.number().min(1).max(100).nullish(),
 				cursor: z.string().nullish(),
-				id_user: z.string().optional(), // add id_user
+				id_user: z.string().optional(),
 			})
 		)
 		.query(async ({ input }) => {
@@ -160,7 +180,13 @@ export const projectRouter = router({
 							},
 							bookmarks: id_user
 								? {
-										where: { id_user },
+										where: { id_user: id_user },
+										select: { id: true },
+								  }
+								: false,
+							LikeProject: id_user
+								? {
+										where: { id_user: id_user },
 										select: { id: true },
 								  }
 								: false,
@@ -181,17 +207,20 @@ export const projectRouter = router({
 				}
 
 				// Add is_bookmarked property
-				const projectsWithBookmark = projects.map(
-					(p: ProjectWithBookmarks) => ({
+				const ProjectWithInteractionsType = projects.map(
+					(p: ProjectWithInteractionsType) => ({
 						...p,
 						is_bookmarked: id_user
 							? p.bookmarks && p.bookmarks.length > 0
+							: false,
+						is_liked: id_user
+							? p.LikeProject && p.LikeProject.length > 0
 							: false,
 					})
 				);
 
 				return {
-					projects: projectsWithBookmark,
+					projects: ProjectWithInteractionsType,
 					nextCursor,
 				};
 			} catch (error) {
@@ -216,6 +245,12 @@ export const projectRouter = router({
 					prisma.project.findMany({
 						where: {
 							is_archived: true,
+							project_user: {
+								some: {
+									id_user: id_user,
+									ownership: "OWNER",
+								},
+							},
 						},
 						select: {
 							id: true,
@@ -265,23 +300,15 @@ export const projectRouter = router({
 					})
 				);
 
-				const filteredProjects = id_user
-					? projects.filter(
-							(p: ProjectOneType) =>
-								p.project_user.length > 0 &&
-								p.project_user[0].user.id === id_user
-					  )
-					: projects;
-
 				let nextCursor: typeof cursor | undefined = undefined;
 
-				if (filteredProjects.length > limit) {
-					const nextItem = filteredProjects.pop();
+				if (projects.length > limit) {
+					const nextItem = projects.pop();
 					nextCursor = nextItem!.id;
 				}
 
 				return {
-					projects: filteredProjects,
+					projects: projects,
 					nextCursor,
 				};
 			} catch (error) {
@@ -342,59 +369,53 @@ export const projectRouter = router({
 			}
 
 			try {
-				const newProject = await retryConnect(() =>
-					prisma.project.create({
-						data: {
-							id_category: input.id_category,
-							title: input.title,
-							slug: slug,
-							is_archived: input.is_archived,
-							content: input.content,
-							image1: input.image1,
-							image2: input.image2,
-							image3: input.image3,
-							image4: input.image4,
-							image5: input.image5,
-							video: input.video,
-							link_figma: input.link_figma,
-							link_github: input.link_github,
-						},
-					})
-				);
-
-				await retryConnect(() =>
-					prisma.projectUser.create({
-						data: {
-							id_user: input.id_user,
-							id_project: newProject.id,
-						},
-					})
-				);
-
-				await retryConnect(() =>
-					prisma.category.update({
-						where: {
-							id: input.id_category,
-						},
-						data: {
-							count_projects: {
-								increment: 1,
+				const [newProject, , ,] = await retryConnect(() =>
+					prisma.$transaction([
+						prisma.project.create({
+							data: {
+								id_category: input.id_category,
+								title: input.title,
+								slug: slug,
+								is_archived: input.is_archived,
+								content: input.content,
+								image1: input.image1,
+								image2: input.image2,
+								image3: input.image3,
+								image4: input.image4,
+								image5: input.image5,
+								video: input.video,
+								link_figma: input.link_figma,
+								link_github: input.link_github,
 							},
-						},
-					})
-				);
+						}),
 
-				await retryConnect(() =>
-					prisma.count_summary.update({
-						where: {
-							id_user: input.id_user,
-						},
-						data: {
-							count_project: {
-								increment: 1,
+						prisma.projectUser.create({
+							data: {
+								id_user: input.id_user,
+								id_project: newProject.id,
 							},
-						},
-					})
+						}),
+						prisma.category.update({
+							where: {
+								id: input.id_category,
+							},
+							data: {
+								count_projects: {
+									increment: 1,
+								},
+							},
+						}),
+						prisma.count_summary.update({
+							where: {
+								id_user: input.id_user,
+							},
+							data: {
+								count_project: {
+									increment: 1,
+								},
+							},
+						}),
+					])
 				);
 
 				return newProject;
@@ -417,18 +438,32 @@ export const projectRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				const existingProject = await retryConnect(() =>
+				const existingProject: ProjectOnMutationType = await retryConnect(() =>
 					prisma.project.findFirst({
 						where: {
 							id: input.id,
+						},
+						include: {
 							project_user: {
-								some: { id_user: input.id_user },
+								select: {
+									id_user: true,
+									ownership: true,
+									collabStatus: true,
+								},
 							},
 						},
 					})
 				);
 
-				if (!existingProject) {
+				const ownerUser = existingProject?.project_user.find(
+					(pu) => pu.ownership === "OWNER"
+				);
+
+				if (
+					!existingProject ||
+					!ownerUser ||
+					ownerUser.id_user !== input.id_user
+				) {
 					throw new Error("Project not found or access denied.");
 				}
 
@@ -499,18 +534,33 @@ export const projectRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				const existingProject = await (
-					await getTrpcCaller()
-				).project.getOne({
-					id: input.id,
-					id_user: input.id_user,
-				});
+				const existingProject: ProjectOnMutationType = await retryConnect(() =>
+					prisma.project.findFirst({
+						where: {
+							id: input.id,
+						},
+						include: {
+							project_user: {
+								select: {
+									id_user: true,
+									ownership: true,
+									collabStatus: true,
+								},
+							},
+						},
+					})
+				);
 
-				if (!existingProject) {
-					throw new Error("Project not found.");
-				}
-				if (existingProject.project_user[0].user.id !== input.id_user) {
-					throw new Error("Project access denied.");
+				const ownerUser = existingProject?.project_user.find(
+					(pu) => pu.ownership === "OWNER"
+				);
+
+				if (
+					!existingProject ||
+					!ownerUser ||
+					ownerUser.id_user !== input.id_user
+				) {
+					throw new Error("Project not found or access denied.");
 				}
 
 				// delete all images in this project from storage
@@ -537,7 +587,7 @@ export const projectRouter = router({
 							where: { id_project: input.id },
 						}),
 						prisma.category.update({
-							where: { id: existingProject.category.id }, // Ensure id_category is valid
+							where: { id: existingProject.id_category },
 							data: { count_projects: { decrement: 1 } },
 						}),
 						prisma.count_summary.update({
@@ -635,7 +685,7 @@ export const projectRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				const existingProject = await retryConnect(() =>
+				const existingProject: ProjectOnArchiveType = await retryConnect(() =>
 					prisma.project.findFirst({
 						where: {
 							id: input.id,
@@ -645,20 +695,21 @@ export const projectRouter = router({
 							project_user: {
 								select: {
 									id_user: true,
+									ownership: true,
 								},
-								orderBy: {
-									created_at: "asc",
-								},
-								take: 1,
 							},
 						},
 					})
 				);
 
+				const ownerUser = existingProject?.project_user.find(
+					(pu) => pu.ownership === "OWNER"
+				);
+
 				if (
 					!existingProject ||
-					!existingProject.project_user.length ||
-					existingProject.project_user[0].id_user !== input.id_user
+					!ownerUser ||
+					ownerUser.id_user !== input.id_user
 				) {
 					throw new Error("Project not found or access denied.");
 				}
@@ -682,7 +733,7 @@ export const projectRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				const existingProject = await retryConnect(() =>
+				const existingProject: ProjectOnArchiveType = await retryConnect(() =>
 					prisma.project.findFirst({
 						where: {
 							id: input.id,
@@ -692,20 +743,21 @@ export const projectRouter = router({
 							project_user: {
 								select: {
 									id_user: true,
+									ownership: true,
 								},
-								orderBy: {
-									created_at: "asc",
-								},
-								take: 1,
 							},
 						},
 					})
 				);
 
+				const ownerUser = existingProject?.project_user.find(
+					(pu) => pu.ownership === "OWNER"
+				);
+
 				if (
 					!existingProject ||
-					!existingProject.project_user.length ||
-					existingProject.project_user[0].id_user !== input.id_user
+					!ownerUser ||
+					ownerUser.id_user !== input.id_user
 				) {
 					throw new Error("Project not found or access denied.");
 				}

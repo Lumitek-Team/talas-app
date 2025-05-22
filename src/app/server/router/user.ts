@@ -1,5 +1,6 @@
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
+import { FollowerType } from "@/lib/type";
 import { retryConnect } from "@/lib/utils";
 import { z } from "zod";
 
@@ -49,21 +50,23 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data = await prisma.user.findMany({
-					take: input?.limit,
-					skip: input?.offset,
-					select: {
-						username: true,
-						name: true,
-						bio: true,
-						photo_profile: true,
-						instagram: true,
-						linkedin: true,
-						github: true,
-						gender: true,
-						email_contact: true,
-					},
-				});
+				const data = await retryConnect(() =>
+					prisma.user.findMany({
+						take: input?.limit,
+						skip: input?.offset,
+						select: {
+							username: true,
+							name: true,
+							bio: true,
+							photo_profile: true,
+							instagram: true,
+							linkedin: true,
+							github: true,
+							gender: true,
+							email_contact: true,
+						},
+					})
+				);
 
 				return data;
 			} catch (error) {
@@ -79,30 +82,32 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data = await prisma.user.findUnique({
-					where: {
-						id: input.id,
-					},
-					select: {
-						username: true,
-						name: true,
-						bio: true,
-						photo_profile: true,
-						instagram: true,
-						linkedin: true,
-						github: true,
-						gender: true,
-						email_contact: true,
-						count_summary: {
-							select: {
-								count_project: true,
-								count_follower: true,
-								count_following: true,
-								all_notif_read: true,
+				const data = await retryConnect(() =>
+					prisma.user.findUnique({
+						where: {
+							id: input.id,
+						},
+						select: {
+							username: true,
+							name: true,
+							bio: true,
+							photo_profile: true,
+							instagram: true,
+							linkedin: true,
+							github: true,
+							gender: true,
+							email_contact: true,
+							count_summary: {
+								select: {
+									count_project: true,
+									count_follower: true,
+									count_following: true,
+									all_notif_read: true,
+								},
 							},
 						},
-					},
-				});
+					})
+				);
 
 				return data;
 			} catch (error) {
@@ -118,29 +123,31 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data = await prisma.user.findFirst({
-					where: {
-						username: input.username,
-					},
-					select: {
-						username: true,
-						name: true,
-						bio: true,
-						photo_profile: true,
-						instagram: true,
-						linkedin: true,
-						github: true,
-						gender: true,
-						email_contact: true,
-						count_summary: {
-							select: {
-								count_project: true,
-								count_follower: true,
-								count_following: true,
+				const data = await retryConnect(() =>
+					prisma.user.findFirst({
+						where: {
+							username: input.username,
+						},
+						select: {
+							username: true,
+							name: true,
+							bio: true,
+							photo_profile: true,
+							instagram: true,
+							linkedin: true,
+							github: true,
+							gender: true,
+							email_contact: true,
+							count_summary: {
+								select: {
+									count_project: true,
+									count_follower: true,
+									count_following: true,
+								},
 							},
 						},
-					},
-				});
+					})
+				);
 
 				return data;
 			} catch (error) {
@@ -158,22 +165,24 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const followers = await prisma.follow.findMany({
-					where: {
-						id_following: input.id_following,
-					},
-					take: input.limit,
-					skip: input.offset,
-					select: {
-						follower: {
-							select: {
-								username: true,
-								name: true,
-								photo_profile: true,
+				const followers: FollowerType[] = await retryConnect(() =>
+					prisma.follow.findMany({
+						where: {
+							id_following: input.id_following,
+						},
+						take: input.limit,
+						skip: input.offset,
+						select: {
+							follower: {
+								select: {
+									username: true,
+									name: true,
+									photo_profile: true,
+								},
 							},
 						},
-					},
-				});
+					})
+				);
 
 				const data = followers.map((follow) => ({
 					...follow.follower,
@@ -195,22 +204,24 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const followings = await prisma.follow.findMany({
-					where: {
-						id_follower: input.id_follower,
-					},
-					take: input.limit,
-					skip: input.offset,
-					select: {
-						follower: {
-							select: {
-								username: true,
-								name: true,
-								photo_profile: true,
+				const followings: FollowerType[] = await retryConnect(() =>
+					prisma.follow.findMany({
+						where: {
+							id_follower: input.id_follower,
+						},
+						take: input.limit,
+						skip: input.offset,
+						select: {
+							follower: {
+								select: {
+									username: true,
+									name: true,
+									photo_profile: true,
+								},
 							},
 						},
-					},
-				});
+					})
+				);
 
 				const data = followings.map((follow) => ({
 					...follow.follower,
@@ -231,14 +242,16 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data = await prisma.user.findFirst({
-					where: {
-						OR: [{ id: input.id }, { username: input.username }],
-					},
-					select: {
-						photo_profile: true,
-					},
-				});
+				const data = await retryConnect(() =>
+					prisma.user.findFirst({
+						where: {
+							OR: [{ id: input.id }, { username: input.username }],
+						},
+						select: {
+							photo_profile: true,
+						},
+					})
+				);
 
 				return data;
 			} catch (error) {
@@ -265,37 +278,41 @@ export const userRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				await prisma.user.update({
-					where: {
-						id: input.id,
-					},
-					data: input.data,
-				});
+				await retryConnect(() =>
+					prisma.user.update({
+						where: {
+							id: input.id,
+						},
+						data: input.data,
+					})
+				);
 
-				const updatedUser = await prisma.user.findUnique({
-					where: {
-						id: input.id,
-					},
-					select: {
-						username: true,
-						name: true,
-						bio: true,
-						photo_profile: true,
-						instagram: true,
-						linkedin: true,
-						github: true,
-						gender: true,
-						email_contact: true,
-						count_summary: {
-							select: {
-								count_project: true,
-								count_follower: true,
-								count_following: true,
-								all_notif_read: true,
+				const updatedUser = await retryConnect(() =>
+					prisma.user.findUnique({
+						where: {
+							id: input.id,
+						},
+						select: {
+							username: true,
+							name: true,
+							bio: true,
+							photo_profile: true,
+							instagram: true,
+							linkedin: true,
+							github: true,
+							gender: true,
+							email_contact: true,
+							count_summary: {
+								select: {
+									count_project: true,
+									count_follower: true,
+									count_following: true,
+									all_notif_read: true,
+								},
 							},
 						},
-					},
-				});
+					})
+				);
 
 				return updatedUser;
 			} catch (error) {
