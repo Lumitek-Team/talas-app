@@ -13,9 +13,25 @@ export const likeCommentRouter = router({
         )
         .mutation(async ({ input }) => {
             try {
-                // Check if the comment exists
+                // Check if the comment exists and get owner info
                 const comment = await prisma.comment.findUnique({
-                    where: { id: input.id_comment }
+                    where: { id: input.id_comment },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                username: true
+                            }
+                        },
+                        project: {
+                            select: {
+                                id: true,
+                                title: true,
+                                slug: true
+                            }
+                        }
+                    }
                 });
 
                 if (!comment) {
@@ -61,6 +77,38 @@ export const likeCommentRouter = router({
                     }
                 });
 
+                // Create notification for comment owner (if not self-like)
+                if (comment.user && comment.user.id !== input.id_user) {
+                    try {
+                        // Get information about the user who liked the comment
+                        const liker = await prisma.user.findUnique({
+                            where: { id: input.id_user },
+                            select: { 
+                                username: true, 
+                                name: true 
+                            }
+                        });
+                        
+                        // Create a notification with context about the project
+                        const notificationTitle = 
+                            `${liker?.username || liker?.name || 'Someone'} liked your comment on "${
+                                comment.project?.title || 'a project'
+                            }"`;
+                        
+                        await prisma.notification.create({
+                            data: {
+                                id_user: comment.user.id,
+                                title: notificationTitle,
+                                is_read: false,
+                                type: "LIKE_COMMENT"
+                            }
+                        });
+                    } catch (notifError) {
+                        // Log but don't fail the main operation
+                        console.error("Failed to create notification:", notifError);
+                    }
+                }
+
                 return {
                     success: true,
                     message: "Comment liked successfully",
@@ -71,7 +119,7 @@ export const likeCommentRouter = router({
                 if (error instanceof TRPCError) throw error;
                 throw new TRPCError({
                     code: "INTERNAL_SERVER_ERROR",
-                    message: `Failed to like project: ${
+                    message: `Failed to like comment: ${
                         error instanceof Error ? error.message : "Unknown error"
                     }`
                 });
@@ -131,7 +179,7 @@ export const likeCommentRouter = router({
                 if (error instanceof TRPCError) throw error;
                 throw new TRPCError({
                     code: "INTERNAL_SERVER_ERROR",
-                    message: `Failed to unlike project: ${
+                    message: `Failed to unlike comment: ${
                         error instanceof Error ? error.message : "Unknown error"
                     }`
                 });
