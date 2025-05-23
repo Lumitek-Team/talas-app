@@ -12,6 +12,7 @@
     "@ckeditor/ckeditor5-react": "^9.5.0",
     "@clerk/nextjs": "^6.19.4",
     "@clerk/themes": "^2.2.38",
+    "@heroicons/react": "^2.2.0",
     "@prisma/client": "^6.7.0",
     "@radix-ui/react-dialog": "^1.1.11",
     "@radix-ui/react-label": "^2.1.4",
@@ -37,7 +38,8 @@
     "tailwind-merge": "^3.2.0",
     "tailwind-variants": "^1.0.0",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.24.3"
+    "zod": "^3.24.3",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

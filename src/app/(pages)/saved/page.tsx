@@ -10,7 +10,7 @@ import { usePostsStore } from "@/lib/store/posts-store";
 export default function SavedProjectsPage() {
   // Use the getSavedPosts function from the store
   const getSavedPosts = usePostsStore(state => state.getSavedPosts);
-  
+
   // Call the function once and memoize the result
   const savedPosts = useMemo(() => getSavedPosts(), [getSavedPosts]);
   

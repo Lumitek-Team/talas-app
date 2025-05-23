@@ -4,14 +4,11 @@ import { retryConnect, deleteImage } from "@/lib/utils";
 import { z } from "zod";
 import slugify from "slugify";
 import { getTrpcCaller } from "@/app/_trpc/server";
-<<<<<<< HEAD
-=======
 import {
 	CommentsInProjectType,
 	ProjectOneType,
 	ProjectWithBookmarks,
 } from "@/lib/type";
->>>>>>> dev
 
 export const projectRouter = router({
 	getOne: protectedProcedure
@@ -23,11 +20,7 @@ export const projectRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-<<<<<<< HEAD
-				const project = await retryConnect(() =>
-=======
 				const data = await retryConnect(() =>
->>>>>>> dev
 					prisma.project.findFirst({
 						where: {
 							OR: [{ id: input.id }, { slug: input.id }],
@@ -83,21 +76,16 @@ export const projectRouter = router({
 									created_at: "asc",
 								},
 							},
-<<<<<<< HEAD
-=======
 							bookmarks: input.id_user
 								? {
 										where: { id_user: input.id_user },
 										select: { id: true },
 								  }
 								: false,
->>>>>>> dev
 						},
 					})
 				);
 
-<<<<<<< HEAD
-=======
 				if (!data) return null;
 
 				const project: ProjectOneType = {
@@ -107,7 +95,6 @@ export const projectRouter = router({
 						: false,
 				};
 
->>>>>>> dev
 				return project;
 			} catch (error) {
 				throw new Error("Error fetching project: " + error);
@@ -119,19 +106,12 @@ export const projectRouter = router({
 			z.object({
 				limit: z.number().min(1).max(100).nullish(),
 				cursor: z.string().nullish(),
-<<<<<<< HEAD
-=======
 				id_user: z.string().optional(), // add id_user
->>>>>>> dev
 			})
 		)
 		.query(async ({ input }) => {
 			const limit = input.limit ?? 50;
-<<<<<<< HEAD
-			const { cursor } = input;
-=======
 			const { cursor, id_user } = input;
->>>>>>> dev
 
 			try {
 				const projects = await retryConnect(() =>
@@ -178,8 +158,6 @@ export const projectRouter = router({
 									created_at: "asc",
 								},
 							},
-<<<<<<< HEAD
-=======
 							bookmarks: id_user
 								? {
 										where: { id_user },
@@ -278,7 +256,6 @@ export const projectRouter = router({
 									created_at: "asc",
 								},
 							},
->>>>>>> dev
 						},
 						orderBy: {
 							created_at: "desc",
@@ -287,12 +264,6 @@ export const projectRouter = router({
 						cursor: cursor ? { id: cursor } : undefined,
 					})
 				);
-<<<<<<< HEAD
-				let nextCursor: typeof cursor | undefined = undefined;
-
-				if (projects.length > limit) {
-					const nextItem = projects.pop();
-=======
 
 				const filteredProjects = id_user
 					? projects.filter(
@@ -306,24 +277,15 @@ export const projectRouter = router({
 
 				if (filteredProjects.length > limit) {
 					const nextItem = filteredProjects.pop();
->>>>>>> dev
 					nextCursor = nextItem!.id;
 				}
 
 				return {
-<<<<<<< HEAD
-					projects,
-					nextCursor,
-				};
-			} catch (error) {
-				throw new Error("Error fetching projects: " + error);
-=======
 					projects: filteredProjects,
 					nextCursor,
 				};
 			} catch (error) {
 				throw new Error("Error fetching archived projects: " + error);
->>>>>>> dev
 			}
 		}),
 
@@ -561,13 +523,9 @@ export const projectRouter = router({
 				].filter(Boolean);
 
 				for (const imagePath of images) {
-<<<<<<< HEAD
-					await deleteImage(imagePath);
-=======
 					if (imagePath) {
 						await deleteImage(imagePath);
 					}
->>>>>>> dev
 				}
 
 				await retryConnect(() =>
@@ -575,12 +533,9 @@ export const projectRouter = router({
 						prisma.project.delete({
 							where: { id: input.id },
 						}),
-<<<<<<< HEAD
-=======
 						prisma.comment.deleteMany({
 							where: { id_project: input.id },
 						}),
->>>>>>> dev
 						prisma.category.update({
 							where: { id: existingProject.category.id }, // Ensure id_category is valid
 							data: { count_projects: { decrement: 1 } },
@@ -595,8 +550,6 @@ export const projectRouter = router({
 				throw new Error("Error deleting project: " + error);
 			}
 		}),
-<<<<<<< HEAD
-=======
 
 	getComments: protectedProcedure
 		.input(
@@ -767,7 +720,6 @@ export const projectRouter = router({
 				throw new Error("Error unarchiving project: " + error);
 			}
 		}),
->>>>>>> dev
 });
 
 export type UserRouter = typeof projectRouter;

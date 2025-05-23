@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
-import { ScrollReveal } from "@/components/ui/scroll-reveal";
 
 export function CTA() {
   const teamMembers = [
