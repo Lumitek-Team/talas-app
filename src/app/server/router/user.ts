@@ -1,6 +1,6 @@
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { FollowerType } from "@/lib/type";
+import { FollowerType, SelectCollabType } from "@/lib/type";
 import { retryConnect } from "@/lib/utils";
 import { z } from "zod";
 
@@ -386,6 +386,38 @@ export const userRouter = router({
 				};
 			} catch (error) {
 				throw new Error("Error fetching bookmarks: " + error);
+			}
+		}),
+
+	getSelectCollab: protectedProcedure
+		.input(
+			z.object({
+				query: z.string(),
+				id_user: z.string(),
+			})
+		)
+		.query(async ({ input }) => {
+			try {
+				const data: SelectCollabType[] = await retryConnect(() =>
+					prisma.user.findMany({
+						where: {
+							id: { not: input.id_user }, // exclude self
+							OR: [
+								{ username: { contains: input.query } },
+								{ name: { contains: input.query } },
+							],
+						},
+						select: {
+							id: true,
+							name: true,
+							username: true,
+							photo_profile: true,
+						},
+					})
+				);
+				return data;
+			} catch (error) {
+				throw new Error("Error fetching user: " + error);
 			}
 		}),
 });

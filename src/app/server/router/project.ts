@@ -10,6 +10,7 @@ import {
 	ProjectOnMutationType,
 	ProjectWithInteractionsType,
 } from "@/lib/type";
+import { collabStatusType, ownershipType } from "@prisma/client";
 
 export const projectRouter = router({
 	getOne: protectedProcedure
@@ -346,6 +347,14 @@ export const projectRouter = router({
 				image4: z.any().optional(),
 				image5: z.any().optional(),
 				video: z.any().optional(),
+				collaborators: z.array(
+					z.object({
+						id: z.string(),
+						name: z.string(),
+						username: z.string(),
+						photo_profile: z.string().optional(),
+					})
+				),
 				link_figma: z.string().optional(),
 				link_github: z.string().optional(),
 			})
@@ -369,32 +378,50 @@ export const projectRouter = router({
 			}
 
 			try {
-				const [newProject, , ,] = await retryConnect(() =>
+				const newProject = await retryConnect(() =>
+					prisma.project.create({
+						data: {
+							id_category: input.id_category,
+							title: input.title,
+							slug: slug,
+							is_archived: input.is_archived,
+							content: input.content,
+							image1: input.image1,
+							image2: input.image2,
+							image3: input.image3,
+							image4: input.image4,
+							image5: input.image5,
+							video: input.video,
+							link_figma: input.link_figma,
+							link_github: input.link_github,
+						},
+					})
+				);
+
+				const ownerCollab = {
+					id_user: input.id_user,
+					id_project: newProject.id,
+					ownership: ownershipType.OWNER,
+					collabStatus: collabStatusType.ACCEPTED,
+				};
+
+				const dataCollab = [
+					ownerCollab,
+					...input.collaborators.map((collab) => ({
+						id_user: collab.id,
+						id_project: newProject.id,
+						ownership: ownershipType.COLLABORATOR,
+						collabStatus: collabStatusType.PENDING,
+					})),
+				];
+
+				const [] = await retryConnect(() =>
 					prisma.$transaction([
-						prisma.project.create({
-							data: {
-								id_category: input.id_category,
-								title: input.title,
-								slug: slug,
-								is_archived: input.is_archived,
-								content: input.content,
-								image1: input.image1,
-								image2: input.image2,
-								image3: input.image3,
-								image4: input.image4,
-								image5: input.image5,
-								video: input.video,
-								link_figma: input.link_figma,
-								link_github: input.link_github,
-							},
+						// request collab
+						prisma.projectUser.createMany({
+							data: dataCollab,
 						}),
 
-						prisma.projectUser.create({
-							data: {
-								id_user: input.id_user,
-								id_project: newProject.id,
-							},
-						}),
 						prisma.category.update({
 							where: {
 								id: input.id_category,

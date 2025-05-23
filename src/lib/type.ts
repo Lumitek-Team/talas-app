@@ -162,3 +162,10 @@ export interface FollowerType {
 		photo_profile: string | null;
 	};
 }
+
+export interface SelectCollabType {
+	id: string;
+	name: string;
+	username: string;
+	photo_profile?: string;
+}

@@ -30,6 +30,7 @@ import { trpc } from "@/app/_trpc/client";
 import ImageCropperModal from "../imageCropper";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import CollaboratorSelect from "./CollaboratorSelect";
 
 interface ProjectFormProps {
     mode: "create" | "edit";
@@ -46,6 +47,14 @@ const formSchema = z.object({
     image4: z.any().nullable(),
     image5: z.any().nullable(),
     video: z.any().nullable(),
+    collaborators: z.array(
+        z.object({
+            id: z.string(),
+            name: z.string(),
+            username: z.string(),
+            photo_profile: z.string().optional(),
+        })
+    ),
     is_archived: z.boolean(),
     link_figma: z.string().nullable(),
     link_github: z.string().nullable(),
@@ -122,6 +131,12 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
             image4: project?.image4 || null,
             image5: project?.image5 || null,
             video: project?.video || null,
+            collaborators: project?.project_user.map((pu) => ({
+                id: pu.user.id,
+                name: pu.user.name,
+                username: pu.user.username,
+                photo_profile: pu.user.photo_profile,
+            })) || [],
             is_archived: project?.is_archived || false,
             link_figma: project?.link_figma || "",
             link_github: project?.link_github || "",
@@ -166,6 +181,10 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
 
         if (croppedImage && mode === "create") {
             formData.append("image1", croppedImage);
+        }
+
+        if (values.collaborators.length > 0) {
+            formData.append("collaborators", JSON.stringify(values.collaborators));
         }
 
         if (mode === "create") {
@@ -362,6 +381,23 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                                 )}
                             />
                         </div>
+
+                        <FormField
+                            control={form.control}
+                            name="collaborators"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Collaborators</FormLabel>
+                                    <FormControl>
+                                        <CollaboratorSelect value={field.value || []} onChange={field.onChange} />
+                                    </FormControl>
+                                    <FormDescription>
+                                        Tambahkan user yang akan berkolaborasi.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <div className="col-span-2">
                             <FormField
