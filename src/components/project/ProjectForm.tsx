@@ -183,11 +183,11 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
             formData.append("image1", croppedImage);
         }
 
-        if (values.collaborators.length > 0) {
-            formData.append("collaborators", JSON.stringify(values.collaborators));
-        }
 
         if (mode === "create") {
+            if (values.collaborators.length > 0) {
+                formData.append("collaborators", JSON.stringify(values.collaborators));
+            }
             try {
                 const res = await fetch("/api/project/create", {
                     method: "POST",
@@ -382,22 +382,24 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                             />
                         </div>
 
-                        <FormField
-                            control={form.control}
-                            name="collaborators"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Collaborators</FormLabel>
-                                    <FormControl>
-                                        <CollaboratorSelect value={field.value || []} onChange={field.onChange} />
-                                    </FormControl>
-                                    <FormDescription>
-                                        Tambahkan user yang akan berkolaborasi.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {mode === "create" && (
+                            <FormField
+                                control={form.control}
+                                name="collaborators"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Collaborators</FormLabel>
+                                        <FormControl>
+                                            <CollaboratorSelect value={field.value || []} onChange={field.onChange} />
+                                        </FormControl>
+                                        <FormDescription>
+                                            Tambahkan user yang akan berkolaborasi.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
 
                         <div className="col-span-2">
                             <FormField
