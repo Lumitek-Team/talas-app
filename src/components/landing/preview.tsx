@@ -11,6 +11,7 @@ export function Preview() {
           <div className="relative group">
             <div
               className="absolute -inset-2 -z-10 rounded-[35px] bg-secondary opacity-40 blur-3xl 
+              className="absolute -inset-2 -z-10 rounded-[35px] bg-secondary opacity-40 blur-3xl 
               transition-all duration-500 ease-in-out 
               group-hover:opacity-90 group-hover:blur-4xl group-hover:-inset-8" 
             />
