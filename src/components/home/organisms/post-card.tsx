@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Github, Figma } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { getPublicUrl } from "@/lib/utils";
 
 interface PostCardProps {
   id: string;
@@ -96,9 +97,17 @@ export function PostCard({
   };
 
   const handleCardClick = () => {
-    router.push(`/project/${id}`);
+    if (slug) {
+      router.push(`/project/${slug}`);
+    }
   };
-
+  
+  // In your link handling:
+  {link_figma && (
+    <a href={link_figma} target="_blank" rel="noopener noreferrer">
+      <Figma className="w-5 h-5" />
+    </a>
+  )}
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     router.push(`/project/${id}`);
@@ -169,26 +178,29 @@ export function PostCard({
           onClick={e => e.stopPropagation()}
         >
           {allImages.map((image, index) => {
-            // For 4 images: 2x2 grid
-            // For 5 images: first row has 3 images, second row has 2 images
-            const spanFull = allImages.length === 4 ? false : 
-                            (allImages.length === 5 && index > 2);
-            
-            return (
-              <div 
-                key={index} 
-                className={`aspect-video bg-muted rounded-md overflow-hidden relative ${
-                  spanFull ? 'col-span-1 md:col-span-1.5' : ''
-                }`}
-              >
-                <Image
-                  src={image}
-                  alt={`Post image ${index + 1}`}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            );
+          const imageUrl = getPublicUrl(image);
+          const spanFull = allImages.length === 4 ? false : 
+                          (allImages.length === 5 && index > 2);
+          
+          return (
+            <div 
+              key={index} 
+              className={`aspect-video bg-muted rounded-md overflow-hidden relative ${
+                spanFull ? 'col-span-1 md:col-span-1.5' : ''
+              }`}
+            >
+              <Image
+                src={imageUrl}
+                alt={`${title || 'Project'} image ${index + 1}`}
+                fill
+                className="object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/img/dummy/project-photo-dummy.jpg';
+                }}
+              />
+            </div>
+          );
           })}
         </div>
       )}
