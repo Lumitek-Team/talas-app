@@ -1,11 +1,14 @@
+// components/home/organisms/post-card.tsx (Modified)
 "use client";
 
 import { PostHeader } from "../molecules/post-header";
 import { PostActions } from "../molecules/post-actions";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"; // useEffect for isMobile, useState for isMobile
 import { Github, Figma } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { getPublicUrl } from "@/lib/utils";
 
 interface PostCardProps {
   id: string;
@@ -16,19 +19,20 @@ interface PostCardProps {
   avatarSrc: string;
   timestamp: string;
   content: string;
-  images?: string[];
+  images?: string[]; // Kept for potential legacy use, but prefer image1-5
   image1?: string;
   image2?: string;
   image3?: string;
   image4?: string;
   image5?: string;
-  likes: number;
+  likes: number; // Direct like count from parent page
   comments: number;
-  count_likes?: number;
-  count_comments?: number;
   link_figma?: string;
   link_github?: string;
-  initialLiked?: boolean;
+  isLiked: boolean; // Direct liked state from parent page
+  isBookmarked: boolean; // Direct bookmarked state from parent page
+  onToggleLike: () => void; // Handler from parent page
+  onToggleBookmark: () => void; // Handler from parent page
   category?: {
     slug: string;
     title: string;
@@ -50,77 +54,97 @@ export function PostCard({
   image3,
   image4,
   image5,
-  likes,
+  likes, // Use this directly
   comments,
-  count_likes,
-  count_comments,
   link_figma,
   link_github,
-  initialLiked = false,
+  isLiked, // Use this directly
+  isBookmarked, // Use this directly
+  onToggleLike,
+  onToggleBookmark,
   category,
 }: PostCardProps) {
-  const [isLiked, setIsLiked] = useState(initialLiked);
-  const [likeCount, setLikeCount] = useState(likes || count_likes || 0);
+  const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
 
-  // Combine images from both formats (legacy and new API format)
-  const allImages = [...images];
-  if (image1) allImages.push(image1);
-  if (image2) allImages.push(image2);
-  if (image3) allImages.push(image3);
-  if (image4) allImages.push(image4);
-  if (image5) allImages.push(image5);
+  // Removed local isLiked, likeCount state, and handleLike method.
+  // These are now controlled by the parent page via props.
+
+  const allDisplayImages = [...images];
+  if (image1) allDisplayImages.push(image1);
+  if (image2) allDisplayImages.push(image2);
+  if (image3) allDisplayImages.push(image3);
+  if (image4) allDisplayImages.push(image4);
+  if (image5) allDisplayImages.push(image5);
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 690);
     };
-    
     handleResize();
     window.addEventListener('resize', handleResize);
-    
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
 
-  const handleLike = () => {
-    if (isLiked) {
-      setLikeCount(prev => prev - 1);
-    } else {
-      setLikeCount(prev => prev + 1);
+  const handleCardClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('a, button')) {
+      return;
     }
-    setIsLiked(!isLiked);
+    if (slug) {
+      router.push(`/project/${slug}`);
+    } else {
+      router.push(`/project/${id}`); // Fallback to ID if slug is not present
+    }
   };
 
-  const displayTitle = title || (content ? content.split('\n')[0] : '');
+  const handleCommentClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    if (slug) {
+        router.push(`/project/${slug}#comments`);
+    } else {
+        router.push(`/project/${id}#comments`);
+    }
+  };
+
+  const displayTitle = title || (content ? content.split('\n')[0] : 'Untitled Project');
   const displayContent = title ? content : (content ? content.split('\n').slice(1).join('\n') : '');
 
   return (
-    <div className={`p-4 ${isMobile ? 'bg-background' : ''}`}>
+    <div
+      className={`p-4 ${isMobile ? 'bg-background' : ''} cursor-pointer`}
+      onClick={handleCardClick}
+    >
       <PostHeader
         username={username}
         userRole={userRole}
         avatarSrc={avatarSrc}
         timestamp={timestamp}
       />
-      
+
       <div className="mb-6">
         <h2 className="text-lg font-bold">{displayTitle}</h2>
         {category && (
-          <p className="text-sm text-muted-foreground mb-3">{category.title}</p>
+          <Link
+            href={`/feeds?category=${category.slug}`}
+            onClick={(e) => e.stopPropagation()}
+            className="text-sm text-muted-foreground hover:underline mb-3 inline-block"
+          >
+            {category.title}
+          </Link>
         )}
         <p className="text-white text-sm whitespace-pre-line">
           {displayContent}
         </p>
-        
-        {/* External Links Section */}
+
         {(link_figma || link_github) && (
-          <div className="flex gap-3 mt-3">
+          <div className="flex gap-3 mt-3" onClick={e => e.stopPropagation()}>
             {link_figma && (
-              <Link 
-                href={link_figma} 
-                target="_blank" 
+              <Link
+                href={link_figma}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 text-white transition-all duration-200 transform active:scale-90"
               >
@@ -128,11 +152,10 @@ export function PostCard({
                 <span>Figma</span>
               </Link>
             )}
-            
             {link_github && (
-              <Link 
-                href={link_github} 
-                target="_blank" 
+              <Link
+                href={link_github}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 text-white transition-all duration-200 transform active:scale-90"
               >
@@ -143,48 +166,64 @@ export function PostCard({
           </div>
         )}
       </div>
-      
-      {allImages.length > 0 && (
-        <div className={`grid gap-2 mb-4 ${
-          allImages.length === 1 ? 'grid-cols-1' : 
-          allImages.length === 2 ? 'grid-cols-2' :
-          allImages.length === 3 ? 'grid-cols-3' :
-          allImages.length === 4 ? 'grid-cols-2' : 'grid-cols-3'
-        }`}>
-          {allImages.map((image, index) => {
-            // For 4 images: 2x2 grid
-            // For 5 images: first row has 3 images, second row has 2 images
-            const spanFull = allImages.length === 4 ? false : 
-                            (allImages.length === 5 && index > 2);
-            
+
+      {allDisplayImages.length > 0 && (
+        <div
+          className={`grid gap-2 mb-4 ${
+            allDisplayImages.length === 1 ? 'grid-cols-1' :
+            allDisplayImages.length === 2 ? 'grid-cols-2' :
+            allDisplayImages.length === 3 ? 'grid-cols-3' :
+            allDisplayImages.length === 4 ? 'grid-cols-2' : 'grid-cols-3'
+          }`}
+          onClick={e => e.stopPropagation()}
+        >
+          {allDisplayImages.slice(0, 5).map((imagePath, index) => {
+            const imageUrl = imagePath.startsWith('http') ? imagePath : getPublicUrl(imagePath);
+            const isFourthOrFifthSpecial = (allDisplayImages.length === 5 && index >= 3) || (allDisplayImages.length === 4 && index >=2);
+
             return (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`aspect-video bg-muted rounded-md overflow-hidden relative ${
-                  spanFull ? 'col-span-1 md:col-span-1.5' : ''
-                }`}
+                   (allDisplayImages.length === 3 && index === 0) ? 'md:col-span-3 row-span-2' : 
+                   (allDisplayImages.length === 5 && index === 0) ? 'col-span-3 md:col-span-2 row-span-2' : 
+                   (allDisplayImages.length === 5 && (index === 1 || index ===2)) ? 'col-span-1 md:col-span-1 row-span-1' :
+                   (allDisplayImages.length > 3 && index > 0 && allDisplayImages.length % 2 !== 0 && index === allDisplayImages.length -1 ) ? 'col-span-2' : 
+                   '' 
+                } ${ isMobile && allDisplayImages.length > 2 && index === 0 ? 'col-span-full' : '' }`}
               >
                 <Image
-                  src={image}
-                  alt={`Post image ${index + 1}`}
+                  src={imageUrl}
+                  alt={`${title || 'Project'} image ${index + 1}`}
                   fill
                   className="object-cover"
+                  sizes="(max-width: 690px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/img/dummy/project-photo-dummy.jpg'; 
+                  }}
                 />
               </div>
             );
           })}
         </div>
       )}
-      
-      <div className="pt-2">
+
+      <div className="pt-2" onClick={e => e.stopPropagation()}>
         <PostActions
-          postId={id}
-          likes={likeCount}
-          comments={comments || count_comments || 0}
-          onLike={handleLike}
-          onComment={() => {}}
-          onShare={() => {}}
-          isLiked={isLiked}
+          likes={likes} 
+          comments={comments}
+          onLikeToggle={onToggleLike} // Pass handler from page
+          onComment={handleCommentClick}
+          onShare={() => {
+            const projectUrl = `${window.location.origin}/project/${slug || id}`;
+            navigator.clipboard.writeText(projectUrl)
+              .then(() => alert('Project link copied to clipboard!'))
+              .catch(err => console.error('Failed to copy link: ', err));
+          }}
+          isLiked={isLiked} 
+          isBookmarked={isBookmarked} 
+          onBookmarkToggle={onToggleBookmark} // Pass handler from page
         />
       </div>
     </div>
