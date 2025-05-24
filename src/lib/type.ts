@@ -1,4 +1,6 @@
-export interface ProjectWithBookmarks {
+import { collabStatusType, ownershipType } from "@prisma/client";
+
+export interface ProjectWithInteractionsType {
 	id: string;
 	id_category: string;
 	slug: string;
@@ -31,6 +33,7 @@ export interface ProjectWithBookmarks {
 		};
 	}[];
 	bookmarks?: { id: string }[];
+	LikeProject?: { id: string }[];
 }
 
 export interface ProjectOneType {
@@ -53,6 +56,7 @@ export interface ProjectOneType {
 	created_at: string;
 	updated_at: string;
 	is_bookmarked?: boolean;
+	is_liked?: boolean;
 	category: {
 		id: string;
 		title: string;
@@ -65,6 +69,42 @@ export interface ProjectOneType {
 			username: string;
 			photo_profile?: string;
 		};
+		ownership: ownershipType;
+		collabStatus: collabStatusType;
+	}[];
+}
+
+export interface ProjectOnMutationType {
+	id: string;
+	id_category: string;
+	slug: string;
+	title: string;
+	content: string;
+	is_archived: boolean;
+	image1?: string;
+	image2?: string;
+	image3?: string;
+	image4?: string;
+	image5?: string;
+	video?: string;
+	link_github: string;
+	link_figma: string;
+	count_likes: number;
+	count_comments: number;
+	created_at: string;
+	updated_at: string;
+	project_user: {
+		id_user: string;
+		ownership: ownershipType;
+		collabStatusType?: collabStatusType;
+	}[];
+}
+
+export interface ProjectOnArchiveType {
+	id: string;
+	project_user: {
+		id_user: string;
+		ownership: string;
 	}[];
 }
 
@@ -114,3 +154,39 @@ export type BookmarkType = {
 		}[];
 	};
 };
+
+export interface FollowerType {
+	follower: {
+		username: string;
+		name: string;
+		photo_profile: string | null;
+	};
+}
+
+export interface SelectCollabType {
+	id: string;
+	name: string;
+	username: string;
+	photo_profile?: string;
+}
+
+export interface RequestCollabType {
+	id: string;
+	project: {
+		id: string;
+		title: string;
+		slug: string;
+		image1?: string;
+		image2?: string;
+		image3?: string;
+		image4?: string;
+		image5?: string;
+		project_user: {
+			user: {
+				username: string;
+				name: string;
+				photo_profile?: string | null;
+			};
+		}[];
+	};
+}

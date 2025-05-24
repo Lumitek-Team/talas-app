@@ -1,77 +1,72 @@
+// components/home/molecules/post-actions.tsx (Modified)
 "use client";
 
 import { cn } from "@/lib/utils";
-import { usePostsStore } from "@/lib/store/posts-store";
-import { 
-  HeartIcon, 
-  ChatBubbleLeftIcon, 
-  BookmarkIcon, 
-  ShareIcon 
+import {
+  HeartIcon,
+  ChatBubbleLeftIcon,
+  BookmarkIcon,
+  ShareIcon,
 } from "@heroicons/react/24/outline";
-import { 
-  HeartIcon as HeartIconSolid, 
-  BookmarkIcon as BookmarkIconSolid 
+import {
+  HeartIcon as HeartIconSolid,
+  BookmarkIcon as BookmarkIconSolid,
 } from "@heroicons/react/24/solid";
 
 interface PostActionsProps {
-  postId: string;
-  likes: number;
+  likes: number;        // Current like count from parent
   comments: number;
-  onLike: () => void;
+  onLikeToggle: () => void;    // Handler from parent for like action
   onComment: () => void;
   onShare: () => void;
-  isLiked?: boolean;
+  isLiked: boolean;     // Current liked state from parent
+  isBookmarked: boolean; // Current bookmarked state from parent
+  onBookmarkToggle: () => void; // Handler from parent for bookmark action
 }
 
 export function PostActions({
-  postId,
   likes,
   comments,
-  onLike,
+  onLikeToggle,
   onComment,
   onShare,
-  isLiked = false,
+  isLiked,
+  isBookmarked,
+  onBookmarkToggle,
 }: PostActionsProps) {
-  // Get save state and toggle function from our store
-  const isPostSaved = usePostsStore(state => state.isPostSaved(postId));
-  const toggleSavePost = usePostsStore(state => state.toggleSavePost);
-
-  const handleSave = () => {
-    toggleSavePost(postId);
-    // This could be replaced with a direct API call in the future
-  };
+  // Removed local state for isBookmarked and tRPC mutations/utils
 
   return (
     <div className="flex justify-between items-center">
-      <ActionButton 
+      <ActionButton
         icon={isLiked ? (
           <HeartIconSolid className="w-5 h-5" />
         ) : (
           <HeartIcon className="w-5 h-5" />
-        )}
+        )} // Icon state based on prop
         label={`${likes} Likes`}
-        onClick={onLike}
+        onClick={onLikeToggle} // Use prop handler
         active={isLiked}
       />
-      
-      <ActionButton 
+
+      <ActionButton
         icon={<ChatBubbleLeftIcon className="w-5 h-5" />}
         label={`${comments} Comments`}
         onClick={onComment}
       />
-      
-      <ActionButton 
-        icon={isPostSaved ? (
+
+      <ActionButton
+        icon={isBookmarked ? (
           <BookmarkIconSolid className="w-5 h-5" />
         ) : (
           <BookmarkIcon className="w-5 h-5" />
-        )}
+        )} // Icon state based on prop
         label="Save"
-        onClick={handleSave}
-        active={isPostSaved}
+        onClick={onBookmarkToggle} // Use prop handler
+        active={isBookmarked}
       />
-      
-      <ActionButton 
+
+      <ActionButton
         icon={<ShareIcon className="w-5 h-5" />}
         label="Share"
         onClick={onShare}
@@ -85,17 +80,20 @@ interface ActionButtonProps {
   label: string;
   onClick: () => void;
   active?: boolean;
+  disabled?: boolean;
 }
 
-function ActionButton({ icon, label, onClick, active = false }: ActionButtonProps) {
+function ActionButton({ icon, label, onClick, active = false, disabled = false }: ActionButtonProps) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={cn(
         "flex items-center gap-1 px-2 py-1 rounded-md transition-all duration-200",
         "hover:bg-gray-700/20 cursor-pointer focus:outline-none active:scale-90",
         "text-xs transform",
-        active ? "text-primary" : "text-white/70"
+        active ? "text-primary" : "text-white/70",
+        disabled && "opacity-50 cursor-not-allowed"
       )}
       aria-label={label}
     >

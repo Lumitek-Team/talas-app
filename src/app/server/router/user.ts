@@ -1,6 +1,8 @@
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
+import { FollowerType, RequestCollabType, SelectCollabType } from "@/lib/type";
 import { retryConnect } from "@/lib/utils";
+import { Notification } from "@prisma/client";
 import { z } from "zod";
 
 export const userRouter = router({
@@ -49,21 +51,23 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data = await prisma.user.findMany({
-					take: input?.limit,
-					skip: input?.offset,
-					select: {
-						username: true,
-						name: true,
-						bio: true,
-						photo_profile: true,
-						instagram: true,
-						linkedin: true,
-						github: true,
-						gender: true,
-						email_contact: true,
-					},
-				});
+				const data = await retryConnect(() =>
+					prisma.user.findMany({
+						take: input?.limit,
+						skip: input?.offset,
+						select: {
+							username: true,
+							name: true,
+							bio: true,
+							photo_profile: true,
+							instagram: true,
+							linkedin: true,
+							github: true,
+							gender: true,
+							email_contact: true,
+						},
+					})
+				);
 
 				return data;
 			} catch (error) {
@@ -79,30 +83,32 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data = await prisma.user.findUnique({
-					where: {
-						id: input.id,
-					},
-					select: {
-						username: true,
-						name: true,
-						bio: true,
-						photo_profile: true,
-						instagram: true,
-						linkedin: true,
-						github: true,
-						gender: true,
-						email_contact: true,
-						count_summary: {
-							select: {
-								count_project: true,
-								count_follower: true,
-								count_following: true,
-								all_notif_read: true,
+				const data = await retryConnect(() =>
+					prisma.user.findUnique({
+						where: {
+							id: input.id,
+						},
+						select: {
+							username: true,
+							name: true,
+							bio: true,
+							photo_profile: true,
+							instagram: true,
+							linkedin: true,
+							github: true,
+							gender: true,
+							email_contact: true,
+							count_summary: {
+								select: {
+									count_project: true,
+									count_follower: true,
+									count_following: true,
+									all_notif_read: true,
+								},
 							},
 						},
-					},
-				});
+					})
+				);
 
 				return data;
 			} catch (error) {
@@ -118,29 +124,31 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data = await prisma.user.findFirst({
-					where: {
-						username: input.username,
-					},
-					select: {
-						username: true,
-						name: true,
-						bio: true,
-						photo_profile: true,
-						instagram: true,
-						linkedin: true,
-						github: true,
-						gender: true,
-						email_contact: true,
-						count_summary: {
-							select: {
-								count_project: true,
-								count_follower: true,
-								count_following: true,
+				const data = await retryConnect(() =>
+					prisma.user.findFirst({
+						where: {
+							username: input.username,
+						},
+						select: {
+							username: true,
+							name: true,
+							bio: true,
+							photo_profile: true,
+							instagram: true,
+							linkedin: true,
+							github: true,
+							gender: true,
+							email_contact: true,
+							count_summary: {
+								select: {
+									count_project: true,
+									count_follower: true,
+									count_following: true,
+								},
 							},
 						},
-					},
-				});
+					})
+				);
 
 				return data;
 			} catch (error) {
@@ -158,22 +166,24 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const followers = await prisma.follow.findMany({
-					where: {
-						id_following: input.id_following,
-					},
-					take: input.limit,
-					skip: input.offset,
-					select: {
-						follower: {
-							select: {
-								username: true,
-								name: true,
-								photo_profile: true,
+				const followers: FollowerType[] = await retryConnect(() =>
+					prisma.follow.findMany({
+						where: {
+							id_following: input.id_following,
+						},
+						take: input.limit,
+						skip: input.offset,
+						select: {
+							follower: {
+								select: {
+									username: true,
+									name: true,
+									photo_profile: true,
+								},
 							},
 						},
-					},
-				});
+					})
+				);
 
 				const data = followers.map((follow) => ({
 					...follow.follower,
@@ -195,22 +205,24 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const followings = await prisma.follow.findMany({
-					where: {
-						id_follower: input.id_follower,
-					},
-					take: input.limit,
-					skip: input.offset,
-					select: {
-						follower: {
-							select: {
-								username: true,
-								name: true,
-								photo_profile: true,
+				const followings: FollowerType[] = await retryConnect(() =>
+					prisma.follow.findMany({
+						where: {
+							id_follower: input.id_follower,
+						},
+						take: input.limit,
+						skip: input.offset,
+						select: {
+							follower: {
+								select: {
+									username: true,
+									name: true,
+									photo_profile: true,
+								},
 							},
 						},
-					},
-				});
+					})
+				);
 
 				const data = followings.map((follow) => ({
 					...follow.follower,
@@ -231,14 +243,16 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data = await prisma.user.findFirst({
-					where: {
-						OR: [{ id: input.id }, { username: input.username }],
-					},
-					select: {
-						photo_profile: true,
-					},
-				});
+				const data = await retryConnect(() =>
+					prisma.user.findFirst({
+						where: {
+							OR: [{ id: input.id }, { username: input.username }],
+						},
+						select: {
+							photo_profile: true,
+						},
+					})
+				);
 
 				return data;
 			} catch (error) {
@@ -265,37 +279,41 @@ export const userRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				await prisma.user.update({
-					where: {
-						id: input.id,
-					},
-					data: input.data,
-				});
+				await retryConnect(() =>
+					prisma.user.update({
+						where: {
+							id: input.id,
+						},
+						data: input.data,
+					})
+				);
 
-				const updatedUser = await prisma.user.findUnique({
-					where: {
-						id: input.id,
-					},
-					select: {
-						username: true,
-						name: true,
-						bio: true,
-						photo_profile: true,
-						instagram: true,
-						linkedin: true,
-						github: true,
-						gender: true,
-						email_contact: true,
-						count_summary: {
-							select: {
-								count_project: true,
-								count_follower: true,
-								count_following: true,
-								all_notif_read: true,
+				const updatedUser = await retryConnect(() =>
+					prisma.user.findUnique({
+						where: {
+							id: input.id,
+						},
+						select: {
+							username: true,
+							name: true,
+							bio: true,
+							photo_profile: true,
+							instagram: true,
+							linkedin: true,
+							github: true,
+							gender: true,
+							email_contact: true,
+							count_summary: {
+								select: {
+									count_project: true,
+									count_follower: true,
+									count_following: true,
+									all_notif_read: true,
+								},
 							},
 						},
-					},
-				});
+					})
+				);
 
 				return updatedUser;
 			} catch (error) {
@@ -369,6 +387,134 @@ export const userRouter = router({
 				};
 			} catch (error) {
 				throw new Error("Error fetching bookmarks: " + error);
+			}
+		}),
+
+	getSelectCollab: protectedProcedure
+		.input(
+			z.object({
+				query: z.string(),
+				id_user: z.string(),
+			})
+		)
+		.query(async ({ input }) => {
+			try {
+				const data: SelectCollabType[] = await retryConnect(() =>
+					prisma.user.findMany({
+						where: {
+							id: { not: input.id_user }, // exclude self
+							OR: [
+								{ username: { contains: input.query } },
+								{ name: { contains: input.query } },
+							],
+						},
+						select: {
+							id: true,
+							name: true,
+							username: true,
+							photo_profile: true,
+						},
+					})
+				);
+				return data;
+			} catch (error) {
+				throw new Error("Error fetching user: " + error);
+			}
+		}),
+
+	getNotification: protectedProcedure
+		.input(
+			z.object({
+				id_user: z.string(),
+				limit: z.number().min(1).max(100).nullish(),
+				cursor: z.string().nullish(),
+			})
+		)
+		.query(async ({ input }) => {
+			const limit = input.limit ?? 12;
+			const { cursor } = input;
+
+			const now = new Date();
+			const oneMonthAgo = new Date();
+			oneMonthAgo.setMonth(now.getMonth() - 1);
+
+			try {
+				const notifications: Notification[] = await retryConnect(() =>
+					prisma.notification.findMany({
+						where: {
+							id_user: input.id_user,
+							created_at: {
+								gte: oneMonthAgo,
+								lte: now,
+							},
+						},
+						take: limit + 1,
+						cursor: cursor ? { id: cursor } : undefined,
+						orderBy: {
+							created_at: "desc",
+						},
+					})
+				);
+
+				const hasNextPage = notifications.length > limit;
+				const items = hasNextPage ? notifications.slice(0, -1) : notifications;
+				return {
+					items,
+					nextCursor: hasNextPage ? items[items.length - 1].id : null,
+				};
+			} catch (error) {
+				throw new Error("Error fetching bookmarks: " + error);
+			}
+		}),
+
+	getRequestCollab: protectedProcedure
+		.input(z.string())
+		.query(async ({ input }) => {
+			try {
+				const requests: RequestCollabType[] = await retryConnect(() =>
+					prisma.projectUser.findMany({
+						where: {
+							id_user: input,
+							collabStatus: "PENDING",
+						},
+						select: {
+							id: true,
+							project: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+									image1: true,
+									image2: true,
+									image3: true,
+									image4: true,
+									image5: true,
+									project_user: {
+										where: {
+											id_user: { not: input },
+											ownership: "OWNER",
+										},
+										select: {
+											user: {
+												select: {
+													username: true,
+													name: true,
+													photo_profile: true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						orderBy: {
+							created_at: "desc",
+						},
+					})
+				);
+				return requests;
+			} catch (error) {
+				throw new Error("Error fetching user: " + error);
 			}
 		}),
 });
