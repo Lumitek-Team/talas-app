@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SelectCollabType } from "@/lib/type";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
+import { debounce } from "@/lib/utils";
 
 interface CollaboratorSelectProps {
     value: SelectCollabType[];
@@ -14,11 +15,21 @@ interface CollaboratorSelectProps {
 }
 
 export default function CollaboratorSelect({ value, onChange }: CollaboratorSelectProps) {
+    const [inputValue, setInputValue] = useState("");
     const [query, setQuery] = useState("");
     const userId = useUser().user?.id;
-    console.log("userId", userId);
 
     // Debounced search
+    const debouncedSetQuery = useMemo(
+        () => debounce((val: string) => setQuery(val), 400),
+        []
+    );
+
+    function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+        setInputValue(e.target.value);
+        debouncedSetQuery(e.target.value);
+    }
+
     const { data: options = [], isLoading: loadingQuery } =
         trpc.user.getSelectCollab.useQuery({
 
@@ -32,6 +43,7 @@ export default function CollaboratorSelect({ value, onChange }: CollaboratorSele
         if (!value.find(u => u.id === user.id)) {
             onChange([...value, user]);
         }
+        setInputValue("");
         setQuery("");
     }
 
@@ -51,8 +63,8 @@ export default function CollaboratorSelect({ value, onChange }: CollaboratorSele
             </div>
             <Input
                 placeholder="Cari user untuk kolaborasi..."
-                value={query}
-                onChange={e => setQuery(e.target.value)}
+                value={inputValue}
+                onChange={handleInputChange}
             />
             {loadingQuery && <div>Loading...</div>}
             {options.length > 0 && (

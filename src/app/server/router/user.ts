@@ -1,7 +1,8 @@
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { FollowerType, SelectCollabType } from "@/lib/type";
+import { FollowerType, RequestCollabType, SelectCollabType } from "@/lib/type";
 import { retryConnect } from "@/lib/utils";
+import { Notification } from "@prisma/client";
 import { z } from "zod";
 
 export const userRouter = router({
@@ -416,6 +417,102 @@ export const userRouter = router({
 					})
 				);
 				return data;
+			} catch (error) {
+				throw new Error("Error fetching user: " + error);
+			}
+		}),
+
+	getNotification: protectedProcedure
+		.input(
+			z.object({
+				id_user: z.string(),
+				limit: z.number().min(1).max(100).nullish(),
+				cursor: z.string().nullish(),
+			})
+		)
+		.query(async ({ input }) => {
+			const limit = input.limit ?? 12;
+			const { cursor } = input;
+
+			const now = new Date();
+			const oneMonthAgo = new Date();
+			oneMonthAgo.setMonth(now.getMonth() - 1);
+
+			try {
+				const notifications: Notification[] = await retryConnect(() =>
+					prisma.notification.findMany({
+						where: {
+							id_user: input.id_user,
+							created_at: {
+								gte: oneMonthAgo,
+								lte: now,
+							},
+						},
+						take: limit + 1,
+						cursor: cursor ? { id: cursor } : undefined,
+						orderBy: {
+							created_at: "desc",
+						},
+					})
+				);
+
+				const hasNextPage = notifications.length > limit;
+				const items = hasNextPage ? notifications.slice(0, -1) : notifications;
+				return {
+					items,
+					nextCursor: hasNextPage ? items[items.length - 1].id : null,
+				};
+			} catch (error) {
+				throw new Error("Error fetching bookmarks: " + error);
+			}
+		}),
+
+	getRequestCollab: protectedProcedure
+		.input(z.string())
+		.query(async ({ input }) => {
+			try {
+				const requests: RequestCollabType[] = await retryConnect(() =>
+					prisma.projectUser.findMany({
+						where: {
+							id_user: input,
+							collabStatus: "PENDING",
+						},
+						select: {
+							id: true,
+							project: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+									image1: true,
+									image2: true,
+									image3: true,
+									image4: true,
+									image5: true,
+									project_user: {
+										where: {
+											id_user: { not: input },
+											ownership: "OWNER",
+										},
+										select: {
+											user: {
+												select: {
+													username: true,
+													name: true,
+													photo_profile: true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						orderBy: {
+							created_at: "desc",
+						},
+					})
+				);
+				return requests;
 			} catch (error) {
 				throw new Error("Error fetching user: " + error);
 			}

@@ -169,3 +169,24 @@ export interface SelectCollabType {
 	username: string;
 	photo_profile?: string;
 }
+
+export interface RequestCollabType {
+	id: string;
+	project: {
+		id: string;
+		title: string;
+		slug: string;
+		image1?: string;
+		image2?: string;
+		image3?: string;
+		image4?: string;
+		image5?: string;
+		project_user: {
+			user: {
+				username: string;
+				name: string;
+				photo_profile?: string | null;
+			};
+		}[];
+	};
+}

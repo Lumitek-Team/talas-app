@@ -1,5 +1,6 @@
 import { bookmarkRouter } from "./router/bookmark";
 import { categoryRouter } from "./router/category";
+import { collaborationRouter } from "./router/collaboration";
 import { commentRouter } from "./router/comment";
 import { followRouter } from "./router/follow";
 import { likeCommentRouter } from "./router/likeComment";
@@ -19,6 +20,7 @@ export const appRouter = router({
 	likeProject: likeProjectRouter,
 	likeComment: likeCommentRouter,
 	notification: notificationRouter,
+	collaboration: collaborationRouter,
 });
 
 export type AppRouter = typeof appRouter;
