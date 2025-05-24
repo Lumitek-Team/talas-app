@@ -33,7 +33,7 @@ export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: Sideba
   const pathname = usePathname();
   
   const navItems: NavItem[] = [
-    { icon: "home", label: "Home", href: "/" },
+    { icon: "home", label: "Home", href: "/feeds" },
     { icon: "bookmark", label: "Saved projects", href: "/saved" },
     { icon: "search", label: "Search", href: "/search" },
     { icon: "bell", label: "Notification", href: "/notifications" },

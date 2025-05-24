@@ -10,7 +10,6 @@ interface FloatingActionButtonProps {
 }
 
 export function FloatingActionButton({
-  onClick,
   label = "Create new post",
 }: FloatingActionButtonProps) {
   const [isMobile, setIsMobile] = useState(false);
@@ -29,19 +28,15 @@ export function FloatingActionButton({
     };
   }, []);
 
-  const handleClick = () => {
-    if (onClick) {
-      onClick();
-    } else {
-      router.push('/create-project');
-    }
+  const handleRedirect = () => {
+    router.push("/create-project");
   };
 
   return (
     <button
-      onClick={handleClick}
+      onClick={handleRedirect}
       aria-label={label}
-      className={`fixed bg-primary rounded-2xl shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-90 hover:bg-primary-foreground group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary z-50 cursor-pointer ${
+      className={`fixed bg-primary rounded-2xl shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-90 hover:bg-primary-foreground group focus:outline-none z-50 cursor-pointer ${
         isMobile ? "bottom-20 right-4 w-14 h-14 rounded-full" : "bottom-8 right-8 w-20 h-16"
       }`}
     >

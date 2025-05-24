@@ -1,14 +1,15 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+const nextConfig = {
   images: {
-    // domains: ["ivpwvybbpejezeeqxsnn.supabase.co"], // Deprecated approach
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'ivpwvybbpejezeeqxsnn.supabase.co', // Add your Supabase storage domain here
-        port: '',
+        hostname: 'img.clerk.com',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ivpwvybbpejezeeqxsnn.supabase.co',
+        pathname: '/storage/v1/object/public/**',
       },
     ],
   },
