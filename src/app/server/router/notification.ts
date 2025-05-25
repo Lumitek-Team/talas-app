@@ -44,12 +44,18 @@ export const notificationRouter = router({
 					})
 				);
 
-				return {
+				const notif = {
 					id: notification.id,
 					title: notification.title,
 					created_at: notification.created_at,
 					is_read: notification.is_read,
 					type: notification.type,
+				};
+
+				return {
+					success: true,
+					message: "Successfully created notification",
+					data: notif,
 				};
 			} catch (error) {
 				if (error instanceof TRPCError) throw error;

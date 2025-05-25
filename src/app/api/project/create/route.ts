@@ -1,6 +1,7 @@
 import { getTrpcCaller } from "@/app/_trpc/server";
 import { auth } from "@clerk/nextjs/server";
 import { uploadImage } from "@/lib/utils";
+import { SelectCollabType } from "@/lib/type";
 
 export async function POST(req: Request) {
 	const trpc = await getTrpcCaller();
@@ -19,6 +20,11 @@ export async function POST(req: Request) {
 	const image5 = formData.get("image5") as File | null;
 	const link_figma = formData.get("link_figma")?.toString();
 	const link_github = formData.get("link_github")?.toString();
+
+	const collaboratorsRaw = formData.get("collaborators") as string | null;
+	const collaborators: SelectCollabType[] = collaboratorsRaw
+		? JSON.parse(collaboratorsRaw)
+		: [];
 
 	if (!title || !id_category || !content || !image1 || !id_user) {
 		return new Response("Name, id_category and content are required", {
@@ -63,6 +69,7 @@ export async function POST(req: Request) {
 			image3: imagePaths[1] || null,
 			image4: imagePaths[2] || null,
 			image5: imagePaths[3] || null,
+			collaborators,
 			link_figma,
 			link_github,
 		});

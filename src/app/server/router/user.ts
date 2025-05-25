@@ -1,7 +1,8 @@
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { FollowerType } from "@/lib/type";
+import { FollowerType, RequestCollabType, SelectCollabType } from "@/lib/type";
 import { retryConnect } from "@/lib/utils";
+import { Notification } from "@prisma/client";
 import { z } from "zod";
 
 export const userRouter = router({
@@ -25,17 +26,31 @@ export const userRouter = router({
 			);
 
 			const username = input.email.split("@")[0];
-			if (!existingUser) {
-				return await prisma.user.create({
-					data: {
-						id: input.id,
-						username: username,
-						name: input.name,
-						email: input.email,
-						auth_type: input.auth_type,
-						photo_profile: input.photo_profile,
-					},
-				});
+			try {
+				if (!existingUser) {
+					const user = await retryConnect(() =>
+						prisma.user.create({
+							data: {
+								id: input.id,
+								username: username,
+								name: input.name,
+								email: input.email,
+								auth_type: input.auth_type,
+								photo_profile: input.photo_profile,
+							},
+						})
+					);
+
+					return {
+						success: true,
+						message: "Successfully synced user with Supabase",
+						data: user,
+					};
+				} else {
+					//
+				}
+			} catch (error) {
+				throw new Error("Error creating project: " + error);
 			}
 		}),
 
@@ -68,7 +83,11 @@ export const userRouter = router({
 					})
 				);
 
-				return data;
+				return {
+					success: true,
+					message: "Successfully get all users",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching user: " + error);
 			}
@@ -109,7 +128,11 @@ export const userRouter = router({
 					})
 				);
 
-				return data;
+				return {
+					success: true,
+					message: "Successfully get user",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching user: " + error);
 			}
@@ -149,7 +172,11 @@ export const userRouter = router({
 					})
 				);
 
-				return data;
+				return {
+					success: true,
+					message: "Successfully get user",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching user: " + error);
 			}
@@ -188,7 +215,11 @@ export const userRouter = router({
 					...follow.follower,
 				}));
 
-				return data;
+				return {
+					success: true,
+					message: "Successfully get all followers",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching followers: " + error);
 			}
@@ -227,7 +258,11 @@ export const userRouter = router({
 					...follow.follower,
 				}));
 
-				return data;
+				return {
+					success: true,
+					message: "Successfully get all followings",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching followings: " + error);
 			}
@@ -253,7 +288,11 @@ export const userRouter = router({
 					})
 				);
 
-				return data;
+				return {
+					success: true,
+					message: "Successfully get photo profile",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching photoProfile: " + error);
 			}
@@ -314,7 +353,11 @@ export const userRouter = router({
 					})
 				);
 
-				return updatedUser;
+				return {
+					success: true,
+					message: "Successfully updated user",
+					data: updatedUser,
+				};
 			} catch (error) {
 				throw new Error("Error updating user: " + error);
 			}
@@ -386,6 +429,142 @@ export const userRouter = router({
 				};
 			} catch (error) {
 				throw new Error("Error fetching bookmarks: " + error);
+			}
+		}),
+
+	getSelectCollab: protectedProcedure
+		.input(
+			z.object({
+				query: z.string(),
+				id_user: z.string(),
+			})
+		)
+		.query(async ({ input }) => {
+			try {
+				const data: SelectCollabType[] = await retryConnect(() =>
+					prisma.user.findMany({
+						where: {
+							id: { not: input.id_user }, // exclude self
+							OR: [
+								{ username: { contains: input.query } },
+								{ name: { contains: input.query } },
+							],
+						},
+						select: {
+							id: true,
+							name: true,
+							username: true,
+							photo_profile: true,
+						},
+					})
+				);
+				return {
+					success: true,
+					message: "Successfully get options for collaborator",
+					data,
+				};
+			} catch (error) {
+				throw new Error("Error fetching user: " + error);
+			}
+		}),
+
+	getNotification: protectedProcedure
+		.input(
+			z.object({
+				id_user: z.string(),
+				limit: z.number().min(1).max(100).nullish(),
+				cursor: z.string().nullish(),
+			})
+		)
+		.query(async ({ input }) => {
+			const limit = input.limit ?? 12;
+			const { cursor } = input;
+
+			const now = new Date();
+			const oneMonthAgo = new Date();
+			oneMonthAgo.setMonth(now.getMonth() - 1);
+
+			try {
+				const notifications: Notification[] = await retryConnect(() =>
+					prisma.notification.findMany({
+						where: {
+							id_user: input.id_user,
+							created_at: {
+								gte: oneMonthAgo,
+								lte: now,
+							},
+						},
+						take: limit + 1,
+						cursor: cursor ? { id: cursor } : undefined,
+						orderBy: {
+							created_at: "desc",
+						},
+					})
+				);
+
+				const hasNextPage = notifications.length > limit;
+				const items = hasNextPage ? notifications.slice(0, -1) : notifications;
+				return {
+					items,
+					nextCursor: hasNextPage ? items[items.length - 1].id : null,
+				};
+			} catch (error) {
+				throw new Error("Error fetching bookmarks: " + error);
+			}
+		}),
+
+	getRequestCollab: protectedProcedure
+		.input(z.string())
+		.query(async ({ input }) => {
+			try {
+				const requests: RequestCollabType[] = await retryConnect(() =>
+					prisma.projectUser.findMany({
+						where: {
+							id_user: input,
+							collabStatus: "PENDING",
+						},
+						select: {
+							id: true,
+							project: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+									image1: true,
+									image2: true,
+									image3: true,
+									image4: true,
+									image5: true,
+									project_user: {
+										where: {
+											id_user: { not: input },
+											ownership: "OWNER",
+										},
+										select: {
+											user: {
+												select: {
+													username: true,
+													name: true,
+													photo_profile: true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						orderBy: {
+							created_at: "desc",
+						},
+					})
+				);
+				return {
+					success: true,
+					message: "Successfully get request collaboration",
+					data: requests,
+				};
+			} catch (error) {
+				throw new Error("Error fetching user: " + error);
 			}
 		}),
 });

@@ -10,6 +10,7 @@ import {
 	ProjectOnMutationType,
 	ProjectWithInteractionsType,
 } from "@/lib/type";
+import { collabStatusType, ownershipType } from "@prisma/client";
 
 export const projectRouter = router({
 	getOne: protectedProcedure
@@ -115,7 +116,11 @@ export const projectRouter = router({
 						: false,
 				};
 
-				return project;
+				return {
+					success: true,
+					message: "Successfully get project",
+					data: project,
+				};
 			} catch (error) {
 				throw new Error("Error fetching project: " + error);
 			}
@@ -346,6 +351,14 @@ export const projectRouter = router({
 				image4: z.any().optional(),
 				image5: z.any().optional(),
 				video: z.any().optional(),
+				collaborators: z.array(
+					z.object({
+						id: z.string(),
+						name: z.string(),
+						username: z.string(),
+						photo_profile: z.string().optional(),
+					})
+				),
 				link_figma: z.string().optional(),
 				link_github: z.string().optional(),
 			})
@@ -369,32 +382,50 @@ export const projectRouter = router({
 			}
 
 			try {
-				const [newProject, , ,] = await retryConnect(() =>
+				const newProject = await retryConnect(() =>
+					prisma.project.create({
+						data: {
+							id_category: input.id_category,
+							title: input.title,
+							slug: slug,
+							is_archived: input.is_archived,
+							content: input.content,
+							image1: input.image1,
+							image2: input.image2,
+							image3: input.image3,
+							image4: input.image4,
+							image5: input.image5,
+							video: input.video,
+							link_figma: input.link_figma,
+							link_github: input.link_github,
+						},
+					})
+				);
+
+				const ownerCollab = {
+					id_user: input.id_user,
+					id_project: newProject.id,
+					ownership: ownershipType.OWNER,
+					collabStatus: collabStatusType.ACCEPTED,
+				};
+
+				const dataCollab = [
+					ownerCollab,
+					...input.collaborators.map((collab) => ({
+						id_user: collab.id,
+						id_project: newProject.id,
+						ownership: ownershipType.COLLABORATOR,
+						collabStatus: collabStatusType.PENDING,
+					})),
+				];
+
+				const [] = await retryConnect(() =>
 					prisma.$transaction([
-						prisma.project.create({
-							data: {
-								id_category: input.id_category,
-								title: input.title,
-								slug: slug,
-								is_archived: input.is_archived,
-								content: input.content,
-								image1: input.image1,
-								image2: input.image2,
-								image3: input.image3,
-								image4: input.image4,
-								image5: input.image5,
-								video: input.video,
-								link_figma: input.link_figma,
-								link_github: input.link_github,
-							},
+						// request collab
+						prisma.projectUser.createMany({
+							data: dataCollab,
 						}),
 
-						prisma.projectUser.create({
-							data: {
-								id_user: input.id_user,
-								id_project: newProject.id,
-							},
-						}),
 						prisma.category.update({
 							where: {
 								id: input.id_category,
@@ -418,7 +449,11 @@ export const projectRouter = router({
 					])
 				);
 
-				return newProject;
+				return {
+					success: true,
+					message: "Successfully create project",
+					data: newProject,
+				};
 			} catch (error) {
 				throw new Error("Error creating project: " + error);
 			}
@@ -520,7 +555,11 @@ export const projectRouter = router({
 					})
 				);
 
-				return updatedProject;
+				return {
+					success: true,
+					message: "Successfully edit project",
+					data: updatedProject,
+				};
 			} catch (error) {
 				throw new Error("Error editing project: " + error);
 			}
@@ -596,6 +635,11 @@ export const projectRouter = router({
 						}),
 					])
 				);
+
+				return {
+					success: true,
+					message: "Successfully delete project",
+				};
 			} catch (error) {
 				throw new Error("Error deleting project: " + error);
 			}
@@ -670,7 +714,11 @@ export const projectRouter = router({
 					}
 				}
 
-				return roots;
+				return {
+					success: true,
+					message: "Successfully all comment in project",
+					data: roots,
+				};
 			} catch (error) {
 				throw new Error("Error fetching comments: " + error);
 			}
@@ -714,12 +762,18 @@ export const projectRouter = router({
 					throw new Error("Project not found or access denied.");
 				}
 
-				await retryConnect(() =>
+				const project = await retryConnect(() =>
 					prisma.project.update({
 						where: { id: input.id },
 						data: { is_archived: true },
 					})
 				);
+
+				return {
+					success: true,
+					message: "Successfully archiving project",
+					data: project,
+				};
 			} catch (error) {
 				throw new Error("Error archiving project: " + error);
 			}
@@ -762,12 +816,18 @@ export const projectRouter = router({
 					throw new Error("Project not found or access denied.");
 				}
 
-				await retryConnect(() =>
+				const project = await retryConnect(() =>
 					prisma.project.update({
 						where: { id: input.id },
 						data: { is_archived: false },
 					})
 				);
+
+				return {
+					success: true,
+					message: "Successfully publishing project",
+					data: project,
+				};
 			} catch (error) {
 				throw new Error("Error unarchiving project: " + error);
 			}
