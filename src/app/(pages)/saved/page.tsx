@@ -53,7 +53,8 @@ const SavedPage = () => {
 
     if (!loadedUser || !data) return <div>Loading...</div>;
     if (!user) return redirect("/sign-in");
-    if (data.pages.length === 0) return <div>You have no saved projects.</div>;
+    const isEmpty = data.pages.every((page) => page.items.length === 0);
+    if (isEmpty) return <div>You have no saved projects.</div>;
 
     const handleUnbookmark = (bookmarkId: string, projectId: string) => {
         setOptimisticBookmarks((prev) => ({ ...prev, [projectId]: false }));

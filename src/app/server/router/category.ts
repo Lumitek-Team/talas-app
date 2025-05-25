@@ -20,7 +20,11 @@ export const categoryRouter = router({
 			})
 		);
 
-		return data;
+		return {
+			success: true,
+			message: `Successfully get ${data.length} categories`,
+			data,
+		};
 	}),
 
 	getOne: protectedProcedure
@@ -36,18 +40,23 @@ export const categoryRouter = router({
 					prisma.category.findFirst({
 						where: {
 							OR: [{ id: input.id }, { slug: input.slug }],
-							},
+						},
 						orderBy: {
 							count_projects: "desc",
+						},
+						select: {
+							id: true,
+							slug: true,
+							title: true,
+							count_projects: true,
 						},
 					})
 				);
 
 				return {
-					id: true,
-					slug: data.slug,
-					title: data.title,
-					count_projects: data.count_projects,
+					success: true,
+					message: `Successfully get category`,
+					data,
 				};
 			} catch (error) {
 				throw new Error("Error fetching category: " + error);
