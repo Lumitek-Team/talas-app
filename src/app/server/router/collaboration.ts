@@ -33,7 +33,7 @@ export const collaborationRouter = router({
 		return {
 			success: true,
 			message: "You have accepted the collaboration",
-			collab: collabData,
+			data: collabData,
 		};
 	}),
 
@@ -62,7 +62,7 @@ export const collaborationRouter = router({
 		return {
 			success: true,
 			message: "You have rejected the collaboration",
-			collab: collabData,
+			data: collabData,
 		};
 	}),
 });

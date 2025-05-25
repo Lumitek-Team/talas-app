@@ -67,7 +67,7 @@ const NotificationPage = () => {
     return (
         <div>
             <p className="font-bold text-lg">Request Collab</p>
-            {requestCollab.data?.map((request) => (
+            {requestCollab.data?.data.map((request) => (
                 <div
                     key={request.id}
                     className="bg-zinc-800 px-8 py-4"

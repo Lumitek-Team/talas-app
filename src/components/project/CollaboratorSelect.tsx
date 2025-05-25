@@ -30,7 +30,7 @@ export default function CollaboratorSelect({ value, onChange }: CollaboratorSele
         debouncedSetQuery(e.target.value);
     }
 
-    const { data: options = [], isLoading: loadingQuery } =
+    const { data, isLoading: loadingQuery } =
         trpc.user.getSelectCollab.useQuery({
 
             query: encodeURIComponent(query),
@@ -38,6 +38,8 @@ export default function CollaboratorSelect({ value, onChange }: CollaboratorSele
         }, {
             enabled: query.length > 0,
         });
+
+    const options: SelectCollabType[] = data?.data || [];
 
     function handleSelect(user: SelectCollabType) {
         if (!value.find(u => u.id === user.id)) {

@@ -98,8 +98,8 @@ export const commentRouter = router({
 
 				return {
 					success: true,
-					message: "Comment successfully",
-					comment: comment,
+					message: "Successfully comment",
+					data: comment,
 					count_likes: updatedProject.count_comments,
 				};
 			} catch (error) {
@@ -137,7 +137,11 @@ export const commentRouter = router({
 						},
 					})
 				);
-				return comment;
+				return {
+					success: true,
+					message: "Successfully edit comment",
+					data: comment,
+				};
 			} catch (error) {
 				throw new Error("Error updating comment: " + error);
 			}
@@ -189,6 +193,11 @@ export const commentRouter = router({
 						}),
 					])
 				);
+
+				return {
+					success: true,
+					message: "Successfully delete comment",
+				};
 			} catch (error) {
 				throw new Error("Error deleting comment: " + error);
 			}

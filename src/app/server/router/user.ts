@@ -26,17 +26,31 @@ export const userRouter = router({
 			);
 
 			const username = input.email.split("@")[0];
-			if (!existingUser) {
-				return await prisma.user.create({
-					data: {
-						id: input.id,
-						username: username,
-						name: input.name,
-						email: input.email,
-						auth_type: input.auth_type,
-						photo_profile: input.photo_profile,
-					},
-				});
+			try {
+				if (!existingUser) {
+					const user = await retryConnect(() =>
+						prisma.user.create({
+							data: {
+								id: input.id,
+								username: username,
+								name: input.name,
+								email: input.email,
+								auth_type: input.auth_type,
+								photo_profile: input.photo_profile,
+							},
+						})
+					);
+
+					return {
+						success: true,
+						message: "Successfully synced user with Supabase",
+						data: user,
+					};
+				} else {
+					//
+				}
+			} catch (error) {
+				throw new Error("Error creating project: " + error);
 			}
 		}),
 
@@ -69,7 +83,11 @@ export const userRouter = router({
 					})
 				);
 
-				return data;
+				return {
+					success: true,
+					message: "Successfully get all users",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching user: " + error);
 			}
@@ -110,7 +128,11 @@ export const userRouter = router({
 					})
 				);
 
-				return data;
+				return {
+					success: true,
+					message: "Successfully get user",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching user: " + error);
 			}
@@ -150,7 +172,11 @@ export const userRouter = router({
 					})
 				);
 
-				return data;
+				return {
+					success: true,
+					message: "Successfully get user",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching user: " + error);
 			}
@@ -189,7 +215,11 @@ export const userRouter = router({
 					...follow.follower,
 				}));
 
-				return data;
+				return {
+					success: true,
+					message: "Successfully get all followers",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching followers: " + error);
 			}
@@ -228,7 +258,11 @@ export const userRouter = router({
 					...follow.follower,
 				}));
 
-				return data;
+				return {
+					success: true,
+					message: "Successfully get all followings",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching followings: " + error);
 			}
@@ -254,7 +288,11 @@ export const userRouter = router({
 					})
 				);
 
-				return data;
+				return {
+					success: true,
+					message: "Successfully get photo profile",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching photoProfile: " + error);
 			}
@@ -315,7 +353,11 @@ export const userRouter = router({
 					})
 				);
 
-				return updatedUser;
+				return {
+					success: true,
+					message: "Successfully updated user",
+					data: updatedUser,
+				};
 			} catch (error) {
 				throw new Error("Error updating user: " + error);
 			}
@@ -416,7 +458,11 @@ export const userRouter = router({
 						},
 					})
 				);
-				return data;
+				return {
+					success: true,
+					message: "Successfully get options for collaborator",
+					data,
+				};
 			} catch (error) {
 				throw new Error("Error fetching user: " + error);
 			}
@@ -512,7 +558,11 @@ export const userRouter = router({
 						},
 					})
 				);
-				return requests;
+				return {
+					success: true,
+					message: "Successfully get request collaboration",
+					data: requests,
+				};
 			} catch (error) {
 				throw new Error("Error fetching user: " + error);
 			}

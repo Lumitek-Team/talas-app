@@ -40,7 +40,11 @@ export const bookmarkRouter = router({
 				})
 			);
 
-			return bookmark;
+			return {
+				success: true,
+				message: "Successfully bookmarked the project",
+				data: bookmark,
+			};
 		}),
 
 	delete: protectedProcedure
@@ -53,7 +57,7 @@ export const bookmarkRouter = router({
 		.mutation(async ({ input }) => {
 			const { id_user, id_project } = input;
 
-			const result = await retryConnect(() =>
+			const { count } = await retryConnect(() =>
 				prisma.bookmark.deleteMany({
 					where: {
 						id_user,
@@ -61,7 +65,10 @@ export const bookmarkRouter = router({
 					},
 				})
 			);
-			return result;
+			return {
+				success: true,
+				message: `Successfully removed ${count} bookmark`,
+			};
 		}),
 });
 

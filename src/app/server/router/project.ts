@@ -116,7 +116,11 @@ export const projectRouter = router({
 						: false,
 				};
 
-				return project;
+				return {
+					success: true,
+					message: "Successfully get project",
+					data: project,
+				};
 			} catch (error) {
 				throw new Error("Error fetching project: " + error);
 			}
@@ -445,7 +449,11 @@ export const projectRouter = router({
 					])
 				);
 
-				return newProject;
+				return {
+					success: true,
+					message: "Successfully create project",
+					data: newProject,
+				};
 			} catch (error) {
 				throw new Error("Error creating project: " + error);
 			}
@@ -547,7 +555,11 @@ export const projectRouter = router({
 					})
 				);
 
-				return updatedProject;
+				return {
+					success: true,
+					message: "Successfully edit project",
+					data: updatedProject,
+				};
 			} catch (error) {
 				throw new Error("Error editing project: " + error);
 			}
@@ -623,6 +635,11 @@ export const projectRouter = router({
 						}),
 					])
 				);
+
+				return {
+					success: true,
+					message: "Successfully delete project",
+				};
 			} catch (error) {
 				throw new Error("Error deleting project: " + error);
 			}
@@ -697,7 +714,11 @@ export const projectRouter = router({
 					}
 				}
 
-				return roots;
+				return {
+					success: true,
+					message: "Successfully all comment in project",
+					data: roots,
+				};
 			} catch (error) {
 				throw new Error("Error fetching comments: " + error);
 			}
@@ -741,12 +762,18 @@ export const projectRouter = router({
 					throw new Error("Project not found or access denied.");
 				}
 
-				await retryConnect(() =>
+				const project = await retryConnect(() =>
 					prisma.project.update({
 						where: { id: input.id },
 						data: { is_archived: true },
 					})
 				);
+
+				return {
+					success: true,
+					message: "Successfully archiving project",
+					data: project,
+				};
 			} catch (error) {
 				throw new Error("Error archiving project: " + error);
 			}
@@ -789,12 +816,18 @@ export const projectRouter = router({
 					throw new Error("Project not found or access denied.");
 				}
 
-				await retryConnect(() =>
+				const project = await retryConnect(() =>
 					prisma.project.update({
 						where: { id: input.id },
 						data: { is_archived: false },
 					})
 				);
+
+				return {
+					success: true,
+					message: "Successfully publishing project",
+					data: project,
+				};
 			} catch (error) {
 				throw new Error("Error unarchiving project: " + error);
 			}
