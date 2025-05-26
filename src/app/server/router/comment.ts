@@ -204,4 +204,4 @@ export const commentRouter = router({
 		}),
 });
 
-export type CategoryRouter = typeof commentRouter;
+export type CommentRouter = typeof commentRouter;

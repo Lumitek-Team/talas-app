@@ -190,3 +190,18 @@ export interface RequestCollabType {
 		}[];
 	};
 }
+
+export interface UserSearchType {
+	name: string;
+	username: string;
+	photo_profile: string;
+	github: string;
+	instagram: string;
+	linkedin: string;
+	gender: string;
+	count_summary: {
+		count_project: number;
+		count_follower: number;
+		count_following: number;
+	};
+}

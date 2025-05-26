@@ -72,4 +72,4 @@ export const bookmarkRouter = router({
 		}),
 });
 
-export type FollowRouter = typeof bookmarkRouter;
+export type BookmarkRouter = typeof bookmarkRouter;

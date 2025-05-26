@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar } from "@/components/ui/avatar-gatau-error";
 import { IconButton } from "@/components/ui/icon-button";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -35,7 +35,7 @@ export function PostComposer({ avatarSrc, username, onSubmit }: PostComposerProp
           />
         </div>
       </div>
-      
+
       <div className="flex justify-between items-center">
         <div className="flex gap-2">
           <IconButton>
@@ -56,7 +56,7 @@ export function PostComposer({ avatarSrc, username, onSubmit }: PostComposerProp
             </svg>
           </IconButton>
         </div>
-        
+
         <Button onClick={handleSubmit}>
           Post
         </Button>

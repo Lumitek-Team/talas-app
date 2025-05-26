@@ -1,6 +1,11 @@
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { FollowerType, RequestCollabType, SelectCollabType } from "@/lib/type";
+import {
+	FollowerType,
+	ProjectWithInteractionsType,
+	RequestCollabType,
+	SelectCollabType,
+} from "@/lib/type";
 import { retryConnect } from "@/lib/utils";
 import { Notification } from "@prisma/client";
 import { z } from "zod";
@@ -565,6 +570,130 @@ export const userRouter = router({
 				};
 			} catch (error) {
 				throw new Error("Error fetching user: " + error);
+			}
+		}),
+
+	getAllProjects: protectedProcedure
+		.input(
+			z.object({
+				limit: z.number().min(1).max(100).nullish(),
+				cursor: z.string().nullish(),
+				id_user: z.string().optional(),
+			})
+		)
+		.query(async ({ input }) => {
+			const limit = input.limit ?? 50;
+			const { cursor, id_user } = input;
+
+			try {
+				const projects = await retryConnect(() =>
+					prisma.project.findMany({
+						where: {
+							is_archived: false,
+							project_user: {
+								some: {
+									id_user: id_user,
+									OR: [
+										{ ownership: "OWNER" },
+										{
+											AND: [
+												{ ownership: "COLLABORATOR" },
+												{ collabStatus: "ACCEPTED" },
+											],
+										},
+									],
+								},
+							},
+						},
+						select: {
+							id: true,
+							title: true,
+							slug: true,
+							content: true,
+							image1: true,
+							image2: true,
+							image3: true,
+							image4: true,
+							image5: true,
+							video: true,
+							count_likes: true,
+							count_comments: true,
+							link_figma: true,
+							link_github: true,
+							created_at: true,
+							updated_at: true,
+							category: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+								},
+							},
+							project_user: {
+								select: {
+									user: {
+										select: {
+											id: true,
+											name: true,
+											username: true,
+											photo_profile: true,
+										},
+									},
+									ownership: true,
+								},
+								orderBy: {
+									created_at: "asc",
+								},
+							},
+							bookmarks: id_user
+								? {
+										where: { id_user: id_user },
+										select: { id: true },
+								  }
+								: false,
+							LikeProject: id_user
+								? {
+										where: { id_user: id_user },
+										select: { id: true },
+								  }
+								: false,
+						},
+						orderBy: {
+							created_at: "desc",
+						},
+						take: limit + 1,
+						cursor: cursor ? { id: cursor } : undefined,
+					})
+				);
+
+				let nextCursor: typeof cursor | undefined = undefined;
+
+				if (projects.length > limit) {
+					const nextItem = projects.pop();
+					nextCursor = nextItem!.id;
+				}
+
+				// Add is_bookmarked property
+				const ProjectWithInteractionsType = projects.map(
+					(p: ProjectWithInteractionsType) => ({
+						...p,
+						is_bookmarked: id_user
+							? p.bookmarks && p.bookmarks.length > 0
+							: false,
+						is_liked: id_user
+							? p.LikeProject && p.LikeProject.length > 0
+							: false,
+					})
+				);
+
+				return {
+					success: true,
+					message: "Successfully get all projects in user",
+					data: ProjectWithInteractionsType,
+					nextCursor,
+				};
+			} catch (error) {
+				throw new Error("Error fetching projects: " + error);
 			}
 		}),
 });
