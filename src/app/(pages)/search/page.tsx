@@ -180,15 +180,6 @@ const SearchPage = () => {
         }
     );
 
-    // Only log data once when it changes
-    useEffect(() => {
-        console.log("SearchPage data", data)
-    }, [data])
-
-    function onSubmit(values: z.infer<typeof formSchema>) {
-        console.log(values)
-    }
-
     const bookmarkMutation = trpc.bookmark.create.useMutation({
         onSuccess: () => {
             refetch()
@@ -321,7 +312,7 @@ const SearchPage = () => {
             <div className="py-8">
                 <Link href={"/search"} className="text-2xl font-bold mb-8">Search Page</Link>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-y-4">
+                    <form onSubmit={() => { }} className="flex flex-col gap-y-4">
                         <FormField
                             control={form.control}
                             name="type"
