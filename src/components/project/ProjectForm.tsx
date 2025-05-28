@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { CategoryType, ProjectOneType } from "@/lib/type";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { convertIframeToOembed, convertOembedToIframe } from "@/lib/utils";
 import RichEditor from "./ckeditor";
 import { Separator } from "../ui/separator";
@@ -31,6 +31,7 @@ import ImageCropperModal from "../imageCropper";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import CollaboratorSelect from "./CollaboratorSelect";
+import VideoUploader from "@/components/VideoUploader";
 
 interface ProjectFormProps {
     mode: "create" | "edit";
@@ -104,8 +105,16 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
     const [openCropper, setOpenCropper] = useState(false);
     const [imageSrc, setImageSrc] = useState("");
     const [croppedImage, setCroppedImage] = useState<File | null>(null);
+    const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
+    const [videoUploadError, setVideoUploadError] = useState<string | null>(null);
+    const [videoDuration, setVideoDuration] = useState<number | null>(null);
 
-    const { data, isLoading: isCategoryLoading } = trpc.category.getAll.useQuery<CategoryType[]>();
+    const { data: categoryData, isLoading: isCategoryLoading } = 
+        trpc.category.getAll.useQuery<{
+            message: string;
+            data: CategoryType[];
+            success: boolean;
+        }>();
 
     const router = useRouter();
 
@@ -155,6 +164,37 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
         setCroppedImage(file);
     };
 
+    const handleVideoFileSelected = useCallback(async (file: File | null) => {
+        setSelectedVideoFile(file);
+        setVideoUploadError(null);
+        
+        if (file) {
+            try {
+                // Get video duration for display
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                
+                video.onloadedmetadata = () => {
+                    setVideoDuration(video.duration);
+                    URL.revokeObjectURL(video.src);
+                };
+                
+                video.src = URL.createObjectURL(file);
+            } catch (error) {
+                console.warn('Could not get video duration for preview:', error);
+            }
+        } else {
+            setVideoDuration(null);
+        }
+        
+        console.log('Video file selected:', file?.name);
+    }, []);
+
+    const handleVideoUploadError = useCallback((error: Error) => {
+        console.log('Video upload error callback triggered:', error.message);
+        setVideoUploadError(error.message);
+    }, []);
+    
     function previewContent() {
         const values = form.getValues();
         setSubmittedTitle(values.title || "No Title");
@@ -171,12 +211,19 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
         formData.append("id_category", values.category);
         formData.append("title", values.title);
         formData.append("content", transformedContent);
+        
         if (values.link_figma) {
             formData.append("link_figma", values.link_figma);
         }
 
         if (values.link_github) {
             formData.append("link_github", values.link_github);
+        }
+
+        // Add the selected video file
+        if (selectedVideoFile) {
+            formData.append("video", selectedVideoFile);
+            console.log('Adding video to form submission:', selectedVideoFile.name);
         }
 
         if (croppedImage && mode === "create") {
@@ -291,7 +338,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                                                     <SelectContent>Loading...</SelectContent>
                                                 ) : (
                                                     <SelectContent>
-                                                        {data?.map((category) => (
+                                                        {categoryData?.data?.map((category) => (
                                                             <SelectItem key={category.id} value={category.id}>
                                                                 {category.title}
                                                             </SelectItem>
@@ -431,6 +478,58 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                                         </FormControl>
                                         <FormDescription>
                                             This is your link github.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <FormField
+                                control={form.control}
+                                name="video"
+                                render={() => (
+                                    <FormItem>
+                                        <FormLabel>Project Video (Optional)</FormLabel>
+                                        <FormControl>
+                                            <div className="space-y-4">
+                                                <VideoUploader
+                                                    onFileSelected={handleVideoFileSelected}
+                                                    onUploadError={handleVideoUploadError}
+                                                />
+                                                
+                                                {/* Show upload error */}
+                                                {videoUploadError && (
+                                                    <div className="p-3 border border-red-300 rounded-md bg-red-50">
+                                                        <p className="text-red-600 text-sm font-medium">Error:</p>
+                                                        <p className="text-red-600 text-sm">{videoUploadError}</p>
+                                                    </div>
+                                                )}
+                                                
+                                                {/* Show selected video */}
+                                                {selectedVideoFile && (
+                                                    <div className="mt-4 p-4 border rounded-md bg-green-50">
+                                                        <p className="mb-2 font-medium text-green-600">
+                                                            Video selected: {selectedVideoFile.name}
+                                                        </p>
+                                                        <video 
+                                                            controls 
+                                                            src={URL.createObjectURL(selectedVideoFile)} 
+                                                            className="w-full max-h-[300px] rounded-md"
+                                                        />
+                                                        <div className="mt-2 text-sm text-gray-500 space-y-1">
+                                                            <p>Size: {(selectedVideoFile.size / (1024 * 1024)).toFixed(2)} MB</p>
+                                                            {videoDuration && (
+                                                                <p>Duration: {Math.round(videoDuration)} seconds {videoDuration > 60 ? '⚠️ (Exceeds 60s limit)' : '✅'}</p>
+                                                            )}
+                                                            <p>Video will be uploaded when you submit the project form.</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </FormControl>
+                                        <FormDescription>
+                                            Upload a video showcasing your project (max 25MB)
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>

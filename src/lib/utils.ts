@@ -182,6 +182,37 @@ export async function uploadImage(file: File, folder: string): Promise<string> {
 	return fileName;
 }
 
+export async function uploadVideo(file: File, folder: string): Promise<string> {
+	try {
+		console.log('uploadVideo called with:', file.name, file.type, file.size);
+		
+		const buffer = Buffer.from(await file.arrayBuffer());
+		const fileExt = file.name.split(".").pop();
+		const fileName = `${folder}/${Date.now()}-${randomUUID()}.${fileExt}`;
+		
+		console.log('Uploading to Supabase with filename:', fileName);
+		
+		// Upload to supabase storage
+		const { error } = await supabase.storage
+			.from("talas-video")
+			.upload(fileName, buffer, {
+				contentType: file.type,
+				cacheControl: "3600",
+			});
+
+		if (error) {
+			console.error('Supabase upload error:', error);
+			throw new Error(`Failed to upload video: ${error.message}`);
+		}
+
+		console.log('Video uploaded successfully to:', fileName);
+		return fileName;
+	} catch (error) {
+		console.error('Error in uploadVideo function:', error);
+		throw error;
+	}
+}
+
 export async function deleteImage(path: string): Promise<void> {
 	const { error } = await supabase.storage.from("talas-image").remove([path]);
 
@@ -191,7 +222,18 @@ export async function deleteImage(path: string): Promise<void> {
 }
 
 export function getPublicUrl(path: string) {
-	const { data } = supabase.storage.from("talas-image").getPublicUrl(path);
+	const { data } = supabase.storage.from('talas-image').getPublicUrl(path);
+
+	if (!data.publicUrl) {
+		console.error("Error getting public URL");
+		return "";
+	}
+
+	return data.publicUrl;
+}
+
+export function getPublicUrlVideo(path: string) {
+	const { data } = supabase.storage.from('talas-video').getPublicUrl(path);
 
 	if (!data.publicUrl) {
 		console.error("Error getting public URL");

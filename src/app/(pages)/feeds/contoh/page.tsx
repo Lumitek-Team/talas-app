@@ -3,7 +3,7 @@
 import { trpc } from "@/app/_trpc/client"
 import { Button } from "@/components/ui/button"
 import { ProjectOneType } from "@/lib/type"
-import { cn, getPublicUrl } from "@/lib/utils"
+import { cn, getPublicUrl, getPublicUrlVideo } from "@/lib/utils"
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -128,25 +128,56 @@ const FeedsPage = () => {
                                 ? optimisticLikes[project.id]
                                 : project.is_liked
 
-                            console.log(project.title, isBookmarked, isLiked)
-
                             return (
                                 <div
                                     key={project.id}
                                     className="grid grid-cols-3 gap-4 mb-4"
                                 >
                                     <div className="col-span-1">
-                                        {/* Replace with actual image */}
-                                        {project.image1 ? (
-                                            <Image width={800} height={450} src={getPublicUrl(project.image1)} alt={project.slug + " image"} />
+                                        {/* Display video if available, otherwise show image */}
+                                        {project.video ? (
+                                            <video
+                                                controls
+                                                className="w-full h-auto rounded-lg"
+                                                poster={project.image1 ? getPublicUrl(project.image1) : undefined}
+                                            >
+                                                <source src={getPublicUrlVideo(project.video)} type="video/mp4" />
+                                                Your browser does not support the video tag.
+                                            </video>
+                                        ) : project.image1 ? (
+                                            <Image
+                                                width={800}
+                                                height={450}
+                                                src={getPublicUrl(project.image1)}
+                                                alt={project.slug + " image"}
+                                                className="w-full h-auto rounded-lg"
+                                            />
                                         ) : (
-                                            <div className="bg-gray-200 h-24 w-full"></div>
+                                            <div className="bg-gray-200 h-24 w-full rounded-lg"></div>
                                         )}
                                     </div>
                                     <div className="col-span-2 flex flex-col gap-2">
-                                        <Link className="text-lg font-semibold" href={`/project/${project.slug}`}>{project.title}</Link>
-                                        <Link href={`/feeds/?category=${project.category.slug}`}>{project.category.title}</Link>
+                                        <Link className="text-lg font-semibold" href={`/project/${project.slug}`}>
+                                            {project.title}
+                                        </Link>
+                                        <Link href={`/feeds/?category=${project.category.slug}`}>
+                                            {project.category.title}
+                                        </Link>
                                         <p>komentar: {project.count_comments}</p>
+
+                                        {/* Show media type indicator */}
+                                        <div className="flex items-center gap-2">
+                                            {project.video && (
+                                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                                    📹 Video
+                                                </span>
+                                            )}
+                                            {project.image1 && (
+                                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                                    🖼️ Image
+                                                </span>
+                                            )}
+                                        </div>
 
                                         <div className="flex gap-2 w-full">
                                             {!isBookmarked ? (

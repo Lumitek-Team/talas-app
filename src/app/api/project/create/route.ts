@@ -1,6 +1,6 @@
 import { getTrpcCaller } from "@/app/_trpc/server";
 import { auth } from "@clerk/nextjs/server";
-import { uploadImage } from "@/lib/utils";
+import { uploadImage, uploadVideo } from "@/lib/utils";
 import { SelectCollabType } from "@/lib/type";
 
 export async function POST(req: Request) {
@@ -13,6 +13,7 @@ export async function POST(req: Request) {
 	const id_category = formData.get("id_category")?.toString();
 	const title = formData.get("title")?.toString();
 	const content = formData.get("content")?.toString();
+	const video = formData.get("video") as File | null;
 	const image1 = formData.get("image1") as File | null;
 	const image2 = formData.get("image2") as File | null;
 	const image3 = formData.get("image3") as File | null;
@@ -30,6 +31,30 @@ export async function POST(req: Request) {
 		return new Response("Name, id_category and content are required", {
 			status: 400,
 		});
+	}
+
+	const videoPathFromUppy = formData.get("videoPath") as string | null;
+
+	// Update video handling logic:
+	let videoPath: string | null = null;
+
+	if (videoPathFromUppy) {
+		// Use pre-uploaded video path
+		videoPath = videoPathFromUppy;
+	} else if (video) {
+		// Check video file size (25MB limit)
+		if (video.size > 25 * 1024 * 1024) {
+			return new Response("Video file size must be less than 25MB", {
+				status: 400,
+			});
+		}
+
+		try {
+			videoPath = await uploadVideo(video, "project");
+		} catch (error) {
+			console.error("Upload error", error);
+			return new Response("Failed to upload video", { status: 500 });
+		}
 	}
 
 	if (image1) {
@@ -64,6 +89,7 @@ export async function POST(req: Request) {
 			id_category,
 			title,
 			content,
+			video: videoPath,
 			image1: image1Path,
 			image2: imagePaths[0] || null,
 			image3: imagePaths[1] || null,
