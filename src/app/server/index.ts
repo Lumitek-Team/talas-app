@@ -6,6 +6,7 @@ import { followRouter } from "./router/follow";
 import { likeCommentRouter } from "./router/likeComment";
 import { likeProjectRouter } from "./router/likeProject";
 import { notificationRouter } from "./router/notification";
+import { pinRouter } from "./router/pin";
 import { projectRouter } from "./router/project";
 import { searchRouter } from "./router/search";
 import { userRouter } from "./router/user";
@@ -23,6 +24,7 @@ export const appRouter = router({
 	notification: notificationRouter,
 	collaboration: collaborationRouter,
 	search: searchRouter,
+	pin: pinRouter,
 });
 
 export type AppRouter = typeof appRouter;

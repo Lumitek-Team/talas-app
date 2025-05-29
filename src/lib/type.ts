@@ -205,3 +205,21 @@ export interface UserSearchType {
 		count_following: number;
 	};
 }
+
+export interface UserProjectsCondition {
+	is_archived: boolean;
+	project_user: {
+		some: {
+			id_user: string | undefined;
+			OR: Array<
+				| { ownership: "OWNER" }
+				| {
+						AND: [{ ownership: "COLLABORATOR" }, { collabStatus: "ACCEPTED" }];
+				  }
+			>;
+		};
+	};
+	pinProject?: {
+		none: { id_user: string };
+	};
+}
