@@ -5,6 +5,7 @@ import {
 	ProjectWithInteractionsType,
 	RequestCollabType,
 	SelectCollabType,
+	UserProjectsCondition,
 } from "@/lib/type";
 import { retryConnect } from "@/lib/utils";
 import { Notification } from "@prisma/client";
@@ -579,32 +580,41 @@ export const userRouter = router({
 				limit: z.number().min(1).max(100).nullish(),
 				cursor: z.string().nullish(),
 				id_user: z.string().optional(),
+				excludePinned: z.boolean().optional(),
 			})
 		)
 		.query(async ({ input }) => {
 			const limit = input.limit ?? 50;
-			const { cursor, id_user } = input;
+			const { cursor, id_user, excludePinned } = input;
 
 			try {
-				const projects = await retryConnect(() =>
-					prisma.project.findMany({
-						where: {
-							is_archived: false,
-							project_user: {
-								some: {
-									id_user: id_user,
-									OR: [
-										{ ownership: "OWNER" },
-										{
-											AND: [
-												{ ownership: "COLLABORATOR" },
-												{ collabStatus: "ACCEPTED" },
-											],
-										},
+				const where: UserProjectsCondition = {
+					is_archived: false,
+					project_user: {
+						some: {
+							id_user: id_user,
+							OR: [
+								{ ownership: "OWNER" },
+								{
+									AND: [
+										{ ownership: "COLLABORATOR" },
+										{ collabStatus: "ACCEPTED" },
 									],
 								},
-							},
+							],
 						},
+					},
+				};
+
+				if (excludePinned && id_user) {
+					where.pinProject = {
+						none: { id_user: id_user },
+					};
+				}
+
+				const projects = await retryConnect(() =>
+					prisma.project.findMany({
+						where,
 						select: {
 							id: true,
 							title: true,
@@ -694,6 +704,94 @@ export const userRouter = router({
 				};
 			} catch (error) {
 				throw new Error("Error fetching projects: " + error);
+			}
+		}),
+
+	getPinnedProjects: protectedProcedure
+		.input(
+			z.object({
+				id_user: z.string(),
+			})
+		)
+		.query(async ({ input }) => {
+			const { id_user } = input;
+			try {
+				const pinnedProjects = await retryConnect(() =>
+					prisma.project.findMany({
+						where: {
+							pinProject: {
+								some: { id_user: id_user },
+							},
+						},
+						select: {
+							id: true,
+							id_category: true,
+							slug: true,
+							title: true,
+							content: true,
+							is_archived: true,
+							image1: true,
+							image2: true,
+							image3: true,
+							image4: true,
+							image5: true,
+							video: true,
+							count_likes: true,
+							count_comments: true,
+							link_figma: true,
+							link_github: true,
+							created_at: true,
+							updated_at: true,
+							category: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+								},
+							},
+							project_user: {
+								select: {
+									user: {
+										select: {
+											id: true,
+											name: true,
+											username: true,
+											photo_profile: true,
+										},
+									},
+								},
+								orderBy: {
+									created_at: "asc",
+								},
+							},
+							bookmarks: {
+								where: { id_user: id_user },
+								select: { id: true },
+							},
+							LikeProject: {
+								where: { id_user: id_user },
+								select: { id: true },
+							},
+						},
+						orderBy: {
+							created_at: "desc",
+						},
+					})
+				);
+
+				const data = pinnedProjects.map((p: ProjectWithInteractionsType) => ({
+					...p,
+					is_bookmarked: p.bookmarks && p.bookmarks.length > 0,
+					is_liked: p.LikeProject && p.LikeProject.length > 0,
+				}));
+
+				return {
+					success: true,
+					message: "Successfully get pinned projects",
+					data,
+				};
+			} catch (error) {
+				throw new Error("Error fetching pinned projects: " + error);
 			}
 		}),
 });
