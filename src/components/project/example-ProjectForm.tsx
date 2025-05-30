@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { CategoryType, ProjectOneType } from "@/lib/type";
 import { useState, useEffect, useRef } from "react";
 import { convertIframeToOembed, convertOembedToIframe } from "@/lib/utils";
-import RichEditor from "./ckeditor";
+import RichEditor from "./example-ckeditor";
 import { Separator } from "../ui/separator";
 import { trpc } from "@/app/_trpc/client";
 import ImageCropperModal from "../imageCropper";
@@ -37,7 +37,7 @@ interface ProjectFormProps {
 }
 
 const formSchema = z.object({
-    title: z.string().min(2).max(50),
+    title: z.string().min(2).max(100),
     category: z.string().min(2),
     content: z.string().min(2),
     image1: z.any(),

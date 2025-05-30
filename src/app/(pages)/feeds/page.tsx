@@ -1,4 +1,4 @@
-// feeds-page.tsx (Assumed to be at app/feeds/page.tsx or similar)
+// feeds/page.tsx
 "use client";
 
 import { Sidebar } from "@/components/layout/sidebar";
@@ -6,7 +6,7 @@ import { PostComposer } from "@/components/home/organisms/post-composer";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { PageContainer } from "@/components/ui/page-container";
-import { useState, useEffect, useCallback, useMemo } from "react"; // Added useMemo
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { ProjectOneType } from "@/lib/type";
 import { PostSkeleton } from '@/components/project/skeleton';
@@ -47,7 +47,7 @@ const transformProjectToPost = (
     username: primaryUser?.username || 'Unknown User',
     userRole: 'Developer',
     avatarSrc: resolvedAvatarSrc,
-    timestamp: new Date(project.created_at).toLocaleDateString(),
+    timestamp: project.created_at, // MODIFIED: Pass the raw date string
     content: project.content,
     image1: project.image1 ? getPublicUrl(project.image1) : undefined,
     image2: project.image2 ? getPublicUrl(project.image2) : undefined,
@@ -105,7 +105,6 @@ export default function HomePage() {
           ...oldData,
           pages: oldData.pages.map(page => ({
             ...page,
-            // Add type for 'p' here
             projects: page.projects.map((p: ProjectOneType) => 
               p.id === variables.id_project ? { ...p, is_bookmarked: true } : p
             ),
@@ -138,7 +137,6 @@ export default function HomePage() {
           ...oldData,
           pages: oldData.pages.map(page => ({
             ...page,
-            // Add type for 'p' here
             projects: page.projects.map((p: ProjectOneType) =>
               p.id === variables.id_project ? { ...p, is_bookmarked: false } : p
             ),
@@ -147,7 +145,6 @@ export default function HomePage() {
       });
       return { previousQueryData };
     },
-    // ... (onError and onSettled remain similar)
     onError: (err, variables, context) => {
       setOptimisticBookmarks((prev) => ({ ...prev, [variables.id_project]: true }));
       if (context?.previousQueryData) { 
@@ -172,7 +169,7 @@ export default function HomePage() {
                 ...oldData,
                 pages: oldData.pages.map(page => ({
                     ...page,
-                    projects: page.projects.map((p: ProjectOneType) => // Add type for 'p'
+                    projects: page.projects.map((p: ProjectOneType) =>
                         p.id === variables.id_project ? { ...p, is_liked: true, count_likes: (p.count_likes || 0) + 1 } : p
                     ),
                 })),
@@ -181,9 +178,29 @@ export default function HomePage() {
         return { previousQueryData };
     },
     onError: (err, variables, context) => {
-      setOptimisticLikes((prev) => ({ ...prev, [variables.id_project]: false }));
-      if (context?.previousQueryData) {
-        utils.project.getAll.setInfiniteData(queryClientKeyProjectGetAll, context.previousQueryData);
+      // If the error is a CONFLICT, it means the post was already liked.
+      // Set optimistic state to true (liked).
+      if (err.data?.code === 'CONFLICT') {
+        setOptimisticLikes((prev) => ({ ...prev, [variables.id_project]: true }));
+        // Update the count if possible, or rely on onSettled to refetch
+        utils.project.getAll.setInfiniteData(queryClientKeyProjectGetAll, (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map(page => ({
+              ...page,
+              projects: page.projects.map((p: ProjectOneType) =>
+                p.id === variables.id_project ? { ...p, is_liked: true, count_likes: p.count_likes } : p // Ensure count isn't wrongly decremented
+              ),
+            })),
+          };
+        });
+      } else {
+        // For other errors, revert to previous state (not liked)
+        setOptimisticLikes((prev) => ({ ...prev, [variables.id_project]: false }));
+        if (context?.previousQueryData) {
+          utils.project.getAll.setInfiniteData(queryClientKeyProjectGetAll, context.previousQueryData);
+        }
       }
     },
     onSettled: (data, error, variables) => {
@@ -201,7 +218,7 @@ export default function HomePage() {
                 ...oldData,
                 pages: oldData.pages.map(page => ({
                     ...page,
-                    projects: page.projects.map((p: ProjectOneType) => // Add type for 'p'
+                    projects: page.projects.map((p: ProjectOneType) =>
                         p.id === variables.id_project ? { ...p, is_liked: false, count_likes: Math.max(0, (p.count_likes || 0) - 1) } : p
                     ),
                 })),
@@ -210,9 +227,29 @@ export default function HomePage() {
         return { previousQueryData };
     },
     onError: (err, variables, context) => {
-      setOptimisticLikes((prev) => ({ ...prev, [variables.id_project]: true }));
-      if (context?.previousQueryData) {
-        utils.project.getAll.setInfiniteData(queryClientKeyProjectGetAll, context.previousQueryData);
+      // If the error is NOT_FOUND, it means the post was already not liked.
+      // Set optimistic state to false (not liked).
+      if (err.data?.code === 'NOT_FOUND') {
+        setOptimisticLikes((prev) => ({ ...prev, [variables.id_project]: false }));
+        // Update the count if possible, or rely on onSettled to refetch
+        utils.project.getAll.setInfiniteData(queryClientKeyProjectGetAll, (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            pages: oldData.pages.map(page => ({
+              ...page,
+              projects: page.projects.map((p: ProjectOneType) =>
+                p.id === variables.id_project ? { ...p, is_liked: false, count_likes: p.count_likes } : p // Ensure count isn't wrongly incremented
+              ),
+            })),
+          };
+        });
+      } else {
+        // For other errors, revert to previous state (liked)
+        setOptimisticLikes((prev) => ({ ...prev, [variables.id_project]: true }));
+        if (context?.previousQueryData) {
+          utils.project.getAll.setInfiniteData(queryClientKeyProjectGetAll, context.previousQueryData);
+        }
       }
     },
     onSettled: (data, error, variables) => {
@@ -252,12 +289,12 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  const handleNewPost = (content: string) => {
-    alert("New post created (mock): " + content);
-  };
-
   const handleFabClick = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  const handleNewPost = (content: string) => { // Added handleNewPost from original file
+    alert("New post created (mock): " + content);
   };
 
   const handleToggleBookmark = (projectId: string, currentIsBookmarked: boolean) => {
@@ -280,9 +317,9 @@ export default function HomePage() {
     }
   };
 
-  if (!isUserLoaded) {
+  if (!isUserLoaded) { // Simplified initial loading check
     return (
-        <> <Sidebar activeItem="Home" /> <PageContainer title="Home"> <div className="space-y-4"> {Array.from({ length: 3 }).map((_, index) => ( <PostSkeleton key={`initial-skeleton-${index}`} /> ))} </div> </PageContainer> </>
+        <> <Sidebar activeItem="Home" /> <PageContainer title="Home"> <div className="space-y-4 p-4 md:p-0"> {Array.from({ length: 3 }).map((_, index) => ( <PostSkeleton key={`initial-skeleton-${index}`} /> ))} </div> </PageContainer> </>
     );
   }
 
@@ -307,7 +344,7 @@ export default function HomePage() {
             <PostComposer
               avatarSrc={user.imageUrl || '/img/dummy/profile-photo-dummy.jpg'}
               username={user.fullName || user.username || 'User'}
-              onSubmit={handleNewPost}
+              onSubmit={handleNewPost} // Added onSubmit prop
               className="border-b border-white/10"
             />
           )}
@@ -320,14 +357,13 @@ export default function HomePage() {
             </div>
           )}
           
-          {allPosts.map((post) => ( // Removed index from map
-            <div key={post.id}>
+          {allPosts.map((post) => (
+            <div key={post.id} className="border-b border-white/10 p-1">
               <PostCard
                 {...post}
                 onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)}
                 onToggleLike={() => handleToggleLike(post.id, post.isLiked)}
               />
-              {/* Removed unnecessary mapping index check for border */}
             </div>
           ))}
           

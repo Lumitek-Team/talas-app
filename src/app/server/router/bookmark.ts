@@ -2,7 +2,6 @@ import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { retryConnect } from "@/lib/utils";
 
 export const bookmarkRouter = router({
 	create: protectedProcedure
@@ -15,14 +14,12 @@ export const bookmarkRouter = router({
 		.mutation(async ({ input }) => {
 			const { id_user, id_project } = input;
 
-			const existingBookmark = await retryConnect(() =>
-				prisma.bookmark.findFirst({
-					where: {
-						id_user,
-						id_project,
-					},
-				})
-			);
+			const existingBookmark = await prisma.bookmark.findFirst({
+				where: {
+					id_user,
+					id_project,
+				},
+			});
 
 			if (existingBookmark) {
 				throw new TRPCError({
@@ -31,16 +28,12 @@ export const bookmarkRouter = router({
 				});
 			}
 
-			const bookmark = await retryConnect(() =>
-				prisma.bookmark.create({
-					data: {
-						id_user,
-						id_project,
-					},
-				})
-			);
-
-			return bookmark;
+			return await prisma.bookmark.create({
+				data: {
+					id_user,
+					id_project,
+				},
+			});
 		}),
 
 	delete: protectedProcedure
@@ -53,14 +46,12 @@ export const bookmarkRouter = router({
 		.mutation(async ({ input }) => {
 			const { id_user, id_project } = input;
 
-			const result = await retryConnect(() =>
-				prisma.bookmark.deleteMany({
-					where: {
-						id_user,
-						id_project,
-					},
-				})
-			);
+			const result = await prisma.bookmark.deleteMany({
+				where: {
+					id_user,
+					id_project,
+				},
+			});
 			return result;
 		}),
 });

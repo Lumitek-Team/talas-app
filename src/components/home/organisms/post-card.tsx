@@ -1,14 +1,15 @@
-// components/home/organisms/post-card.tsx (Modified)
+// components/home/organisms/post-card.tsx (Refactored with date-fns)
 "use client";
 
 import { PostHeader } from "../molecules/post-header";
 import { PostActions } from "../molecules/post-actions";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react"; // useEffect for isMobile, useState for isMobile
+import { useState, useEffect } from "react";
 import { Github, Figma } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getPublicUrl } from "@/lib/utils";
+import { formatDistanceToNow } from 'date-fns'; // Import date-fns function
 
 interface PostCardProps {
   id: string;
@@ -17,22 +18,22 @@ interface PostCardProps {
   username: string;
   userRole: string;
   avatarSrc: string;
-  timestamp: string;
+  timestamp: string; // Expecting a date string (e.g., ISO string from project.created_at)
   content: string;
-  images?: string[]; // Kept for potential legacy use, but prefer image1-5
+  images?: string[];
   image1?: string;
   image2?: string;
   image3?: string;
   image4?: string;
   image5?: string;
-  likes: number; // Direct like count from parent page
+  likes: number;
   comments: number;
   link_figma?: string;
   link_github?: string;
-  isLiked: boolean; // Direct liked state from parent page
-  isBookmarked: boolean; // Direct bookmarked state from parent page
-  onToggleLike: () => void; // Handler from parent page
-  onToggleBookmark: () => void; // Handler from parent page
+  isLiked: boolean;
+  isBookmarked: boolean;
+  onToggleLike: () => void;
+  onToggleBookmark: () => void;
   category?: {
     slug: string;
     title: string;
@@ -46,7 +47,7 @@ export function PostCard({
   username,
   userRole,
   avatarSrc,
-  timestamp,
+  timestamp, // This is the raw date string now
   content,
   images = [],
   image1,
@@ -54,21 +55,18 @@ export function PostCard({
   image3,
   image4,
   image5,
-  likes, // Use this directly
+  likes,
   comments,
   link_figma,
   link_github,
-  isLiked, // Use this directly
-  isBookmarked, // Use this directly
+  isLiked,
+  isBookmarked,
   onToggleLike,
   onToggleBookmark,
   category,
 }: PostCardProps) {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
-
-  // Removed local isLiked, likeCount state, and handleLike method.
-  // These are now controlled by the parent page via props.
 
   const allDisplayImages = [...images];
   if (image1) allDisplayImages.push(image1);
@@ -96,12 +94,12 @@ export function PostCard({
     if (slug) {
       router.push(`/project/${slug}`);
     } else {
-      router.push(`/project/${id}`); // Fallback to ID if slug is not present
+      router.push(`/project/${id}`);
     }
   };
 
   const handleCommentClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation();
     if (slug) {
         router.push(`/project/${slug}#comments`);
     } else {
@@ -112,6 +110,18 @@ export function PostCard({
   const displayTitle = title || (content ? content.split('\n')[0] : 'Untitled Project');
   const displayContent = title ? content : (content ? content.split('\n').slice(1).join('\n') : '');
 
+  // Format the timestamp using date-fns
+  let formattedTimestamp = 'just now'; // Default value
+  if (timestamp) {
+    try {
+      formattedTimestamp = formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+    } catch (error) {
+      console.error("Failed to format timestamp:", timestamp, error);
+      // Fallback to the original string or a simple format if parsing fails
+      formattedTimestamp = new Date(timestamp).toLocaleDateString(); // Or just keep original timestamp string
+    }
+  }
+
   return (
     <div
       className={`p-4 ${isMobile ? 'bg-background' : ''} cursor-pointer`}
@@ -121,7 +131,7 @@ export function PostCard({
         username={username}
         userRole={userRole}
         avatarSrc={avatarSrc}
-        timestamp={timestamp}
+        timestamp={formattedTimestamp} // Pass the formatted timestamp
       />
 
       <div className="mb-6">
@@ -179,17 +189,15 @@ export function PostCard({
         >
           {allDisplayImages.slice(0, 5).map((imagePath, index) => {
             const imageUrl = imagePath.startsWith('http') ? imagePath : getPublicUrl(imagePath);
-            const isFourthOrFifthSpecial = (allDisplayImages.length === 5 && index >= 3) || (allDisplayImages.length === 4 && index >=2);
-
             return (
               <div
                 key={index}
                 className={`aspect-video bg-muted rounded-md overflow-hidden relative ${
-                   (allDisplayImages.length === 3 && index === 0) ? 'md:col-span-3 row-span-2' : 
-                   (allDisplayImages.length === 5 && index === 0) ? 'col-span-3 md:col-span-2 row-span-2' : 
-                   (allDisplayImages.length === 5 && (index === 1 || index ===2)) ? 'col-span-1 md:col-span-1 row-span-1' :
-                   (allDisplayImages.length > 3 && index > 0 && allDisplayImages.length % 2 !== 0 && index === allDisplayImages.length -1 ) ? 'col-span-2' : 
-                   '' 
+                  (allDisplayImages.length === 3 && index === 0) ? 'md:col-span-3 row-span-2' : 
+                  (allDisplayImages.length === 5 && index === 0) ? 'col-span-3 md:col-span-2 row-span-2' : 
+                  (allDisplayImages.length === 5 && (index === 1 || index ===2)) ? 'col-span-1 md:col-span-1 row-span-1' :
+                  (allDisplayImages.length > 3 && index > 0 && allDisplayImages.length % 2 !== 0 && index === allDisplayImages.length -1 ) ? 'col-span-2' : 
+                  '' 
                 } ${ isMobile && allDisplayImages.length > 2 && index === 0 ? 'col-span-full' : '' }`}
               >
                 <Image
@@ -213,7 +221,7 @@ export function PostCard({
         <PostActions
           likes={likes} 
           comments={comments}
-          onLikeToggle={onToggleLike} // Pass handler from page
+          onLikeToggle={onToggleLike}
           onComment={handleCommentClick}
           onShare={() => {
             const projectUrl = `${window.location.origin}/project/${slug || id}`;
@@ -223,7 +231,7 @@ export function PostCard({
           }}
           isLiked={isLiked} 
           isBookmarked={isBookmarked} 
-          onBookmarkToggle={onToggleBookmark} // Pass handler from page
+          onBookmarkToggle={onToggleBookmark}
         />
       </div>
     </div>

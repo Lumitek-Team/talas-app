@@ -1,7 +1,7 @@
 import { CommentsInProjectType } from "@/lib/type";
 import { Separator } from "../ui/separator";
 import { Button } from "../ui/button";
-import CommentForm from "./CommentForm";
+import CommentForm from "./example-CommentForm";
 import { useState } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";

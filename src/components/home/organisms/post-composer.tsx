@@ -18,7 +18,7 @@ export function PostComposer({ avatarSrc, username, className = "" }: PostCompos
   };
 
   return (
-    <div className={`p-4 ${className}`}>
+    <div className={`p-5 ${className}`}>
       <div className="flex items-center gap-3">
         <Avatar src={avatarSrc} alt={username} />
         <div className="flex-1">
