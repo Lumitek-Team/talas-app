@@ -178,6 +178,18 @@ export const projectRouter = router({
 											photo_profile: true,
 										},
 									},
+									ownership: true,
+								},
+								where: {
+									OR: [
+										{
+											ownership: "OWNER",
+										},
+										{
+											ownership: "COLLABORATOR",
+											collabStatus: "ACCEPTED",
+										},
+									],
 								},
 								orderBy: {
 									created_at: "asc",

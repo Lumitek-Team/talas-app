@@ -74,7 +74,7 @@ export async function POST(req: Request) {
 			link_github,
 		});
 
-		return Response.json({ success: true, project });
+		return Response.json(project);
 	} catch (err) {
 		console.error("[ERROR DI API]", err);
 		return new Response("Failed to create project", { status: 500 });
