@@ -67,4 +67,4 @@ export const collaborationRouter = router({
 	}),
 });
 
-export type CollaborationRouter = typeof collaborationRouter;
+export type FollowRouter = typeof collaborationRouter;

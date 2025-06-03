@@ -171,4 +171,4 @@ export const likeCommentRouter = router({
 		}),
 });
 
-export type LikeCommentRouter = typeof likeCommentRouter;
+export type likeCommentRouter = typeof likeCommentRouter;

@@ -834,4 +834,4 @@ export const projectRouter = router({
 		}),
 });
 
-export type ProjectRouter = typeof projectRouter;
+export type UserRouter = typeof projectRouter;
