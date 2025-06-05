@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { 
   HomeIcon, 
   BookmarkIcon, 
@@ -31,13 +32,19 @@ interface SidebarNavProps {
 
 export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: SidebarNavProps) {
   const pathname = usePathname();
+  const { user } = useUser();
+  const email = user?.primaryEmailAddress?.emailAddress;
+  const username = user?.username || (email ? email.split("@")[0] : null);
+  const profileHref = username ? `/profile/${username}` : "/";
+
+  
   
   const navItems: NavItem[] = [
     { icon: "home", label: "Home", href: "/feeds" },
     { icon: "bookmark", label: "Saved projects", href: "/saved" },
     { icon: "search", label: "Search", href: "/search" },
     { icon: "bell", label: "Notification", href: "/notifications" },
-    { icon: "user", label: "Profile", href: "/profile" },
+    { icon: "user", label: "Profile", href: profileHref },
   ];
 
   if (isMobile) {

@@ -123,6 +123,7 @@ export const userRouter = router({
 						username: input.username,
 					},
 					select: {
+						id: true,
 						username: true,
 						name: true,
 						bio: true,
