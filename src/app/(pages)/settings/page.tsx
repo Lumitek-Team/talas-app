@@ -6,6 +6,7 @@ import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { useState, useEffect, Fragment } from "react";
 import { PrivacyPolicyContent } from "@/components/setting/privacy-policy"
 import { SupportContent } from "@/components/setting/support";
+import { useRouter } from "next/navigation";
 import {
   ChevronDown,
   ChevronUp,
@@ -15,14 +16,8 @@ import {
   UserX,
 } from "lucide-react";
 
-const settingsData = [
-  { label: "Archive", icon: Archive, noChevron: true },
-  { label: "Privacy policy", icon: Shield, content: <PrivacyPolicyContent /> },
-  { label: "Support", icon: LifeBuoy, content: <SupportContent /> },
-  { label: "Delete account", icon: UserX, danger: true },
-];
-
 export default function SettingsPage() {
+  const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -31,6 +26,13 @@ export default function SettingsPage() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const settingsData = [
+    { label: "Archive", icon: Archive, noChevron: true, onClick: () => router.push("/settings/archive") },
+    { label: "Privacy policy", icon: Shield, content: <PrivacyPolicyContent /> },
+    { label: "Support", icon: LifeBuoy, content: <SupportContent /> },
+    { label: "Delete account", icon: UserX, danger: true },
+  ];
 
   return (
     <div className="flex min-h-screen">
@@ -52,6 +54,7 @@ export default function SettingsPage() {
                 danger, 
                 noChevron,
                 content,
+                onClick
               }, index) => (
                 <Fragment key={label}>
                   <SettingItem 
@@ -60,6 +63,7 @@ export default function SettingsPage() {
                     danger={danger} 
                     noChevron={noChevron}
                     content={content}
+                    onClick={onClick}
                   />
                   {index < settingsData.length - 1 && (
                     <div className="my-1 border-t border-white/10" />
@@ -82,6 +86,7 @@ type SettingItemProps = {
   danger?: boolean;
   noChevron?: boolean;
   content?: React.ReactNode;
+  onClick?: () => void;
 };
 
 function SettingItem({ 
@@ -90,10 +95,15 @@ function SettingItem({
   danger = false, 
   noChevron = false,
   content,
+  onClick
 }: SettingItemProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleClick = () => {
+    if (onClick) {
+      onClick(); // <- Kalau ada onClick custom, jalankan itu
+      return;
+    }
     if (!danger && !noChevron && content) {
       setIsOpen(!isOpen);
     }

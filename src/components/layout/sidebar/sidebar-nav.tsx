@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { trpc } from "@/app/_trpc/client"
 import { 
   HomeIcon, 
   BookmarkIcon, 
@@ -33,18 +34,25 @@ interface SidebarNavProps {
 export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: SidebarNavProps) {
   const pathname = usePathname();
   const { user } = useUser();
-  const email = user?.primaryEmailAddress?.emailAddress;
-  const username = user?.username || (email ? email.split("@")[0] : null);
-  const profileHref = username ? `/profile/${username}` : "/";
+  const userId = user?.id;
+  console.log(userId);
+  const { data, isLoading, error } = trpc.user.getById.useQuery(
+    { id: userId || "" }, // default empty string to avoid undefined
+    { enabled: !!userId } // hanya fetch kalau userId sudah ada
+  );
+  const username = data?.username;
+  console.log(user)
 
-  
-  
   const navItems: NavItem[] = [
     { icon: "home", label: "Home", href: "/feeds" },
     { icon: "bookmark", label: "Saved projects", href: "/saved" },
     { icon: "search", label: "Search", href: "/search" },
     { icon: "bell", label: "Notification", href: "/notifications" },
-    { icon: "user", label: "Profile", href: profileHref },
+    {
+      icon: "user",
+      label: "Profile",
+      href: username ? `/profile/${username}` : "/", // fallback ke "/" kalau belum ada username
+    },
   ];
 
   if (isMobile) {
