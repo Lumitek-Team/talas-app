@@ -36,13 +36,13 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    if (myUserData?.username && username && myUserData.username !== username) {
+    if (myUserData?.data?.username && username && myUserData.data.username !== username) {
       router.push("/sign-in");
     }
-  }, [myUserData?.username, username, router]);
+  }, [myUserData?.data?.username, username, router]);
 
   if (!isLoaded || !userId) return null;
-  if (!myUserData?.username || myUserData.username !== username) return null;
+  if (!myUserData?.data?.username || myUserData.data?.username !== username) return null;
   if (!profileData) return <p>User not found</p>;
 
   return (
@@ -50,7 +50,7 @@ export default function ProfilePage() {
       <Sidebar activeItem="Profile" />
       <PageContainer title="Profile">
         <div className="flex justify-center px-4">
-          <ProfileCard user={profileData} isMobile={isMobile} />
+          <ProfileCard user={profileData.data} isMobile={isMobile} />
           
         </div>
       </PageContainer>

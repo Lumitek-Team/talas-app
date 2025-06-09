@@ -15,7 +15,7 @@ import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { uploadFile, getImageUrl } from "@/lib/supabase/storage";
 
-type genderType = "MALE" | "FEMALE" ;
+type genderType = "MALE" | "FEMALE";
 
 type UserDetail = {
   id: string;
@@ -40,7 +40,6 @@ export default function EditProfile() {
   const router = useRouter();
   const usernameFromUrl = params?.username as string | undefined;
   const { user } = useUser();
-
   const [isMobile, setIsMobile] = useState(false);
 
   const {
@@ -52,7 +51,7 @@ export default function EditProfile() {
     { enabled: !!usernameFromUrl }
   );
 
-  const userData = userDetail as UserDetail | undefined;
+  const userData = userDetail?.data as UserDetail | undefined;
   const utils = trpc.useUtils();
 
   const updateMutation = trpc.user.update.useMutation({
@@ -107,28 +106,26 @@ export default function EditProfile() {
   const handleFileChange = async (file: File) => {
     if (!file || !user?.id) return;
 
-    // Preview sementara
     setPreviewUrl(URL.createObjectURL(file));
 
     const filePath = `profile_photos/${user.id}-${Date.now()}.${file.name.split(".").pop()}`;
 
     try {
-        const result = await uploadFile("talas-image", filePath, file);
-
-        // Lanjutkan proses ambil public URL
-        const publicUrl = await getImageUrl("talas-image", result.path);
-        if (publicUrl) {
+      const result = await uploadFile("talas-image", filePath, file);
+      const publicUrl = await getImageUrl("talas-image", result.path);
+      if (publicUrl) {
         setPreviewUrl(publicUrl);
-        }
+      }
     } catch (error: any) {
-        console.error("Upload error:", error.message);
-        alert("Upload foto gagal. Silakan coba lagi.");
-        return;
+      console.error("Upload error:", error.message);
+      alert("Upload foto gagal. Silakan coba lagi.");
+      return;
     }
-    };
-
+  };
 
   const handleSubmit = useCallback(() => {
+    console.log("userData", userData);
+console.log("user", user);
     if (!userData?.id || !user) {
       alert("Data pengguna tidak lengkap.");
       return;
@@ -138,6 +135,7 @@ export default function EditProfile() {
       alert("Nama dan username wajib diisi.");
       return;
     }
+
 
     updateMutation.mutate({
       id: userData.id,

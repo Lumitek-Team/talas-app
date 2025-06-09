@@ -36,7 +36,7 @@ export interface ProjectWithInteractionsType {
 	LikeProject?: { id: string }[];
 }
 
-export type ProjectOneType = {
+export interface ProjectOneType {
 	id: string;
 	id_category: string;
 	slug: string;
@@ -55,7 +55,6 @@ export type ProjectOneType = {
 	link_github: string;
 	created_at: string;
 	updated_at: string;
-	is_liked?: boolean;
 	is_bookmarked?: boolean;
 	is_liked?: boolean;
 	category: {

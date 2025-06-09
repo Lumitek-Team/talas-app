@@ -40,7 +40,7 @@ export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: Sideba
     { id: userId || "" }, // default empty string to avoid undefined
     { enabled: !!userId } // hanya fetch kalau userId sudah ada
   );
-  const username = data?.username;
+  const username = data?.data?.username;
   console.log(user)
 
   const navItems: NavItem[] = [

@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "./node_modules/@prisma/client"
 }
 
 datasource db {
@@ -60,10 +61,7 @@ model Project {
   LikeProject    LikeProject[]
   category       Category      @relation(fields: [id_category], references: [id], onDelete: Cascade)
   project_user   ProjectUser[]
-<<<<<<< HEAD
-=======
   pinProject     pinProject[]
->>>>>>> 37923bd8862d6162571139b7956be5cd048f4066
 
   @@index([id_category], map: "idx_category")
   @@index([slug], map: "idx_slug_project")
@@ -210,16 +208,4 @@ enum collabStatusType {
   PENDING
   ACCEPTED
   REJECTED
-}
-
-enum genderType {
-  MALE
-  FEMALE
-}
-
-enum notifType {
-  FOLLOW
-  LIKE_PROJECT
-  LIKE_COMMENT
-  COMMENT
 }
