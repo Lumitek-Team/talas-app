@@ -1,4 +1,6 @@
-export interface ProjectWithBookmarks {
+import { collabStatusType, ownershipType } from "@prisma/client";
+
+export interface ProjectWithInteractionsType {
 	id: string;
 	id_category: string;
 	slug: string;
@@ -31,6 +33,7 @@ export interface ProjectWithBookmarks {
 		};
 	}[];
 	bookmarks?: { id: string }[];
+	LikeProject?: { id: string }[];
 }
 
 export type ProjectOneType = {
@@ -54,7 +57,7 @@ export type ProjectOneType = {
 	updated_at: string;
 	is_liked?: boolean;
 	is_bookmarked?: boolean;
-	LikeProject?: { id: string }[]; // Add this if you want to access the raw LikeProject data on client, otherwise is_liked is enough
+	is_liked?: boolean;
 	category: {
 		id: string;
 		title: string;
@@ -67,6 +70,42 @@ export type ProjectOneType = {
 			username: string;
 			photo_profile?: string;
 		};
+		ownership: ownershipType;
+		collabStatus: collabStatusType;
+	}[];
+}
+
+export interface ProjectOnMutationType {
+	id: string;
+	id_category: string;
+	slug: string;
+	title: string;
+	content: string;
+	is_archived: boolean;
+	image1?: string;
+	image2?: string;
+	image3?: string;
+	image4?: string;
+	image5?: string;
+	video?: string;
+	link_github: string;
+	link_figma: string;
+	count_likes: number;
+	count_comments: number;
+	created_at: string;
+	updated_at: string;
+	project_user: {
+		id_user: string;
+		ownership: ownershipType;
+		collabStatusType?: collabStatusType;
+	}[];
+}
+
+export interface ProjectOnArchiveType {
+	id: string;
+	project_user: {
+		id_user: string;
+		ownership: string;
 	}[];
 }
 
@@ -116,3 +155,72 @@ export type BookmarkType = {
 		}[];
 	};
 };
+
+export interface FollowerType {
+	follower: {
+		username: string;
+		name: string;
+		photo_profile: string | null;
+	};
+}
+
+export interface SelectCollabType {
+	id: string;
+	name: string;
+	username: string;
+	photo_profile?: string;
+}
+
+export interface RequestCollabType {
+	id: string;
+	project: {
+		id: string;
+		title: string;
+		slug: string;
+		image1?: string;
+		image2?: string;
+		image3?: string;
+		image4?: string;
+		image5?: string;
+		project_user: {
+			user: {
+				username: string;
+				name: string;
+				photo_profile?: string | null;
+			};
+		}[];
+	};
+}
+
+export interface UserSearchType {
+	name: string;
+	username: string;
+	photo_profile: string;
+	github: string;
+	instagram: string;
+	linkedin: string;
+	gender: string;
+	count_summary: {
+		count_project: number;
+		count_follower: number;
+		count_following: number;
+	};
+}
+
+export interface UserProjectsCondition {
+	is_archived: boolean;
+	project_user: {
+		some: {
+			id_user: string | undefined;
+			OR: Array<
+				| { ownership: "OWNER" }
+				| {
+						AND: [{ ownership: "COLLABORATOR" }, { collabStatus: "ACCEPTED" }];
+				  }
+			>;
+		};
+	};
+	pinProject?: {
+		none: { id_user: string };
+	};
+}

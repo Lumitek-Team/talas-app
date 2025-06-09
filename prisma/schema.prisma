@@ -31,6 +31,7 @@ model User {
   notifications Notification[]
   project_user  ProjectUser[]
   count_summary count_summary?
+  pinProject    pinProject[]
 
   @@index([username], map: "idx_username")
 }
@@ -59,6 +60,10 @@ model Project {
   LikeProject    LikeProject[]
   category       Category      @relation(fields: [id_category], references: [id], onDelete: Cascade)
   project_user   ProjectUser[]
+<<<<<<< HEAD
+=======
+  pinProject     pinProject[]
+>>>>>>> 37923bd8862d6162571139b7956be5cd048f4066
 
   @@index([id_category], map: "idx_category")
   @@index([slug], map: "idx_slug_project")
@@ -110,7 +115,7 @@ model count_summary {
   count_following Int      @default(0)
   count_follower  Int      @default(0)
   created_at      DateTime @default(now())
-  all_notif_read  Boolean  @default(false)
+  all_notif_read  Boolean  @default(true)
   user            User     @relation(fields: [id_user], references: [id])
 
   @@index([id_user], map: "idx_user_count_summary")
@@ -128,12 +133,14 @@ model Follow {
 }
 
 model ProjectUser {
-  id         String   @id @default(ulid())
-  id_user    String
-  id_project String
-  created_at DateTime @default(now())
-  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [id_user], references: [id])
+  id           String            @id @default(ulid())
+  id_user      String
+  id_project   String
+  ownership    ownershipType     @default(OWNER)
+  collabStatus collabStatusType?
+  created_at   DateTime          @default(now())
+  project      Project           @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  user         User              @relation(fields: [id_user], references: [id])
 
   @@index([id_user, id_project], map: "idx_user_project")
 }
@@ -169,6 +176,40 @@ model LikeComment {
   user       User     @relation(fields: [id_user], references: [id])
 
   @@index([id_user, id_comment], map: "idx_user_comment_like")
+}
+
+model pinProject {
+  id         String   @id @default(ulid())
+  id_user    String
+  id_project String
+  created_at DateTime @default(now())
+  project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [id_user], references: [id])
+
+  @@index([id_user, id_project], map: "idx_user_project_pin")
+}
+
+enum genderType {
+  MALE
+  FEMALE
+}
+
+enum notifType {
+  FOLLOW
+  LIKE_PROJECT
+  LIKE_COMMENT
+  COMMENT
+}
+
+enum ownershipType {
+  OWNER
+  COLLABORATOR
+}
+
+enum collabStatusType {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
 
 enum genderType {

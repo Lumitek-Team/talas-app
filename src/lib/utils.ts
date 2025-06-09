@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import imageCompression from "browser-image-compression";
 import { supabase } from "./supabase/client";
-// import { randomUUID } from "crypto"; this cause an error in client side
+import { randomUUID } from "crypto";
 import prisma from "./prisma";
 
 export function cn(...inputs: ClassValue[]) {

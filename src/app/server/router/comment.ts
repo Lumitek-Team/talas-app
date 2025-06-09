@@ -2,29 +2,12 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { retryConnect } from "@/lib/utils"; // Assuming retryConnect is in this path
+import { getAllDescendantCommentIds, retryConnect } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
-import { Comment, Prisma } from "@prisma/client"; // Import Prisma for types if needed
-import { TRPCError } from "@trpc/server"; // For throwing structured errors
-
-// getAllDescendantCommentIds function remains the same as you provided
-// ... (getAllDescendantCommentIds function here) ...
-async function getAllDescendantCommentIds(
-	prismaClient: Prisma.TransactionClient, // Use Prisma.TransactionClient if used within a transaction
-	parentId: string
-): Promise<string[]> {
-	const children = await prismaClient.comment.findMany({
-		where: { parent_id: parentId },
-		select: { id: true },
-	});
-	let allIds: string[] = [];
-	for (const child of children) {
-		allIds.push(child.id);
-		const descendants = await getAllDescendantCommentIds(prismaClient, child.id); // Pass prismaClient
-		allIds = allIds.concat(descendants);
-	}
-	return allIds;
-}
+import { Comment, Project } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import { ProjectOneType } from "@/lib/type";
+import { Prisma } from "@prisma/client";
 
 
 export const commentRouter = router({
@@ -38,10 +21,9 @@ export const commentRouter = router({
 		)
 		.mutation(async ({ input, ctx }) => { // ctx might be available if you set it up in trpc.ts
 			const { id_project, content, parent_id } = input;
-			const user = await currentUser(); // Use Clerk's currentUser for backend auth
-			
-			if (!user || !user.id) {
-				throw new TRPCError({ code: "UNAUTHORIZED", message: "User not authenticated." });
+			const user = await currentUser();
+			if (!user) {
+				throw new Error("User not authenticated");
 			}
 			if (!id_project || !content) {
 				throw new TRPCError({ code: "BAD_REQUEST", message: "Project ID and content are required." });
@@ -68,36 +50,82 @@ export const commentRouter = router({
 					});
 				}
 			}
+			const project: ProjectOneType = await retryConnect(() =>
+				prisma.project.findUnique({
+					where: { id: input.id_project },
+					include: {
+						project_user: true,
+					},
+				})
+			);
+			if (!project) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Project not found",
+				});
+			}
+
+			const projectUsers = project?.project_user;
+			if (!projectUsers || projectUsers.length === 0) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Project has no owner or collaborators",
+				});
+			}
+
+			const ownerUserId = projectUsers.find((pu) => pu.ownership === "OWNER")
+				?.user.id;
+
+			const notifications = projectUsers
+				.filter((pu) => pu.user.id !== user.id)
+				.map((pu) => {
+					const notificationTitle =
+						pu.user.id === ownerUserId
+							? `${user.username} comment on your project "${project.title}"`
+							: `${user.username} comment on project you collaborate on: "${project.title}"`;
+
+					return {
+						id_user: pu.user.id,
+						title: notificationTitle,
+						is_read: false,
+						type: "LIKE_PROJECT" as const,
+					};
+				});
 
 			try {
-                // The transaction returns an array of results for each operation.
-                // The first operation is prisma.comment.create, so its result is at index 0.
-				const transactionResult = await retryConnect(() =>
-					prisma.$transaction([
-						prisma.comment.create({
-							data: {
-								id_project,
-								content,
-								parent_id,
-								id_user: user.id, // Use authenticated user's ID
-							},
-						}),
-						prisma.project.update({
-							where: {
-								id: id_project,
-							},
-							data: {
-								count_comments: {
-									increment: 1,
+				const [comment, updatedProject]: [Comment, Project] =
+					await retryConnect(() =>
+						prisma.$transaction([
+							prisma.comment.create({
+								data: {
+									id_project,
+									content,
+									parent_id,
+									id_user: user.id,
 								},
-							},
-						}),
-					])
-				);
-                
-                const newComment = transactionResult[0] as Comment; // Cast the first result to Comment
-				return newComment;
+							}),
+							prisma.project.update({
+								where: {
+									id: id_project,
+								},
+								data: {
+									count_comments: {
+										increment: 1,
+									},
+								},
+							}),
+							prisma.notification.createMany({
+								data: notifications,
+							}),
+						])
+					);
 
+				return {
+					success: true,
+					message: "Successfully comment",
+					data: comment,
+					count_likes: updatedProject.count_comments,
+				};
 			} catch (error) {
                 console.error("Error creating comment in backend:", error);
 				if (error instanceof TRPCError) throw error; // Re-throw TRPC specific errors
@@ -136,7 +164,11 @@ export const commentRouter = router({
 						},
 					})
 				);
-				return comment;
+				return {
+					success: true,
+					message: "Successfully edit comment",
+					data: comment,
+				};
 			} catch (error) {
                 console.error("Error updating comment in backend:", error);
 				if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
@@ -165,37 +197,36 @@ export const commentRouter = router({
 			}
 
 			try {
-                 // Use a transaction to ensure atomicity
-                await retryConnect(() => prisma.$transaction(async (tx) => {
-                    const commentToDelete = await tx.comment.findUnique({
-                        where: { id: input.id, id_user: user.id }, // Re-check ownership inside transaction
-                    });
+				// Ambil semua id turunan (anak, cucu, dst)
+				const descendantIds = await getAllDescendantCommentIds(
+					prisma,
+					input.id
+				);
+				// Hapus semua komentar (root + semua turunan)
+				await retryConnect(() =>
+					prisma.$transaction([
+						prisma.comment.deleteMany({
+							where: {
+								id: { in: [input.id, ...descendantIds] },
+							},
+						}),
+						prisma.project.update({
+							where: {
+								id: input.id_project,
+							},
+							data: {
+								count_comments: {
+									decrement: descendantIds.length + 1,
+								},
+							},
+						}),
+					])
+				);
 
-                    if (!commentToDelete) {
-                        throw new TRPCError({ code: 'NOT_FOUND', message: 'Comment not found or you do not have permission to delete it.' });
-                    }
-
-                    const descendantIds = await getAllDescendantCommentIds(tx, input.id);
-                    const idsToDelete = [input.id, ...descendantIds];
-                    
-                    await tx.comment.deleteMany({
-                        where: {
-                            id: { in: idsToDelete },
-                        },
-                    });
-
-                    await tx.project.update({
-                        where: {
-                            id: input.id_project,
-                        },
-                        data: {
-                            count_comments: {
-                                decrement: idsToDelete.length,
-                            },
-                        },
-                    });
-                }));
-                return { success: true, deletedCount: 1 }; // Return a success indicator
+				return {
+					success: true,
+					message: "Successfully delete comment",
+				};
 			} catch (error) {
                 console.error("Error deleting comment in backend:", error);
                 if (error instanceof TRPCError) throw error;
@@ -204,5 +235,4 @@ export const commentRouter = router({
 		}),
 });
 
-// export type CategoryRouter = typeof commentRouter; // This was likely a typo, should be CommentRouter
 export type CommentRouter = typeof commentRouter;
