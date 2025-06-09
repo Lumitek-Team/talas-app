@@ -1,4 +1,7 @@
-import { collabStatusType, ownershipType } from "@prisma/client";
+import { 
+	collabStatusType, 
+	ownershipType 
+} from "@prisma/client";
 
 export interface ProjectWithInteractionsType {
 	id: string;
