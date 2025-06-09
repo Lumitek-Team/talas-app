@@ -1,36 +1,51 @@
-// components/ui/action-menu.tsx
-import { Pencil, ArchiveRestore, Trash } from "lucide-react";
+"use client";
+
+import { useEffect, useRef } from "react";
+import { Trash2, ArrowUpRight } from "lucide-react";
 
 type ActionMenuProps = {
-  onEdit: () => void;
-  onUnarchive: () => void;
-  onDelete: () => void;
+  onUnarchive?: () => void;
+  onDelete?: () => void;
+  onClose: () => void;
 };
 
-export function ActionMenu({ onEdit, onUnarchive, onDelete }: ActionMenuProps) {
-  return (
-    <div className="bg-[#2a292b] text-white border border-white/20 rounded-xl p-2 w-48 space-y-1 shadow-md">
-      <button
-        onClick={onEdit}
-        className="flex items-center w-full px-3 py-2 text-sm rounded-md hover:bg-white/10 transition"
-      >
-        <Pencil className="w-4 h-4 mr-2" />
-        Edit
-      </button>
+export function ActionMenu({
+  onUnarchive,
+  onDelete,
+  onClose,
+}: ActionMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      ref={menuRef}
+      className="absolute right-0 top-8 z-10 bg-card border border-white/10 rounded-sm shadow-md w-48 overflow-hidden"
+    >
       <button
-        onClick={onUnarchive}
-        className="flex items-center w-full px-3 py-2 text-sm rounded-md bg-white/10 hover:bg-white/20 transition"
+        onClick={(e) => {onUnarchive?.(); e.stopPropagation()}}
+        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-white/5 text-white"
       >
-        <ArchiveRestore className="w-4 h-4 mr-2" />
+        <ArrowUpRight className="w-4 h-4" />
         Unarchive
       </button>
-
       <button
-        onClick={onDelete}
-        className="flex items-center w-full px-3 py-2 text-sm rounded-md text-red-500 hover:bg-red-500/10 transition"
+        onClick={(e) => {onDelete?.(); e.stopPropagation();}}
+        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-500/10 text-red-500"
       >
-        <Trash className="w-4 h-4 mr-2 text-red-500" />
+        <Trash2 className="w-4 h-4" />
         Delete
       </button>
     </div>

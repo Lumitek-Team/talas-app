@@ -12,6 +12,8 @@ import type { ProjectType } from "@/components/archive/card-archive";
 import { PostSkeleton } from "@/components/project/skeleton";
 
 export default function Archive() {
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const userId = user?.id;
@@ -21,7 +23,6 @@ export default function Archive() {
     { enabled: !!userId }
   );
 
-  // Detect mobile
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -31,7 +32,6 @@ export default function Archive() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Redirect if user not signed in
   useEffect(() => {
     if (isLoaded && !userId) {
       router.push("/sign-in");
@@ -43,7 +43,10 @@ export default function Archive() {
   return (
     <>
       <Sidebar activeItem="Settings" />
-      <PageContainer title="Archive" showBackButton={true}>
+      <PageContainer
+        title={isProcessing ? "Processing..." : "Archive"}
+        showBackButton={true}
+      >
         <div
           className={`text-white shadow-md space-y-4 p-6 pt-10 ${
             isMobile
@@ -61,14 +64,24 @@ export default function Archive() {
               ) : data?.projects?.length ? (
                 data.projects.map((project: ProjectType, index: number) => (
                   <div key={project.id}>
-                    <CardArchive project={project} />
+                    {/* Bungkus CardArchive dengan div clickable */}
+                    <div
+                      onClick={() => router.push(`/project/${project.id}`)}
+                      className="cursor-pointer"
+                    >
+                      <CardArchive
+                        project={project}
+                        userId={userId}
+                        setIsProcessing={setIsProcessing}
+                      />
+                    </div>
                     {index < data.projects.length - 1 && (
                       <div className="my-1 border-t border-white/10 mb-5" />
                     )}
                   </div>
                 ))
               ) : (
-                <p className="text-muted-foreground text-center">
+                <p className="text-muted-foreground text-center mb-3">
                   No archived projects.
                 </p>
               )}

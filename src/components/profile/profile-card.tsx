@@ -3,9 +3,10 @@
 import { ProfileHeader } from "./profile-header";
 import { ProfileStats } from "./profile-stats";
 import { ProfileButtonEdit } from "./profile-button-edit";
-import { PinnedProject } from "./pinned-project";
 import { FlexHeader } from "./flex-header";
 import { PhotoProfileUser } from "./profile-photo-user";
+import { ContainerProject } from "@/components/profile/container-project";
+import { PinnedProject } from "@/components/profile/pinned-project";
 
 interface UserCountSummary {
   count_project: number;
@@ -28,11 +29,16 @@ interface User {
 
 interface ProfileCardProps {
   user: User;
+  isMobile?: boolean;
 }
 
-export function ProfileCard({ user }: ProfileCardProps) {
+export function ProfileCard({ user, isMobile = false }: ProfileCardProps) {
   return (
-    <div className="bg-card w-full p-8 rounded-2xl border border-white/10 space-y-4 text-white shadow">
+    <div
+      className={`w-full rounded-2xl space-y-4 text-white shadow ${
+        isMobile ? "bg-background p-2" : "bg-card border p-8 border-white/10"
+      }`}
+    >
       <FlexHeader>
         <ProfileHeader
           name={user.name}
@@ -43,15 +49,21 @@ export function ProfileCard({ user }: ProfileCardProps) {
         <PhotoProfileUser photoUrl={user.photo_profile || undefined} />
       </FlexHeader>
       <ProfileStats
-        summary={user.count_summary ?? { count_project: 0, count_follower: 0, count_following: 0 }}
+        summary={user.count_summary ?? {
+          count_project: 0,
+          count_follower: 0,
+          count_following: 0,
+        }}
         instagram={user.instagram}
         linkedin={user.linkedin}
         github={user.github}
       />
-      <ProfileButtonEdit
-        username={user.username}
-      />
-      {/* <PinnedProject username={user.username} /> */}
+      <ProfileButtonEdit username={user.username} />
+      <ContainerProject>
+        <PinnedProject>
+          <h1>dew</h1>
+        </PinnedProject>
+      </ContainerProject>
     </div>
   );
 }

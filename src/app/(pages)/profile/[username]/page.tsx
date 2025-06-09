@@ -7,10 +7,11 @@ import { PageContainer } from "@/components/ui/page-container";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { ProfileCard } from "@/components/profile/profile-card";
 import { useUser } from "@clerk/nextjs";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function ProfilePage() {
   const router = useRouter();
+  const [isMobile, setIsMobile] = useState(false);
   const { username } = useParams() as { username: string };
   const { user, isLoaded } = useUser();
 
@@ -26,6 +27,14 @@ export default function ProfilePage() {
     { enabled: !!username }
   );
 
+  // ✅ Tambahkan ini
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 690);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     if (myUserData?.username && username && myUserData.username !== username) {
       router.push("/sign-in");
@@ -34,7 +43,6 @@ export default function ProfilePage() {
 
   if (!isLoaded || !userId) return null;
   if (!myUserData?.username || myUserData.username !== username) return null;
-
   if (!profileData) return <p>User not found</p>;
 
   return (
@@ -42,7 +50,8 @@ export default function ProfilePage() {
       <Sidebar activeItem="Profile" />
       <PageContainer title="Profile">
         <div className="flex justify-center px-4">
-          <ProfileCard user={profileData} />
+          <ProfileCard user={profileData} isMobile={isMobile} />
+          
         </div>
       </PageContainer>
       <FloatingActionButton />
