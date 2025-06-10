@@ -51,7 +51,7 @@ export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: Sideba
     {
       icon: "user",
       label: "Profile",
-      href: username ? `/profile/${username}` : "/", // fallback ke "/" kalau belum ada username
+      href: username ? `/profile/${username}` : "/feeds", // fallback ke "/" kalau belum ada username
     },
   ];
 

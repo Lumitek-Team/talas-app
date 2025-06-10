@@ -1,5 +1,3 @@
-"use client";
-
 import { ProfileHeader } from "./profile-header";
 import { ProfileStats } from "./profile-stats";
 import { ProfileButtonEdit } from "./profile-button-edit";
@@ -7,6 +5,12 @@ import { FlexHeader } from "./flex-header";
 import { PhotoProfileUser } from "./profile-photo-user";
 import { ContainerProject } from "@/components/profile/container-project";
 import { PinnedProject } from "@/components/profile/pinned-project";
+import { getPublicUrl } from "@/lib/utils";
+import { CardArchive } from "../archive/card-archive";
+import { CardContentArchive } from "../archive/content-archive";
+import { CardHeaderArchive } from "../archive/card-header-archive";
+import { ImageContainer } from "../archive/image-container";
+import { CardProjectProfile } from "./card-project-profile";
 
 interface UserCountSummary {
   count_project: number;
@@ -27,12 +31,23 @@ interface User {
   count_summary: UserCountSummary | null;
 }
 
-interface ProfileCardProps {
-  user: User;
-  isMobile?: boolean;
+interface Project {
+  id: string;
+  title: string;
+  slug: string;
+  content: string; // <--- tambahkan ini
+  image1?: string | undefined;
+  created_at: string;
 }
 
-export function ProfileCard({ user, isMobile = false }: ProfileCardProps) {
+interface ProfileCardProps {
+  user: User;
+  userId: string;
+  isMobile?: boolean;
+  projects: Project[];
+}
+
+export function ProfileCard({ user, userId, isMobile = false, projects }: ProfileCardProps) {
   return (
     <div
       className={`w-full rounded-2xl space-y-4 text-white shadow ${
@@ -61,8 +76,15 @@ export function ProfileCard({ user, isMobile = false }: ProfileCardProps) {
       <ProfileButtonEdit username={user.username} />
       <ContainerProject>
         <PinnedProject>
-          <h1>dew</h1>
+          
         </PinnedProject>
+        {projects.map((project) => (
+          <CardProjectProfile
+            key={project.id}
+            project={project}
+            userId={userId}
+          />
+        ))}
       </ContainerProject>
     </div>
   );

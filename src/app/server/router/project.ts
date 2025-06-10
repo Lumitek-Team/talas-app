@@ -208,12 +208,6 @@ export const projectRouter = router({
 										select: { id: true },
 									}
 								: false,
-									LikeProject: id_user // Add this section
-										? {
-												where: { id_user },
-												select: { id: true },
-											}
-										: false,
 						},
 						orderBy: {
 							created_at: "desc",
@@ -230,7 +224,7 @@ export const projectRouter = router({
 					nextCursor = nextItem!.id;
 				}
 				// Add is_bookmarked property
-				const ProjectWithInteractionsType = projects.map(
+				const ProjectWithInteractionsType = projectsFromDb.map(
 					(p: ProjectWithInteractionsType) => ({
 						...p,
 						is_bookmarked: id_user
@@ -595,7 +589,7 @@ export const projectRouter = router({
 				};
 			} catch (error) {
 				console.error("Error editing project:", error);
-				throw new Error("Error editing project: " + error.message);
+				throw new Error("Error editing project: " + (error as Error).message);
 			}
 		}),
 

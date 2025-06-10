@@ -55,13 +55,16 @@ export default function EditProfile() {
   const utils = trpc.useUtils();
 
   const updateMutation = trpc.user.update.useMutation({
-    onSuccess: () => {
-      if (usernameFromUrl) {
-        utils.user.getByUsername.invalidate({ username: usernameFromUrl });
-      }
-      router.back();
-    },
-  });
+  onSuccess: () => {
+    console.log("Berhasil update user!");
+    utils.user.getByUsername.invalidate({ username: usernameFromUrl });
+    router.back();
+  },
+  onError: (error) => {
+    console.error("Gagal update user:", error);
+    alert("Gagal menyimpan data. Silakan coba lagi.");
+  }
+});
 
   const [name, setName] = useState("");
   const [usernameInput, setUsernameInput] = useState("");
@@ -89,8 +92,9 @@ export default function EditProfile() {
       setInstagram(userData.instagram ?? "");
       setLinkedIn(userData.linkedin ?? "");
       setGitHub(userData.github ?? "");
+      setPreviewUrl(userData.photo_profile ?? null);
     }
-    if (user?.primaryEmailAddress?.emailAddress) {
+    if (!email && user?.primaryEmailAddress?.emailAddress) {
       setEmail(user.primaryEmailAddress.emailAddress);
     }
   }, [userData, user]);
@@ -119,14 +123,11 @@ export default function EditProfile() {
     } catch (error: any) {
       console.error("Upload error:", error.message);
       alert("Upload foto gagal. Silakan coba lagi.");
-      return;
     }
   };
 
   const handleSubmit = useCallback(() => {
-    console.log("userData", userData);
-console.log("user", user);
-    if (!userData?.id || !user) {
+    if (!userData || !user) {
       alert("Data pengguna tidak lengkap.");
       return;
     }
@@ -136,23 +137,22 @@ console.log("user", user);
       return;
     }
 
-
     updateMutation.mutate({
-      id: userData.id,
+      id: user.id,
       data: {
         name: name.trim(),
         username: usernameInput.trim(),
-        email_contact: email.trim(),
-        bio,
+        email_contact: email?.trim() || undefined,
+        bio: bio?.trim() || undefined,
         gender,
-        instagram,
-        linkedin: linkedIn,
-        github: gitHub,
-        photo_profile: previewUrl ?? userData?.photo_profile ?? undefined,
+        instagram: instagram?.trim() || undefined,
+        linkedin: linkedIn?.trim() || undefined,
+        github: gitHub?.trim() || undefined,
+        photo_profile: previewUrl || undefined,
       },
     });
   }, [
-    userData?.id,
+    userData,
     user,
     name,
     usernameInput,
@@ -173,10 +173,8 @@ console.log("user", user);
   if (userDetailError) {
     return (
       <div className="text-center p-10 text-red-500">
-        Gagal memuat data:
-        <br />
-        {userDetailError?.message || ""}
-        <br />
+        Gagal memuat data:<br />
+        {userDetailError?.message || ""}<br />
         <button
           onClick={() => window.location.reload()}
           className="mt-4 bg-red-600 px-4 py-2 rounded text-white hover:bg-red-700"
@@ -201,7 +199,7 @@ console.log("user", user);
           <FormWrapper>
             <ProfileRow gap="gap-10">
               <PhotoProfile
-                photoUrl={previewUrl || userData?.photo_profile || undefined}
+                photoUrl={previewUrl || undefined}
                 onChange={handleFileChange}
               />
               <InputForm

@@ -12,22 +12,45 @@ import { useEffect, useState } from "react";
 export default function ProfilePage() {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
-  const { username } = useParams() as { username: string };
-  const { user, isLoaded } = useUser();
 
+  const rawParams = useParams();
+  const username = typeof rawParams?.username === "string" ? rawParams.username : undefined;
+
+  const { user, isLoaded } = useUser();
   const userId = user?.id;
 
-  const { data: myUserData } = trpc.user.getById.useQuery(
+  const { data: myUserData, isLoading: isMyUserLoading } = trpc.user.getById.useQuery(
     { id: userId || "" },
     { enabled: !!userId }
   );
 
+  const correctUsername = myUserData?.data?.username;
+
+  const isUsernameReady = isLoaded && userId && !isMyUserLoading && !!correctUsername;
+  const isUsernameMatch = correctUsername === username;
+
+  // 🔁 Redirect jika username di URL tidak sesuai dengan username yang valid
+  useEffect(() => {
+    if (isUsernameReady && username && !isUsernameMatch) {
+      router.replace(`/profile/${correctUsername}`);
+    }
+  }, [isUsernameReady, isUsernameMatch, correctUsername, username, router]);
+
   const { data: profileData } = trpc.user.getByUsername.useQuery(
-    { username },
-    { enabled: !!username }
+    { username: username! },
+    { enabled: !!isUsernameReady && !!isUsernameMatch }
   );
 
-  // ✅ Tambahkan ini
+  const { data: projectsData } = trpc.user.getAllProjects.useQuery(
+    {
+      id_user: userId!,
+      limit: 100,
+      excludePinned: true,
+    },
+    { enabled: !!isUsernameReady && !!isUsernameMatch }
+  );
+
+  // 📱 Responsive check
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 690);
     handleResize();
@@ -35,23 +58,22 @@ export default function ProfilePage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    if (myUserData?.data?.username && username && myUserData.data.username !== username) {
-      router.push("/sign-in");
-    }
-  }, [myUserData?.data?.username, username, router]);
+  // 🧹 Jangan render sampai username valid dan cocok
+  if (!isUsernameReady || !isUsernameMatch) return null;
 
-  if (!isLoaded || !userId) return null;
-  if (!myUserData?.data?.username || myUserData.data?.username !== username) return null;
-  if (!profileData) return <p>User not found</p>;
+  if (!profileData?.data) return <p className="text-center mt-10">User not found</p>;
 
   return (
     <>
       <Sidebar activeItem="Profile" />
       <PageContainer title="Profile">
         <div className="flex justify-center px-4">
-          <ProfileCard user={profileData.data} isMobile={isMobile} />
-          
+          <ProfileCard
+            user={profileData.data}
+            isMobile={isMobile}
+            projects={projectsData?.data || []}
+            userId={userId!}
+          />
         </div>
       </PageContainer>
       <FloatingActionButton />
