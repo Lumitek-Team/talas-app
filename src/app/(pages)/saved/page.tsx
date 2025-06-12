@@ -1,4 +1,5 @@
-// app/saved/page.tsx (or your equivalent path)
+// app/saved/page.tsx
+
 "use client";
 
 import { Sidebar } from "@/components/layout/sidebar";
@@ -7,23 +8,24 @@ import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { PageContainer } from "@/components/ui/page-container";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { trpc } from "@/app/_trpc/client";
-import { ProjectOneType, BookmarkType } from "@/lib/type"; // Using BookmarkType from your type.ts
+import { ProjectOneType, BookmarkType } from "@/lib/type";
 import { PostSkeleton } from '@/components/project/skeleton';
 import { useUser } from "@clerk/nextjs";
 import { getPublicUrl } from "@/lib/utils";
 import { redirect } from "next/navigation";
+import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog"; // Import dialog
 
-// Transform bookmarked item data to PostCard props
+// Transform bookmarked item data to PostCard props (remains the same)
 const transformSavedItemToPostCardProps = (
   bookmarkItem: BookmarkType,
   optimisticBookmarks: Record<string, boolean>
 ) => {
-  const project = bookmarkItem.project; // This 'project' has limited fields as per BookmarkType
+  const project = bookmarkItem.project;
   const primaryUser = project.project_user && project.project_user[0]?.user;
 
   const isBookmarked = optimisticBookmarks[project.id] !== undefined
     ? optimisticBookmarks[project.id]
-    : true; // Items on this page are bookmarked by default
+    : true;
 
   let resolvedAvatarSrc: string;
   if (primaryUser?.photo_profile) {
@@ -36,33 +38,30 @@ const transformSavedItemToPostCardProps = (
     resolvedAvatarSrc = '/img/dummy/profile-photo-dummy.jpg';
   }
 
-  // Map fields from bookmarkItem.project and provide defaults for those not present
   return {
     id: project.id,
     slug: project.slug,
     title: project.title,
     username: primaryUser?.username || 'Unknown User',
-    userRole: 'Developer', // Default
+    userRole: 'Developer',
     avatarSrc: resolvedAvatarSrc,
-    timestamp: new Date(project.created_at).toLocaleDateString(), // Assuming project.created_at is a valid date string or Date
+    timestamp: project.created_at, // Pass raw date string
 
-    // Fields explicitly NOT in bookmarkItem.project as per your BookmarkType:
-    content: "", // Default for PostCard
-    likes: 0,      // Default for PostCard
-    comments: 0,   // Default for PostCard
-    link_figma: undefined, // Default for PostCard
-    link_github: undefined,// Default for PostCard
-    category: undefined,   // Default for PostCard
-    isLiked: false,        // Default for PostCard (like status not fetched here)
+    content: "",
+    likes: 0,
+    comments: 0,
+    link_figma: undefined,
+    link_github: undefined,
+    category: undefined,
+    isLiked: false,
 
-    // Fields that ARE in bookmarkItem.project:
     image1: project.image1 ? getPublicUrl(project.image1) : undefined,
     image2: project.image2 ? getPublicUrl(project.image2) : undefined,
     image3: project.image3 ? getPublicUrl(project.image3) : undefined,
     image4: project.image4 ? getPublicUrl(project.image4) : undefined,
     image5: project.image5 ? getPublicUrl(project.image5) : undefined,
     
-    isBookmarked: isBookmarked, // Crucial for this page's logic
+    isBookmarked: isBookmarked,
   };
 };
 
@@ -72,12 +71,16 @@ export default function SavedProjectsPage() {
   const [allPosts, setAllPosts] = useState<ReturnType<typeof transformSavedItemToPostCardProps>[]>([]);
   const [optimisticBookmarks, setOptimisticBookmarks] = useState<Record<string, boolean>>({});
 
+  // State for confirmation dialog
+  const [isUnsaveConfirmOpen, setIsUnsaveConfirmOpen] = useState(false);
+  const [projectToUnsaveId, setProjectToUnsaveId] = useState<string | null>(null);
+
   const utils = trpc.useUtils();
   const currentUserIdSaved = user?.id || "";
 
   const queryClientKeyUserGetBookmarked = useMemo(() => ({
     id: currentUserIdSaved,
-    limit: 10 // Ensure this matches the limit used in useInfiniteQuery
+    limit: 10
   }), [currentUserIdSaved]);
 
   const {
@@ -89,7 +92,7 @@ export default function SavedProjectsPage() {
     isError,
     error,
   } = trpc.user.getBookmarked.useInfiniteQuery(
-    { id: currentUserIdSaved, limit: 10 }, // Parameters for the query
+    { id: currentUserIdSaved, limit: 10 },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       enabled: !!user && isUserLoaded,
@@ -122,6 +125,12 @@ export default function SavedProjectsPage() {
     onSettled: (data, error, variables) => {
       utils.user.getBookmarked.invalidate(queryClientKeyUserGetBookmarked);
       if (user?.id) {
+        // Invalidate project.getOne if the user navigates to a project detail page
+        // that was just unbookmarked, to reflect the change.
+        if (variables?.id_project) {
+            utils.project.getOne.invalidate({ id: variables.id_project, id_user: user.id });
+        }
+        // Also invalidate feeds page if it shows bookmark status directly
         utils.project.getAll.invalidate({ limit: 15, id_user: user.id });
       }
     },
@@ -130,7 +139,7 @@ export default function SavedProjectsPage() {
   useEffect(() => {
     if (data?.pages) {
       const transformedPosts = data.pages
-        .flatMap(page => page.items as BookmarkType[]) // Casting to BookmarkType
+        .flatMap(page => page.items as BookmarkType[])
         .map(item => transformSavedItemToPostCardProps(item, optimisticBookmarks));
       setAllPosts(transformedPosts);
     }
@@ -163,17 +172,25 @@ export default function SavedProjectsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleUnbookmark = (projectId: string) => {
-    if (!user) return;
-    setOptimisticBookmarks((prev) => ({ ...prev, [projectId]: false }));
+  // Opens the confirmation dialog
+  const promptUnsave = (projectId: string) => {
+    setProjectToUnsaveId(projectId);
+    setIsUnsaveConfirmOpen(true);
+  };
+
+  // Called when user confirms unsave action in the dialog
+  const handleConfirmUnsave = () => {
+    if (!user || !projectToUnsaveId) return;
+    setOptimisticBookmarks((prev) => ({ ...prev, [projectToUnsaveId]: false }));
     unbookmarkMutation.mutate(
-      { id_user: user.id, id_project: projectId }
+      { id_user: user.id, id_project: projectToUnsaveId }
     );
+    setProjectToUnsaveId(null); // Reset
   };
 
   const handleToggleLikeDisabled = () => {
-    // This button would ideally be disabled or not fully functional
-    // if like status isn't available for saved items.
+    // This function is passed to PostCard but won't be used in 'saved-page' context
+    // as the like button won't be visible.
   };
 
   if (!isUserLoaded) {
@@ -185,7 +202,7 @@ export default function SavedProjectsPage() {
   if (!user) {
     useEffect(() => {
         redirect("/sign-in");
-    }, [user]);
+    }, [user]); // Dependency array ensures this runs once after user status is known
     return (
         <> <Sidebar activeItem="Saved" /> <PageContainer title="Saved Projects"> <div className="flex items-center justify-center h-64"> <p className="text-muted-foreground">Please sign in to view your saved projects.</p> </div> </PageContainer> </>
     );
@@ -197,7 +214,9 @@ export default function SavedProjectsPage() {
     );
   }
 
-  const trulySavedPosts = allPosts.filter(post => post.isBookmarked);
+  const trulySavedPosts = allPosts.filter(post => 
+    optimisticBookmarks[post.id] !== undefined ? optimisticBookmarks[post.id] : post.isBookmarked
+  );
 
   return (
     <>
@@ -217,8 +236,10 @@ export default function SavedProjectsPage() {
             <div key={post.id} className={`${isMobile ? '' : 'bg-card rounded-3xl border border-white/10 mb-4'}`}>
               <PostCard
                 {...post}
-                onToggleBookmark={() => handleUnbookmark(post.id)}
-                onToggleLike={handleToggleLikeDisabled} // Like functionality is limited here
+                displayContext="saved-page" // Pass the display context
+                onToggleBookmark={() => promptUnsave(post.id)} // Trigger dialog
+                onToggleLike={handleToggleLikeDisabled} // Still need to pass it due to PostCardProps
+                                                        // but it won't be used by PostActions in this context
               />
             </div>
           ))}
@@ -231,7 +252,7 @@ export default function SavedProjectsPage() {
             </div>
           )}
           
-          {!hasNextPage && !isLoading && trulySavedPosts.length > 0 && !isFetchingNextPage && ( // Added !isFetchingNextPage
+          {!hasNextPage && !isLoading && trulySavedPosts.length > 0 && !isFetchingNextPage && (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No more saved projects</p>
             </div>
@@ -247,6 +268,17 @@ export default function SavedProjectsPage() {
       </PageContainer>
 
       <FloatingActionButton onClick={handleFabClick} />
+
+      {/* Confirmation Dialog for Unsave */}
+      <CustomAlertDialog
+        isOpen={isUnsaveConfirmOpen}
+        onOpenChange={setIsUnsaveConfirmOpen}
+        title="Unsave Project"
+        description="Are you sure you want to unsave this project?"
+        onConfirm={handleConfirmUnsave} // This will call unbookmarkMutation
+        confirmText="Yes, Unsave"
+        confirmButtonVariant="destructive" // "destructive" or "default" as preferred
+      />
     </>
   );
 }

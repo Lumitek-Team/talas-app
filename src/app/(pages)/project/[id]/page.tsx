@@ -259,7 +259,7 @@ export default function ProjectDetailPage() {
         )}
 
         <div className={`overflow-hidden ${isMobile ? 'bg-background' : 'bg-card rounded-3xl border border-white/10'}`}>
-          <div className={isOwner && !isMobile ? "p-2" : "p-4"}> {/* Adjust padding if owner actions are present */}
+          <div className={isOwner && !isMobile ? "p-2" : "p-2"}> {/* Adjust padding if owner actions are present */}
             <PostCard {...postCardData} />
             <div className="my-1 border-t border-white/10 mx-4"></div>
             <div>

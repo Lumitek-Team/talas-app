@@ -55,11 +55,11 @@ export function CommentSection({ projectId, currentUser }: CommentSectionProps) 
             {/* Skeleton loaders for comments */}
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={`skeleton-comment-${index}`} className="flex gap-3 py-3 animate-pulse">
-                <div className="w-8 h-8 mt-1 rounded-full bg-slate-700"></div>
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 w-1/4 bg-slate-700 rounded"></div>
-                  <div className="h-10 w-full bg-slate-700 rounded"></div>
-                  <div className="h-4 w-1/2 bg-slate-700 rounded"></div>
+                <div className="w-8 h-8 mt-1 rounded-full bg-gray-600"></div>
+                <div className="flex-1">
+                  <div className="h-4 w-1/4 bg-gray-600 rounded mb-3"></div>
+                  <div className="h-10 w-full bg-gray-600 rounded mb-3"></div>
+                  <div className="h-4 w-1/2 bg-gray-600 rounded mb-3"></div>
                 </div>
               </div>
             ))}
