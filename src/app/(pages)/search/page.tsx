@@ -294,7 +294,7 @@ export default function SearchPage() {
                 />
             ) : (
               <div>
-                {showInitialPrompt ? <p className="text-neutral-400 p-4">Enter a search term to find: <span className="font-semibold text-neutral-200">{activeFilter}</span></p>
+                {showInitialPrompt ? <p className="text-neutral-400 p-4">Type a keyword to find: <span className="font-semibold text-neutral-200">{activeFilter}</span></p>
                   : isLoading ? <>{Array.from({ length: 3 }).map((_, i) => <PostSkeleton key={`search-skeleton-${i}`} />)}</>
                   : searchError ? <div className="text-center py-8"><p className="text-red-400">Error: {searchError.message}</p></div>
                   : allRawResults.length === 0 ? <div className="text-center py-8"><p className="text-muted-foreground">No results found for "{committedValues.query}"</p></div>
