@@ -113,6 +113,7 @@ export const userRouter = router({
 							id: input.id,
 						},
 						select: {
+							id: true,
 							username: true,
 							name: true,
 							bio: true,
@@ -158,6 +159,7 @@ export const userRouter = router({
 							username: input.username,
 						},
 						select: {
+							id: true,
 							username: true,
 							name: true,
 							bio: true,
