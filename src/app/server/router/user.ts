@@ -1,6 +1,7 @@
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import {
+	FollowingType,
 	FollowerType,
 	ProjectWithInteractionsType,
 	RequestCollabType,
@@ -113,6 +114,7 @@ export const userRouter = router({
 							id: input.id,
 						},
 						select: {
+							id: true,
 							username: true,
 							name: true,
 							bio: true,
@@ -158,6 +160,7 @@ export const userRouter = router({
 							username: input.username,
 						},
 						select: {
+							id: true,
 							username: true,
 							name: true,
 							bio: true,
@@ -241,7 +244,7 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const followings: FollowerType[] = await retryConnect(() =>
+				const followings: FollowingType[] = await retryConnect(() =>
 					prisma.follow.findMany({
 						where: {
 							id_follower: input.id_follower,
@@ -249,7 +252,7 @@ export const userRouter = router({
 						take: input.limit,
 						skip: input.offset,
 						select: {
-							follower: {
+							following: {
 								select: {
 									username: true,
 									name: true,
@@ -261,7 +264,7 @@ export const userRouter = router({
 				);
 
 				const data = followings.map((follow) => ({
-					...follow.follower,
+					...follow.following,
 				}));
 
 				return {

@@ -22,13 +22,12 @@ export function PhotoProfile({ photoUrl, onChange }: PhotoProfileProps) {
     if (file) {
       const url = URL.createObjectURL(file);
       setPreview(url);
-      onChange?.(file); // kirim file ke parent
+      onChange?.(file); 
     }
   };
 
   useEffect(() => {
     return () => {
-      // Clean up blob URL agar tidak membebani memori
       if (preview) URL.revokeObjectURL(preview);
     };
   }, [preview]);

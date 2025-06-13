@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatDistanceToNow } from "date-fns";
 import { MoreVertical, 
   Archive, 
   Trash2, 
@@ -19,6 +20,7 @@ type ActionItem = {
 
 type CardHeaderArchiveProps = {
   title: string;
+  createAt: string;
   onArchive?: () => void;
   onDelete?: () => void;
   onEdit?: () => void;
@@ -26,10 +28,12 @@ type CardHeaderArchiveProps = {
   onUnpin?: () => void;
   isArchiving?: boolean;
   isPinned?: boolean;
+  isMyProfile?: boolean;
 };
 
 export function CardHeaderProjectProfile({
   title,
+  createAt,
   onArchive,
   onDelete,
   onEdit, 
@@ -37,6 +41,7 @@ export function CardHeaderProjectProfile({
   onPin,
   onUnpin,
   isPinned,
+  isMyProfile
 }: CardHeaderArchiveProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -75,7 +80,7 @@ export function CardHeaderProjectProfile({
       <div className="flex flex-col">
         <h2>
           {isPinned && (
-            <div className="flex justify-between items-center gap-2 text-md  px-0">
+            <div className="flex items-center gap-2 text-md  px-0">
               <Pin className="w-5 h-5 text-green-500"/>
               <h2>Pinned Project</h2>
             </div>
@@ -86,21 +91,27 @@ export function CardHeaderProjectProfile({
         </h2>
       </div>
       
+        {isMyProfile ? (
         <button
-        aria-label="More actions"
-        onClick={(e) => {
-          setMenuOpen(!menuOpen);
-          e.stopPropagation();
-        }}
-        className="p-1 rounded hover:bg-white/10 transition"
-        disabled={isArchiving}
-      >
-        {isArchiving ? (
-          <span className="text-xs text-gray-400">Archiving...</span>
-        ) : (
-          <MoreVertical className="w-5 h-5 text-gray-400" />
-        )}
-      </button>
+          aria-label="More actions"
+          onClick={(e) => {
+            setMenuOpen(!menuOpen);
+            e.stopPropagation();
+          }}
+          className="p-1 rounded hover:bg-white/10 transition"
+          disabled={isArchiving}
+        >
+          {isArchiving ? (
+            <span className="text-xs text-gray-400">Archiving...</span>
+          ) : (
+            <MoreVertical className="w-5 h-5 text-gray-400" />
+          )}
+        </button>
+      ) : (
+        <span className="text-sm text-muted-foreground">
+          {formatDistanceToNow(new Date(createAt), { addSuffix: true })}
+        </span>
+      )}
 
       {menuOpen && (
         <ActionMenu

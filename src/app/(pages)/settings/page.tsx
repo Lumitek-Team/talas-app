@@ -101,7 +101,7 @@ function SettingItem({
 
   const handleClick = () => {
     if (onClick) {
-      onClick(); // <- Kalau ada onClick custom, jalankan itu
+      onClick(); 
       return;
     }
     if (!danger && !noChevron && content) {

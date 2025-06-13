@@ -11,6 +11,7 @@ import { trpc } from "@/app/_trpc/client";
 
 export interface ProjectType {
   id: string;
+  created_at: string;
   title: string;
   content: string;
   image1?: string;
@@ -25,13 +26,15 @@ type CardProjectProfileProps = {
   userId: string;
   isPinned?: boolean;
   onMutateSuccess?: () => void;
+  isMyProfile?: boolean;
 };
 
 export function CardProjectProfile({
   project,
   userId,
   isPinned,
-  onMutateSuccess
+  onMutateSuccess,
+  isMyProfile
 }: CardProjectProfileProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -123,9 +126,10 @@ export function CardProjectProfile({
   };
 
   return (
-    <div onClick={handleCardClick}>
+    <div onClick={handleCardClick} className="mt-5 border-b border-white/10 ">
       <CardHeaderProjectProfile
         title={project.title}
+        createAt={project.created_at}
         onEdit={handleEdit}
         onArchive={handleArchive}
         onDelete={handleDelete}
@@ -133,6 +137,7 @@ export function CardProjectProfile({
         onUnpin={handleUnpin}
         isArchiving={archive.status === "pending"}
         isPinned={isPinned}
+        isMyProfile={isMyProfile}
       />
       <ContentProjectProfile content={project.content} />
       <ImageContainerProjectProfile images={imageUrls} />

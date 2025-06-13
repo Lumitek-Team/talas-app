@@ -6,7 +6,9 @@ import { PhotoProfileUser } from "./profile-photo-user";
 import { ContainerProject } from "@/components/profile/container-project";
 import { PinnedProject } from "@/components/profile/pinned-project";
 import { CardProjectProfile } from "./card-project-profile";
-import { trpc } from "@/app/_trpc/client"; // pastikan ini benar
+import { trpc } from "@/app/_trpc/client";
+import { ProfileFollow } from "./follow-button";
+import { useState, useEffect } from "react"
 
 interface UserCountSummary {
   count_project: number;
@@ -15,6 +17,7 @@ interface UserCountSummary {
 }
 
 interface User {
+  id: string;
   username: string;
   name: string;
   bio?: string | null;
@@ -42,32 +45,57 @@ interface Project {
 
 interface ProfileCardProps {
   user: User;
-  userId: string;
+  currentUserId: string;
   isMobile?: boolean;
   projects: Project[];
+  isMyProfile: boolean;
 }
 
-export function ProfileCard({ user, userId, isMobile = false, projects }: ProfileCardProps) {
-  const {
-    data,
-    refetch,
-  } = trpc.user.getPinnedProjects.useQuery({ id_user: userId }, { refetchOnWindowFocus: false });
+export function ProfileCard({
+  user,
+  currentUserId,
+  isMobile = false,
+  projects,
+  isMyProfile,
+}: ProfileCardProps) {
+  const pinnedUserId = isMyProfile ? currentUserId : user.id;
 
-  // Data pinned yang didapat dari backend
-  const pinnedProjects: { id: string }[] = data?.data ?? [];
+  const { data: pinnedData, refetch, isLoading } = trpc.user.getPinnedProjects.useQuery(
+    { id_user: pinnedUserId },
+    {
+      refetchOnWindowFocus: false,
+      enabled: !!pinnedUserId,
+    }
+  );
 
-  // Buat set berisi ID dari proyek yang dipinned
+  const { data: followingData, isLoading: isFollowingLoading } =
+  trpc.user.getAllFollowing.useQuery(
+    { id_follower: currentUserId }, 
+    {
+      enabled: !isMyProfile && !!currentUserId, 
+    }
+  );
+  const pinnedProjects: { id: string }[] = pinnedData?.data ?? [];
   const pinnedIds = new Set(pinnedProjects.map((p) => p.id));
 
-  // Filter proyek yang dipinned dan tidak
   const pinned = projects.filter((p) => pinnedIds.has(p.id));
   const notPinned = projects.filter((p) => !pinnedIds.has(p.id));
 
-  console.log("All projects:", projects.map(p => p.id));
-  console.log("Pinned IDs:", [...pinnedIds]);
+  const [isFollowing, setIsFollowing] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!isMyProfile && followingData?.data) {
+      const found = followingData.data.some((u) => u.username === user.username);
+      setIsFollowing(found);
+    }
+  }, [followingData, user.username, isMyProfile]);
 
   return (
-    <div className={`w-full rounded-2xl space-y-4 text-white shadow ${isMobile ? "bg-background p-2" : "bg-card border p-7 border-white/10"}`}>
+    <div
+      className={`w-full rounded-2xl space-y-4 text-white ${
+        isMobile ? "bg-background p-2" : "bg-card border p-7 border-white/10"
+      }`}
+    >
       <FlexHeader>
         <ProfileHeader
           name={user.name}
@@ -79,43 +107,73 @@ export function ProfileCard({ user, userId, isMobile = false, projects }: Profil
       </FlexHeader>
 
       <ProfileStats
-        summary={user.count_summary ?? {
-          count_project: 0,
-          count_follower: 0,
-          count_following: 0,
-        }}
+        summary={
+          user.count_summary ?? {
+            count_project: 0,
+            count_follower: 0,
+            count_following: 0,
+          }
+        }
         instagram={user.instagram}
         linkedin={user.linkedin}
         github={user.github}
+        userId={user.id}
       />
 
-      <ProfileButtonEdit username={user.username} />
+      {/* Tombol Edit atau Follow */}
+      {isMyProfile ? (
+        <ProfileButtonEdit username={user.username} />
+      ) : typeof isFollowing === "boolean" ? (
+        <ProfileFollow
+          key={user.id}
+          username={user.username}
+          idCurrentUser={currentUserId}
+          idTargetUser={user.id}
+        />
+      ) : (
+        <div className="text-sm text-muted-foreground text-center mt-6 mb-6">
+          Checking follow status...
+        </div>
+      )}
 
+      {/* Projek */}
       <ContainerProject>
-        {pinned.length > 0 && (
-          <PinnedProject>
-            {pinned.map((project) => (
+        {isLoading ? (
+          <div className="flex justify-center items-center h-40">
+            <p className="text-sm text-muted-foreground">Loading projects...</p>
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="flex justify-center items-center h-40">
+            <p className="text-sm text-muted-foreground">No projects yet</p>
+          </div>
+        ) : (
+          <>
+            {pinned.length > 0 && (
+              <PinnedProject>
+                {pinned.map((project) => (
+                  <CardProjectProfile
+                    key={project.id}
+                    project={project}
+                    userId={currentUserId}
+                    isPinned
+                    onMutateSuccess={() => refetch()}
+                    isMyProfile={isMyProfile}
+                  />
+                ))}
+              </PinnedProject>
+            )}
+            {notPinned.map((project) => (
               <CardProjectProfile
                 key={project.id}
                 project={project}
-                userId={userId}
-                isPinned
+                userId={currentUserId}
                 onMutateSuccess={() => refetch()}
+                isMyProfile={isMyProfile}
               />
             ))}
-          </PinnedProject>
+          </>
         )}
-        {notPinned.map((project) => (
-          <CardProjectProfile
-            key={project.id}
-            project={project}
-            userId={userId}
-            onMutateSuccess={() => refetch()}
-          />
-        ))}
       </ContainerProject>
     </div>
   );
 }
-
-

@@ -8,7 +8,7 @@ type PinnedProjectProps = {
 
 export function ContainerProject({ children, className }: PinnedProjectProps) {
   return (
-    <div className="mt-2">
+    <div className="mt-2 flex flex-col gap-50">
       <div>{children}</div>
     </div>
   );

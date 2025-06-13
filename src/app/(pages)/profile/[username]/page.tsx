@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { trpc } from "@/app/_trpc/client";
 import { Sidebar } from "@/components/layout/sidebar";
 import { PageContainer } from "@/components/ui/page-container";
@@ -9,47 +9,36 @@ import { ProfileCard } from "@/components/profile/profile-card";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 
+
 export default function ProfilePage() {
-  const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
 
   const rawParams = useParams();
   const username = typeof rawParams?.username === "string" ? rawParams.username : undefined;
 
   const { user, isLoaded } = useUser();
-  const userId = user?.id;
+  const userId = user?.id ?? "";
 
   const { data: myUserData, isLoading: isMyUserLoading } = trpc.user.getById.useQuery(
-    { id: userId || "" },
+    { id: userId },
     { enabled: !!userId }
   );
 
-  const correctUsername = myUserData?.data?.username;
-
-  const isUsernameReady = isLoaded && userId && !isMyUserLoading && !!correctUsername;
-  const isUsernameMatch = correctUsername === username;
-
-  // 🔁 Redirect jika username di URL tidak sesuai dengan username yang valid
-  useEffect(() => {
-    if (isUsernameReady && username && !isUsernameMatch) {
-      router.replace(`/profile/${correctUsername}`);
-    }
-  }, [isUsernameReady, isUsernameMatch, correctUsername, username, router]);
-
   const { data: profileData } = trpc.user.getByUsername.useQuery(
     { username: username! },
-    { enabled: !!isUsernameReady && !!isUsernameMatch }
+    { enabled: !!username }
   );
+
+  const profileId = profileData?.data?.id;
 
   const { data: projectsData } = trpc.user.getAllProjects.useQuery(
     {
-      id_user: userId!,
+      id_user: profileId,
       limit: 100,
     },
-    { enabled: !!isUsernameReady && !!isUsernameMatch }
+    { enabled: !!profileId }
   );
 
-  // 📱 Responsive check
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 690);
     handleResize();
@@ -57,21 +46,25 @@ export default function ProfilePage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // 🧹 Jangan render sampai username valid dan cocok
-  if (!isUsernameReady || !isUsernameMatch) return null;
+  const isReady = isLoaded && !isMyUserLoading && !!profileData?.data;
 
-  if (!profileData?.data) return <p className="text-center mt-10">User not found</p>;
+  if (!isReady) return null;
+
+  // Cek apakah user login?
+  const isMyProfile = myUserData?.data?.username === profileData?.data?.username;
 
   return (
     <>
-      <Sidebar activeItem="Profile" />
-      <PageContainer title="Profile">
+      <Sidebar activeItem={isMyProfile ? "Profile" : ""} />
+      <PageContainer title={isMyProfile ? "Profile" : "@" + profileData.data.username}>
         <div className="flex justify-center px-4">
           <ProfileCard
             user={profileData.data}
             isMobile={isMobile}
             projects={projectsData?.data || []}
-            userId={userId!}
+            currentUserId={myUserData?.data?.id ?? ""} 
+            isMyProfile={isMyProfile}
+            
           />
         </div>
       </PageContainer>

@@ -41,6 +41,16 @@ export default function EditProfile() {
   const usernameFromUrl = params?.username as string | undefined;
   const { user } = useUser();
   const [isMobile, setIsMobile] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const {
+    data: loggedInUserDetail,
+    isLoading: isLoggedInUserLoading,
+    error: loggedInUserError,
+  } = trpc.user.getById.useQuery(
+    { id: user?.id ?? "" },
+    { enabled: !!user?.id }
+  );
 
   const {
     data: userDetail,
@@ -55,16 +65,20 @@ export default function EditProfile() {
   const utils = trpc.useUtils();
 
   const updateMutation = trpc.user.update.useMutation({
-  onSuccess: () => {
-    console.log("Berhasil update user!");
-    utils.user.getByUsername.invalidate({ username: usernameFromUrl });
-    router.back();
-  },
-  onError: (error) => {
-    console.error("Gagal update user:", error);
-    alert("Gagal menyimpan data. Silakan coba lagi.");
-  }
-});
+    onSuccess: (updatedUser) => {
+      console.log("Berhasil update user!");
+      utils.user.getByUsername.invalidate({ username: usernameFromUrl });
+      if (updatedUser.data.username !== usernameFromUrl) {
+        router.replace(`/profile/${updatedUser.data.username}`);
+      } else {
+        router.back();
+      }
+    },
+    onError: (error) => {
+      console.error("Gagal update user:", error);
+      alert("Gagal menyimpan data. Silakan coba lagi.");
+    },
+  });
 
   const [name, setName] = useState("");
   const [usernameInput, setUsernameInput] = useState("");
@@ -75,6 +89,32 @@ export default function EditProfile() {
   const [linkedIn, setLinkedIn] = useState("");
   const [gitHub, setGitHub] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Cek akses pengguna
+  useEffect(() => {
+    if (
+      !isUserDetailLoading &&
+      !isLoggedInUserLoading &&
+      !isRedirecting &&
+      user &&
+      userDetail?.data?.id &&
+      loggedInUserDetail?.data?.id &&
+      userDetail.data.id !== loggedInUserDetail.data.id &&
+      loggedInUserDetail.data.username
+    ) {
+      setIsRedirecting(true);
+      router.replace(`/profile/${loggedInUserDetail.data.username}/edit`);
+    }
+  }, [
+    isUserDetailLoading,
+    isLoggedInUserLoading,
+    isRedirecting,
+    user,
+    userDetail?.data?.id,
+    loggedInUserDetail?.data?.id,
+    loggedInUserDetail?.data?.username,
+    router,
+  ]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 690);
@@ -166,15 +206,19 @@ export default function EditProfile() {
     updateMutation,
   ]);
 
-  if (isUserDetailLoading) {
+  // Fallback saat redirect
+  if (isRedirecting) return null;
+
+  if (isUserDetailLoading || isLoggedInUserLoading) {
     return <div className="text-center p-10 text-white">Memuat data...</div>;
   }
 
-  if (userDetailError) {
+  if (userDetailError || loggedInUserError) {
     return (
       <div className="text-center p-10 text-red-500">
         Gagal memuat data:<br />
-        {userDetailError?.message || ""}<br />
+        {userDetailError?.message || loggedInUserError?.message}
+        <br />
         <button
           onClick={() => window.location.reload()}
           className="mt-4 bg-red-600 px-4 py-2 rounded text-white hover:bg-red-700"

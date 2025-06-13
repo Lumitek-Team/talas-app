@@ -166,6 +166,14 @@ export interface FollowerType {
 	};
 }
 
+export interface FollowingType {
+  following: {
+    username: string;
+    name: string;
+    photo_profile: string | null;
+  };
+}
+
 export interface SelectCollabType {
 	id: string;
 	name: string;

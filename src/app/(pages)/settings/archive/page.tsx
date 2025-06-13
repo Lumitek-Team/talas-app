@@ -27,7 +27,7 @@ export default function Archive() {
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 690);
-    handleResize(); // Initial check
+    handleResize(); 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -63,7 +63,6 @@ export default function Archive() {
               ) : data?.projects?.length ? (
                 data.projects.map((project: ProjectType, index: number) => (
                   <div key={project.title}>
-                    {/* Bungkus CardArchive dengan div clickable */}
                     <div
                       onClick={() => router.push(`/project/${project.title}`)}
                       className="cursor-pointer"

@@ -39,7 +39,7 @@ export function CardHeaderArchive({
       onClick: onDelete,
       className: "text-red-500 hover:bg-red-500/10",
     },
-  ].filter(Boolean) as ActionItem[]; // Hapus item null kalau tidak ada handler
+  ].filter(Boolean) as ActionItem[];
 
   return (
     <div className="relative flex justify-between items-end mb-5">

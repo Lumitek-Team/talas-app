@@ -36,24 +36,35 @@ export function ImageContainerProjectProfile({ images }: ImageContainerProps) {
   }, [loadedCount, images.length, isCarouselActive]);
 
   return (
-    <ScrollArea className="w-full rounded-md overflow-hidden">
-      <div
-        ref={containerRef}
-        className={`flex gap-4 pt-2 pb-2 transition-all ${
-          isCarouselActive ? "w-max" : "w-full justify-center"
-        }`}
-      >
-        {images.map((src, idx) => (
+  <ScrollArea className="w-full rounded-md overflow-hidden ">
+    <div
+      ref={containerRef}
+      className={`flex gap-4 transition-all ${
+        isCarouselActive ? "w-max" : "w-full justify-center"
+      }`}
+      style={{
+        flexWrap: isCarouselActive ? "nowrap" : "wrap",
+        overflowX: isCarouselActive ? "auto" : "hidden",
+      }}
+    >
+      {images.map((src, idx) => (
+        <div
+          key={idx}
+          className={`shrink-0 w-full max-w-[650px] ${
+            isCarouselActive ? "" : ""
+          }`}
+        >
           <img
-            key={idx}
             src={src}
             alt={`Image ${idx + 1}`}
             onLoad={() => setLoadedCount((prev) => prev + 1)}
-            className="aspect-video h-auto w-full max-w-none rounded-sm object-contain bg-white"
+            className="aspect-video w-full rounded-sm object-contain bg-white mb-2"
           />
-        ))}
-      </div>
-      {isCarouselActive && <ScrollBar orientation="horizontal" />}
-    </ScrollArea>
-  );
+        </div>
+      ))}
+    </div>
+    {isCarouselActive && <ScrollBar orientation="horizontal" />}
+  </ScrollArea>
+);
+
 }
