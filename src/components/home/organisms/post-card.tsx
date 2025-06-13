@@ -128,8 +128,7 @@ export function PostCard({
 
   return (
     <div
-      className={`p-4 ${isMobile ? 'bg-background' : ''} cursor-pointer`}
-      onClick={handleCardClick}
+      className={`p-4 ${isMobile ? 'bg-background' : ''}`}
     >
       <PostHeader
         username={username}
@@ -141,14 +140,9 @@ export function PostCard({
       <div className="mb-6">
         <h2 className="text-lg font-bold">{displayTitle}</h2>
         {category && (
-          <Link
-            href={`/feeds?category=${category.slug}`}
-            onClick={(e) => e.stopPropagation()} // Prevent card click
-            data-prevent-card-click="true" // Add attribute for clarity
-            className="text-sm text-muted-foreground hover:underline mb-3 inline-block"
-          >
+          <p className="text-sm text-muted-foreground mb-3 inline-block">
             {category.title}
-          </Link>
+          </p>
         )}
         <p className="text-white text-sm whitespace-pre-line">
           {displayContent}
