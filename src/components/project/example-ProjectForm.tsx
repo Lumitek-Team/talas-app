@@ -105,7 +105,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
     const [imageSrc, setImageSrc] = useState("");
     const [croppedImage, setCroppedImage] = useState<File | null>(null);
 
-    const { data, isLoading: isCategoryLoading } = trpc.category.getAll.useQuery<CategoryType[]>();
+    const { data, isLoading: isCategoryLoading } = trpc.category.getAll.useQuery();
 
     const router = useRouter();
 
@@ -291,7 +291,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ mode = "create", project }) =
                                                     <SelectContent>Loading...</SelectContent>
                                                 ) : (
                                                     <SelectContent>
-                                                        {data?.map((category) => (
+                                                        {data?.data.map((category) => (
                                                             <SelectItem key={category.id} value={category.id}>
                                                                 {category.title}
                                                             </SelectItem>

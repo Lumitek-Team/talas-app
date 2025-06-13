@@ -3,11 +3,12 @@ import { ReactNode } from "react";
 
 type PinnedProjectProps = {
   children: ReactNode;
+  className? : String
 };
 
-export function ContainerProject({ children }: PinnedProjectProps) {
+export function ContainerProject({ children, className }: PinnedProjectProps) {
   return (
-    <div className="rounded-lg space-y-2">
+    <div className="mt-2">
       <div>{children}</div>
     </div>
   );

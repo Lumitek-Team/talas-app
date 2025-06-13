@@ -15,6 +15,7 @@ export function PhotoProfileUser({ photoUrl }: PhotoProfileUserProps) {
             src={photoUrl}
             alt="User Photo"
             className="w-full h-full rounded-full object-cover"
+            referrerPolicy="no-referrer"
           />
         ) : (
           <div className="w-full h-full rounded-full bg-white flex items-center justify-center">

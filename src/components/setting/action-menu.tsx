@@ -1,19 +1,22 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Trash2, ArrowUpRight } from "lucide-react";
+import { cn } from "@/lib/utils"; // kalau kamu punya className helper
+import { ReactNode } from "react";
+
+export type ActionItem = {
+  label: string;
+  icon: ReactNode;
+  onClick: () => void;
+  className?: string;
+};
 
 type ActionMenuProps = {
-  onUnarchive?: () => void;
-  onDelete?: () => void;
+  actions: ActionItem[];
   onClose: () => void;
 };
 
-export function ActionMenu({
-  onUnarchive,
-  onDelete,
-  onClose,
-}: ActionMenuProps) {
+export function ActionMenu({ actions, onClose }: ActionMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,20 +37,23 @@ export function ActionMenu({
       ref={menuRef}
       className="absolute right-0 top-8 z-10 bg-card border border-white/10 rounded-sm shadow-md w-48 overflow-hidden"
     >
-      <button
-        onClick={(e) => {onUnarchive?.(); e.stopPropagation()}}
-        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-white/5 text-white"
-      >
-        <ArrowUpRight className="w-4 h-4" />
-        Unarchive
-      </button>
-      <button
-        onClick={(e) => {onDelete?.(); e.stopPropagation();}}
-        className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-500/10 text-red-500"
-      >
-        <Trash2 className="w-4 h-4" />
-        Delete
-      </button>
+      {actions.map((action, index) => (
+        <button
+          key={index}
+          onClick={(e) => {
+            action.onClick();
+            onClose();
+            e.stopPropagation();
+          }}
+          className={cn(
+            "w-full flex items-center gap-2 px-4 py-2 hover:bg-white/5 text-white",
+            action.className
+          )}
+        >
+          {action.icon}
+          {action.label}
+        </button>
+      ))}
     </div>
   );
 }

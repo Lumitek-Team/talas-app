@@ -10,6 +10,7 @@ interface PageContainerProps {
   className?: string;
   title: string;
   showBackButton?: boolean;
+  backButtonHref?: string;
 }
 
 export function PageContainer({ 

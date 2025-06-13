@@ -53,7 +53,7 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
   });
 
   const availableCategories = useMemo(() => {
-    return fetchedCategories?.map(cat => ({ id: cat.id, title: cat.title })) || [];
+    return fetchedCategories?.data ?? [];
   }, [fetchedCategories]);
 
   const form = useForm<ProjectFormValues>({
@@ -88,7 +88,7 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
     onSuccess: (data) => {
       setIsSubmittingForm(false);
       utils.project.getAll.invalidate();
-      router.push(`/project/${data.slug}`);
+      router.push(`/project/${data.data.slug}`);
     },
     onError: (error) => {
       setIsSubmittingForm(false);
@@ -104,7 +104,7 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
         utils.project.getOne.invalidate({ id: project.slug, id_user: user?.id }); 
       }
       utils.project.getAll.invalidate();
-      router.replace(`/project/${data.slug}`);
+      router.replace(`/project/${data.data.slug}`);
     },
     onError: (error) => {
       setIsSubmittingForm(false);

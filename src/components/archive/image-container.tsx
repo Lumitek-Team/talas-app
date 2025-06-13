@@ -3,35 +3,11 @@
 import React from "react";
 
 type ImageContainerProps = {
-  images: string[]; // Asumsi: setiap image adalah URL string
+  images: string[];
 };
 
 export function ImageContainer({ images }: ImageContainerProps) {
-  const imageCount = images.length;
-
-  const getImageClass = () => {
-    if (imageCount === 1) return "w-full max-w-3xl aspect-video";
-    if (imageCount === 2) return "w-full aspect-video";
-    return "w-90 aspect-video"; // 3+ gambar
-  };
-
-  const isCarouselActive = imageCount >= 3;
-
-  if (imageCount === 2) {
-    // Untuk 2 gambar: grid 2 kolom
-    return (
-      <div className="grid grid-cols-2 gap-2 w-full pt-2 pb-2">
-        {images.map((src, idx) => (
-          <img
-            key={idx}
-            src={src}
-            alt={`Image ${idx + 1}`}
-            className={`${getImageClass()} object-contain rounded-sm`}
-          />
-        ))}
-      </div>
-    );
-  }
+  const isCarouselActive = images.length > 1;
 
   return (
     <div
@@ -56,7 +32,7 @@ export function ImageContainer({ images }: ImageContainerProps) {
             key={idx}
             src={src}
             alt={`Image ${idx + 1}`}
-            className={`${getImageClass()} object-contain rounded-sm flex-shrink-0`}
+            className="w-full max-w-[100vw] aspect-video object-contain rounded-sm flex-shrink-0"
           />
         ))}
       </div>

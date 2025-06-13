@@ -5,12 +5,8 @@ import { FlexHeader } from "./flex-header";
 import { PhotoProfileUser } from "./profile-photo-user";
 import { ContainerProject } from "@/components/profile/container-project";
 import { PinnedProject } from "@/components/profile/pinned-project";
-import { getPublicUrl } from "@/lib/utils";
-import { CardArchive } from "../archive/card-archive";
-import { CardContentArchive } from "../archive/content-archive";
-import { CardHeaderArchive } from "../archive/card-header-archive";
-import { ImageContainer } from "../archive/image-container";
 import { CardProjectProfile } from "./card-project-profile";
+import { trpc } from "@/app/_trpc/client"; // pastikan ini benar
 
 interface UserCountSummary {
   count_project: number;
@@ -35,8 +31,12 @@ interface Project {
   id: string;
   title: string;
   slug: string;
-  content: string; // <--- tambahkan ini
-  image1?: string | undefined;
+  content: string;
+  image1?: string;
+  image2?: string;
+  image3?: string;
+  image4?: string;
+  image5?: string;
   created_at: string;
 }
 
@@ -48,12 +48,26 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ user, userId, isMobile = false, projects }: ProfileCardProps) {
+  const {
+    data,
+    refetch,
+  } = trpc.user.getPinnedProjects.useQuery({ id_user: userId }, { refetchOnWindowFocus: false });
+
+  // Data pinned yang didapat dari backend
+  const pinnedProjects: { id: string }[] = data?.data ?? [];
+
+  // Buat set berisi ID dari proyek yang dipinned
+  const pinnedIds = new Set(pinnedProjects.map((p) => p.id));
+
+  // Filter proyek yang dipinned dan tidak
+  const pinned = projects.filter((p) => pinnedIds.has(p.id));
+  const notPinned = projects.filter((p) => !pinnedIds.has(p.id));
+
+  console.log("All projects:", projects.map(p => p.id));
+  console.log("Pinned IDs:", [...pinnedIds]);
+
   return (
-    <div
-      className={`w-full rounded-2xl space-y-4 text-white shadow ${
-        isMobile ? "bg-background p-2" : "bg-card border p-8 border-white/10"
-      }`}
-    >
+    <div className={`w-full rounded-2xl space-y-4 text-white shadow ${isMobile ? "bg-background p-2" : "bg-card border p-7 border-white/10"}`}>
       <FlexHeader>
         <ProfileHeader
           name={user.name}
@@ -63,6 +77,7 @@ export function ProfileCard({ user, userId, isMobile = false, projects }: Profil
         />
         <PhotoProfileUser photoUrl={user.photo_profile || undefined} />
       </FlexHeader>
+
       <ProfileStats
         summary={user.count_summary ?? {
           count_project: 0,
@@ -73,19 +88,34 @@ export function ProfileCard({ user, userId, isMobile = false, projects }: Profil
         linkedin={user.linkedin}
         github={user.github}
       />
+
       <ProfileButtonEdit username={user.username} />
+
       <ContainerProject>
-        <PinnedProject>
-          
-        </PinnedProject>
-        {projects.map((project) => (
+        {pinned.length > 0 && (
+          <PinnedProject>
+            {pinned.map((project) => (
+              <CardProjectProfile
+                key={project.id}
+                project={project}
+                userId={userId}
+                isPinned
+                onMutateSuccess={() => refetch()}
+              />
+            ))}
+          </PinnedProject>
+        )}
+        {notPinned.map((project) => (
           <CardProjectProfile
             key={project.id}
             project={project}
             userId={userId}
+            onMutateSuccess={() => refetch()}
           />
         ))}
       </ContainerProject>
     </div>
   );
 }
+
+

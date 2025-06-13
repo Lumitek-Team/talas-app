@@ -45,7 +45,6 @@ export default function ProfilePage() {
     {
       id_user: userId!,
       limit: 100,
-      excludePinned: true,
     },
     { enabled: !!isUsernameReady && !!isUsernameMatch }
   );

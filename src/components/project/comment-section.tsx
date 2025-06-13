@@ -32,7 +32,7 @@ export function CommentSection({ projectId, currentUser }: CommentSectionProps) 
   return (
     <div className="pt-4 pb-1 p-4">
       <h3 className="text-xl font-semibold mb-3 text-white">
-        Comments ({commentsQuery.data?.length ?? 0})
+        Comments ({commentsQuery.data?.data.length ?? 0})
       </h3>
 
       {/* Form for adding a new top-level comment */}
@@ -70,13 +70,13 @@ export function CommentSection({ projectId, currentUser }: CommentSectionProps) 
           <p className="text-red-500 py-4">Error loading comments: {commentsQuery.error.message}</p>
         )}
 
-        {commentsQuery.data && commentsQuery.data.length === 0 && !commentsQuery.isLoading && (
+        {commentsQuery.data && commentsQuery.data.data.length === 0 && !commentsQuery.isLoading && (
           <p className="text-muted-foreground py-4">Be the first to share your thoughts!</p>
         )}
 
         {/* Render the tree of comments */}
         {commentsQuery.data &&
-          commentsQuery.data.map((comment: CommentsInProjectType) => (
+          commentsQuery.data.data.map((comment: CommentsInProjectType) => (
             <CommentItem
               key={comment.id}
               comment={comment}

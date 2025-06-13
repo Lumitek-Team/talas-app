@@ -35,7 +35,7 @@ export default function EditProjectPage() {
   const { data: project, isLoading: isLoadingProject, error: projectError } = trpc.project.getOne.useQuery(
     {
       id: projectIdOrSlug, // Pass the slug (or ID) to fetch the project
-      id_user: user?.id,   // Pass current user ID for backend checks (e.g., viewing own archived project)
+      id_user: user!.id,   // Pass current user ID for backend checks (e.g., viewing own archived project)
     },
     {
       enabled: !!projectIdOrSlug && isUserLoaded && !!user, // Enable query when slug/ID and user are available
@@ -48,13 +48,13 @@ export default function EditProjectPage() {
   const updateProjectMutation = trpc.project.edit.useMutation({
     onSuccess: (updatedProjectData) => {
       // Invalidate relevant queries to refetch data on other pages
-      utils.project.getOne.invalidate({ id: updatedProjectData.slug, id_user: user?.id });
+      utils.project.getOne.invalidate({ id: updatedProjectData.data.slug, id_user: user?.id });
       // If you sometimes query by raw ID, invalidate that too
-      utils.project.getOne.invalidate({ id: updatedProjectData.id, id_user: user?.id });
+      utils.project.getOne.invalidate({ id: updatedProjectData.data.id, id_user: user?.id });
       utils.project.getAll.invalidate(); // Invalidate project lists/feeds
       // Potentially invalidate user-specific project lists if they exist
 
-      router.push(`/project/${updatedProjectData.slug || projectIdOrSlug}`); // Navigate back to the project detail page
+      router.push(`/project/${updatedProjectData.data.slug || projectIdOrSlug}`); // Navigate back to the project detail page
       // Consider adding a success toast notification here
     },
     onError: (error) => {
@@ -109,18 +109,18 @@ export default function EditProjectPage() {
 
   // Authorization: Check if the current user is the owner of the project
   // Assumes project_user[0] is the primary owner.
-  const isOwner = user && project.project_user && project.project_user[0]?.user?.id === user.id;
+  const isOwner = user && project.data.project_user && project.data.project_user[0]?.user?.id === user.id;
 
   if (!isOwner) {
     // Redirect if not the owner. useEffect ensures this runs client-side after initial render.
     useEffect(() => {
-      router.push(`/project/${project?.slug || projectIdOrSlug}`);
+      router.push(`/project/${project?.data.slug || projectIdOrSlug}`);
     }, [router, project, projectIdOrSlug]);
 
     return (
       <>
         <Sidebar />
-        <PageContainer title="Unauthorized" showBackButton={true} backButtonHref={`/project/${project?.slug || projectIdOrSlug}`}>
+        <PageContainer title="Unauthorized" showBackButton={true} backButtonHref={`/project/${project?.data.slug || projectIdOrSlug}`}>
           <div className="p-6"><p>You are not authorized to edit this project. Redirecting...</p></div>
         </PageContainer>
       </>
@@ -129,26 +129,26 @@ export default function EditProjectPage() {
 
   // Prepare initial data for the form, mapping from ProjectOneType to ProjectFormValues
   const initialFormValues: Partial<ProjectFormValues> = {
-    title: project.title,
-    caption: project.content, // 'caption' in form schema maps to 'content' in DB
-    githubUrl: project.link_github || "",
-    figmaUrl: project.link_figma || "",
-    category: project.id_category, // Store category ID
+    title: project.data.title,
+    caption: project.data.content, // 'caption' in form schema maps to 'content' in DB
+    githubUrl: project.data.link_github || "",
+    figmaUrl: project.data.link_figma || "",
+    category: project.data.id_category, // Store category ID
   };
 
   // Extract existing image URLs to pass to the ProjectForm
   const existingImageUrls: (string | null)[] = [
-    project.image1,
-    project.image2,
-    project.image3,
-    project.image4,
-    project.image5,
+    project.data.image1,
+    project.data.image2,
+    project.data.image3,
+    project.data.image4,
+    project.data.image5,
   ].map(url => url || null); // Use null for empty image slots
 
   return (
     <>
       <Sidebar activeItem="Create" /> {/* Or a more relevant activeItem like "My Projects" */}
-      <PageContainer title={`Edit: ${project.title}`} showBackButton={true} backButtonHref={`/project/${project.slug || projectIdOrSlug}`}>
+      <PageContainer title={`Edit: ${project.data.title}`} showBackButton={true} backButtonHref={`/project/${project.data.slug || projectIdOrSlug}`}>
         <div className={`overflow-hidden ${isMobile ? 'bg-background' : 'bg-card rounded-3xl border border-white/10'}`}>
           <div className="p-6 space-y-6">
             {/*
@@ -165,7 +165,7 @@ export default function EditProjectPage() {
             */}
             <ProjectForm
               mode="edit"
-              project={project} // Pass the fetched project data directly
+              project={project.data} // Pass the fetched project data directly
               // initialData, existingImageUrls, projectId props are removed from ProjectForm
             />
           </div>

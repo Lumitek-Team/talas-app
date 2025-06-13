@@ -59,14 +59,13 @@ export default function Archive() {
               {isLoading ? (
                 <>
                   <PostSkeleton />
-                  <PostSkeleton />
                 </>
               ) : data?.projects?.length ? (
                 data.projects.map((project: ProjectType, index: number) => (
-                  <div key={project.id}>
+                  <div key={project.title}>
                     {/* Bungkus CardArchive dengan div clickable */}
                     <div
-                      onClick={() => router.push(`/project/${project.id}`)}
+                      onClick={() => router.push(`/project/${project.title}`)}
                       className="cursor-pointer"
                     >
                       <CardArchive

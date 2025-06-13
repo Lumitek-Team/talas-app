@@ -39,19 +39,22 @@ export default function ProjectDetailPage() {
     id_user: currentUserId,
   }), [projectId, currentUserId]);
 
-  const { data: project, isLoading, error, refetch: refetchProject } = trpc.project.getOne.useQuery(
-    queryClientKeyProjectGetOne,
-    {
-      enabled: !!projectId && isUserLoaded && (!!user || !currentUserId),
-      onSuccess: (data) => {
-        if (data) {
-          // This condition should now correctly initialize optimisticLike
-          if (optimisticLike === undefined) setOptimisticLike(data.is_liked);
-          if (optimisticBookmark === undefined) setOptimisticBookmark(data.is_bookmarked);
-        }
-      }
+  const {
+    data: project,
+    isLoading,
+    error,
+    refetch: refetchProject
+  } = trpc.project.getOne.useQuery(queryClientKeyProjectGetOne, {
+    enabled: !!projectId && isUserLoaded && (!!user || !currentUserId),
+  });
+
+  useEffect(() => {
+    const data = project?.data;
+    if (data) {
+      if (optimisticLike === undefined) setOptimisticLike(data.is_liked);
+      if (optimisticBookmark === undefined) setOptimisticBookmark(data.is_bookmarked);
     }
-  );
+  }, [project, optimisticLike, optimisticBookmark]);
 
   // Project mutations (like, bookmark - from previous refactor)
   const bookmarkMutation = trpc.bookmark.create.useMutation({
@@ -69,7 +72,7 @@ export default function ProjectDetailPage() {
         await utils.project.getOne.cancel(queryClientKeyProjectGetOne); 
         const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne); 
         utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) => 
-            oldData ? { ...oldData, is_liked: true, count_likes: (oldData.count_likes || 0) + 1 } : undefined 
+            oldData ? { ...oldData, is_liked: true, count_likes: (oldData.data.count_likes || 0) + 1 } : undefined 
         ); 
         setOptimisticLike(true); // Explicitly set optimistic state here too
         return { previousProjectData }; 
@@ -97,7 +100,7 @@ export default function ProjectDetailPage() {
         await utils.project.getOne.cancel(queryClientKeyProjectGetOne); 
         const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne); 
         utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) => 
-            oldData ? { ...oldData, is_liked: false, count_likes: Math.max(0, (oldData.count_likes || 0) - 1) } : undefined 
+            oldData ? { ...oldData, is_liked: false, count_likes: Math.max(0, (oldData.data.count_likes || 0) - 1) } : undefined 
         ); 
         setOptimisticLike(false); // Explicitly set optimistic state here too
         return { previousProjectData }; 
@@ -162,56 +165,56 @@ export default function ProjectDetailPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleToggleBookmark = () => { /* ... as before ... */ if (!user || !project) return; const currentIsBookmarked = optimisticBookmark !== undefined ? optimisticBookmark : project.is_bookmarked; setOptimisticBookmark(!currentIsBookmarked); if (currentIsBookmarked) { unbookmarkMutation.mutate({ id_user: user.id, id_project: project.id }); } else { bookmarkMutation.mutate({ id_user: user.id, id_project: project.id }); } };
+  const handleToggleBookmark = () => { /* ... as before ... */ if (!user || !project) return; const currentIsBookmarked = optimisticBookmark !== undefined ? optimisticBookmark : project.data.is_bookmarked; setOptimisticBookmark(!currentIsBookmarked); if (currentIsBookmarked) { unbookmarkMutation.mutate({ id_user: user.id, id_project: project.data.id }); } else { bookmarkMutation.mutate({ id_user: user.id, id_project: project.data.id }); } };
   const handleToggleLike = () => { 
     if (!user || !project) return;
     // Optimistic update is now more robustly handled in onMutate and onError
-    const currentIsLiked = optimisticLike !== undefined ? optimisticLike : project.is_liked;
+    const currentIsLiked = optimisticLike !== undefined ? optimisticLike : project.data.is_liked;
     // No need to call setOptimisticLike here directly if mutations handle it well
     if (currentIsLiked) {
-      unlikeMutation.mutate({ id_user: user.id, id_project: project.id });
+      unlikeMutation.mutate({ id_user: user.id, id_project: project.data.id });
     } else {
-      likeMutation.mutate({ id_user: user.id, id_project: project.id });
+      likeMutation.mutate({ id_user: user.id, id_project: project.data.id });
     }
   };
   
   // Handlers for owner actions
   const handleConfirmDeleteProject = () => {
     if (!project || !user) return;
-    deleteProjectMutation.mutate({ id: project.id, id_user: user.id });
+    deleteProjectMutation.mutate({ id: project.data.id, id_user: user.id });
   };
   const handleConfirmArchiveProject = () => {
     if (!project || !user) return;
-    archiveProjectMutation.mutate({ id: project.id, id_user: user.id });
+    archiveProjectMutation.mutate({ id: project.data.id, id_user: user.id });
   };
   const handleConfirmUnarchiveProject = () => {
     if (!project || !user) return;
-    unarchiveProjectMutation.mutate({ id: project.id, id_user: user.id });
+    unarchiveProjectMutation.mutate({ id: project.data.id, id_user: user.id });
   };
 
   if (!isUserLoaded || (currentUserId && !user)) { /* ... loading user ... */ return <><Sidebar /><PageContainer title="Loading User..." showBackButton={true}><div className="space-y-4 p-4"><PostSkeleton /></div></PageContainer></>; }
   if (isLoading) { /* ... loading project ... */  return <><Sidebar /><PageContainer title="Loading Project..." showBackButton={true}><div className="space-y-4 p-4"><PostSkeleton /></div></PageContainer></>; }
   if (error || !project) { /* ... error or not found ... */ return <><Sidebar /><PageContainer title={error ? "Error" : "Project Not Found"} showBackButton={true}><div className="p-8 text-center"><h2 className="text-xl font-bold mb-4">{error ? "Could not load project" : "Project not found"}</h2><p>{error ? error.message : "The project you're looking for doesn't exist or has been removed."}</p><button onClick={() => router.push('/')} className="mt-6 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-foreground transition-colors">Go to Home</button></div></PageContainer></>; }
 
-  const primaryProjectUser = project.project_user && project.project_user[0]?.user;
+  const primaryProjectUser = project.data.project_user && project.data.project_user[0]?.user;
   const isOwner = user && primaryProjectUser && user.id === primaryProjectUser.id;
 
   const postCardData = { /* ... as before ... */
-    id: project.id, slug: project.slug, title: project.title,
+    id: project.data.id, slug: project.data.slug, title: project.data.title,
     username: primaryProjectUser?.username || 'Unknown User', userRole: 'Developer',
     avatarSrc: getPublicUrl(primaryProjectUser?.photo_profile) || '/img/dummy/profile-photo-dummy.jpg',
-    timestamp: project.created_at, // Pass raw date string
-    content: project.content,
-    image1: project.image1 ? getPublicUrl(project.image1) : undefined,
-    image2: project.image2 ? getPublicUrl(project.image2) : undefined,
-    image3: project.image3 ? getPublicUrl(project.image3) : undefined,
-    image4: project.image4 ? getPublicUrl(project.image4) : undefined,
-    image5: project.image5 ? getPublicUrl(project.image5) : undefined,
-    likes: project.count_likes, comments: project.count_comments,
-    link_figma: project.link_figma, link_github: project.link_github,
-    category: project.category,
-    isBookmarked: optimisticBookmark !== undefined ? optimisticBookmark : !!project.is_bookmarked,
-    isLiked: optimisticLike !== undefined ? optimisticLike : !!project?.is_liked, // Ensure project.is_liked is used as fallback
+    timestamp: project.data.created_at, // Pass raw date string
+    content: project.data.content,
+    image1: project.data.image1 ? getPublicUrl(project.data.image1) : undefined,
+    image2: project.data.image2 ? getPublicUrl(project.data.image2) : undefined,
+    image3: project.data.image3 ? getPublicUrl(project.data.image3) : undefined,
+    image4: project.data.image4 ? getPublicUrl(project.data.image4) : undefined,
+    image5: project.data.image5 ? getPublicUrl(project.data.image5) : undefined,
+    likes: project.data.count_likes, comments: project.data.count_comments,
+    link_figma: project.data.link_figma, link_github: project.data.link_github,
+    category: project.data.category,
+    isBookmarked: optimisticBookmark !== undefined ? optimisticBookmark : !!project.data.is_bookmarked,
+    isLiked: optimisticLike !== undefined ? optimisticLike : !!project?.data.is_liked, // Ensure project.is_liked is used as fallback
     onToggleBookmark: handleToggleBookmark,
     onToggleLike: handleToggleLike,
   };
@@ -219,11 +222,11 @@ export default function ProjectDetailPage() {
   return (
     <>
       <Sidebar />
-      <PageContainer title={project.title || "Project Details"} showBackButton={true}>
+      <PageContainer title={project.data.title || "Project Details"} showBackButton={true}>
         {/* Owner Actions Section */}
         {isOwner && (
           <div className="flex justify-end gap-2 mb-4 px-4 pt-4 md:px-0 md:pt-0">
-            {project.is_archived ? (
+            {project.data.is_archived ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -244,7 +247,7 @@ export default function ProjectDetailPage() {
                 {archiveProjectMutation.isPending ? "Archiving..." : "Archive"}
               </Button>
             )}
-            <Link href={`/project/${project.slug}/edit`}> {/* Assuming edit page uses slug */}
+            <Link href={`/project/${project.data.slug}/edit`}> {/* Assuming edit page uses slug */}
               <Button variant="outline" size="sm" className="border-slate-700 hover:bg-slate-700/80">Edit</Button>
             </Link>
             <Button
@@ -259,11 +262,11 @@ export default function ProjectDetailPage() {
         )}
 
         <div className={`overflow-hidden ${isMobile ? 'bg-background' : 'bg-card rounded-3xl border border-white/10'}`}>
-          <div className={isOwner && !isMobile ? "p-2" : "p-4"}> {/* Adjust padding if owner actions are present */}
+          <div className={isOwner && !isMobile ? "p-2" : "p-2"}> {/* Adjust padding if owner actions are present */}
             <PostCard {...postCardData} />
             <div className="my-1 border-t border-white/10 mx-4"></div>
             <div>
-                <CommentSection projectId={project.id} currentUser={user} />
+                <CommentSection projectId={project.data.id} currentUser={user} />
             </div>
           </div>
         </div>
