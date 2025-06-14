@@ -55,8 +55,8 @@ export default function NotificationPage() {
   const renderContent = () => {
     if (isLoading) {
       if (isLoading) {
-  return <LoadingSpinner />;
-}
+        return <LoadingSpinner />;
+      }
     }
 
     if (error) {
