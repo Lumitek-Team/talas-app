@@ -9,7 +9,7 @@ import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { CardArchive } from "@/components/archive/card-archive";
 import type { ProjectType } from "@/components/archive/card-archive";
-import { PostSkeleton } from "@/components/project/skeleton";
+import { LoadingSpinner } from "@/components/ui/loading";
 
 export default function Archive() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -58,7 +58,7 @@ export default function Archive() {
             <div className="w-full max-w-3xl space-y-6">
               {isLoading ? (
                 <>
-                  <PostSkeleton />
+                  <LoadingSpinner />
                 </>
               ) : data?.projects?.length ? (
                 data.projects.map((project: ProjectType, index: number) => (

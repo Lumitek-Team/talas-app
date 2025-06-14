@@ -12,8 +12,8 @@ export function GenderButton({ gender, selectedGender, onSelect }: GenderButtonP
   return (
     <button
       type="button"
-      className={`flex items-center justify-center rounded-xl w-20 h-8 text-sm ${
-        isSelected ? "bg-white text-black" : "border border-white text-white"
+      className={`flex items-center justify-center rounded-xl w-20 h-8 text-sm cursor-pointer ${
+        isSelected ? "bg-primary text-white" : " bg-white/10 hover:bg-white/20 text-white"
       }`}
       onClick={() => onSelect(gender)}
     >

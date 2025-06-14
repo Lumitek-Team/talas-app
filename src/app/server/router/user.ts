@@ -330,7 +330,7 @@ export const userRouter = router({
 					instagram: z.string().optional(),
 					linkedin: z.string().optional(),
 					github: z.string().optional(),
-					gender: z.enum(["MALE", "FEMALE"]).optional(),
+					gender: z.enum(["MALE", "FEMALE"]).nullish(),
 					email_contact: z.string().optional(),
 				}),
 			})
