@@ -12,7 +12,7 @@ interface Notification {
 
 interface NotificationsDB {
   recent: Notification[];
-  earlier: Notification[];
+  previous: Notification[];
 }
 
 interface UpdateNotificationRequest {
@@ -45,7 +45,7 @@ const notificationsDB: NotificationsDB = {
       isRead: true
     }
   ],
-  earlier: [
+  previous: [
     {
       id: 3,
       type: 'follow',
@@ -59,13 +59,13 @@ const notificationsDB: NotificationsDB = {
 
 // Helpers
 const categorizeNotifications = (allNotifications: Notification[]): NotificationsDB => {
-  const result: NotificationsDB = { recent: [], earlier: [] };
+  const result: NotificationsDB = { recent: [], previous: [] };
 
   allNotifications.forEach(notif => {
     if (!notif.isRead) {
       result.recent.push(notif);
     } else {
-      result.earlier.push(notif);
+      result.previous.push(notif);
     }
   });
 
@@ -85,7 +85,7 @@ const updateNotificationStatus = (id: number, isRead: boolean): boolean => {
 
   notificationsDB.recent = notificationsDB.recent.map(updateIfMatch);
   if (!found) {
-    notificationsDB.earlier = notificationsDB.earlier.map(updateIfMatch);
+    notificationsDB.previous = notificationsDB.previous.map(updateIfMatch);
   }
 
   return found;
@@ -95,7 +95,7 @@ const updateNotificationStatus = (id: number, isRead: boolean): boolean => {
 export async function GET(): Promise<NextResponse<NotificationsDB | ApiResponse>> {
   try {
     await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
-    const allNotifications = [...notificationsDB.recent, ...notificationsDB.earlier];
+    const allNotifications = [...notificationsDB.recent, ...notificationsDB.previous];
     return NextResponse.json(categorizeNotifications(allNotifications));
   } catch (error) {
     console.error('GET Error:', error);
@@ -139,7 +139,7 @@ export async function PUT(): Promise<NextResponse<ApiResponse>> {
     const markAllAsRead = (notifs: Notification[]) => notifs.map(n => ({ ...n, isRead: true }));
     
     notificationsDB.recent = markAllAsRead(notificationsDB.recent);
-    notificationsDB.earlier = markAllAsRead(notificationsDB.earlier);
+    notificationsDB.previous = markAllAsRead(notificationsDB.previous);
     
     return NextResponse.json({ success: true });
   } catch (error) {

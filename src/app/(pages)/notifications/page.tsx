@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { PageContainer } from "@/components/ui/page-container";
 import { NotificationItems } from "@/components/notification/notifItem";
+import { LoadingSpinner } from "@/components/ui/loading";
 import { BellIcon } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
 import { trpc } from "@/app/_trpc/client";
@@ -53,19 +54,9 @@ export default function NotificationPage() {
 
   const renderContent = () => {
     if (isLoading) {
-      return (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-pulse flex space-x-2">
-            {[0, 0.1, 0.2].map((delay) => (
-              <div
-                key={delay}
-                className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
-                style={{ animationDelay: `${delay}s` }}
-              />
-            ))}
-          </div>
-        </div>
-      );
+      if (isLoading) {
+  return <LoadingSpinner />;
+}
     }
 
     if (error) {
@@ -75,7 +66,7 @@ export default function NotificationPage() {
           <p className="text-sm mb-2">{error.message}</p>
           <button
             onClick={() => window.location.reload()}
-            className="text-sm text-green-500 hover:text-green-400"
+            className="text-sm text-green-500 pointer hover:text-green-400"
           >
             Try again
           </button>
@@ -113,7 +104,7 @@ export default function NotificationPage() {
 
         {earlier.length > 0 && (
           <section className="space-y-4">
-            <h2 className="text-sm text-gray-400 font-medium mb-2">Earlier</h2>
+            <h2 className="text-sm text-gray-400 font-medium mb-2">Previous</h2>
             {earlier.map((notification) => (
               <NotificationItems
                 key={notification.id}
