@@ -64,8 +64,8 @@ export default function Archive() {
                 data.projects.map((project: ProjectType, index: number) => (
                   <div key={project.title}>
                     <div
-                      onClick={() => router.push(`/project/${project.title}`)}
-                      className="cursor-pointer"
+                      // onClick={() => router.push(`/project/${project.title}`)}
+                      // className="cursor-pointer"
                     >
                       <CardArchive
                         project={project}

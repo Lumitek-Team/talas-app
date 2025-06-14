@@ -46,7 +46,7 @@ export function ActionMenu({ actions, onClose }: ActionMenuProps) {
             e.stopPropagation();
           }}
           className={cn(
-            "w-full flex items-center gap-2 px-4 py-2 hover:bg-white/5 text-white",
+            "w-full flex items-center gap-2 px-4 py-2 hover:bg-white/5 text-white cursor-pointer",
             action.className
           )}
         >
