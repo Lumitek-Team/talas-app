@@ -20,29 +20,45 @@ type NotificationItemProps = {
   onReadChange?: (id: string) => void;
 };
 
-const iconMap = {
-  like: HeartIcon,
-  comment: ChatBubbleOvalLeftIcon,
-  follow: UserPlusIcon,
+const getNotificationIcon = (notification: NotificationType) => {
+  const { type, title } = notification;
+  
+  switch (type?.toLowerCase()) {
+    case 'like':
+    case 'like_project':
+      return HeartIcon;
+    case 'comment':
+    case 'comment_project':
+      return ChatBubbleOvalLeftIcon;
+    case 'follow':
+    case 'follow_user':
+      return UserPlusIcon;
+    default:
+      // If type doesn't match, check the title content for keywords
+      const titleLower = title?.toLowerCase() || '';
+      
+      if (titleLower.includes('liked') || titleLower.includes('like')) {
+        return HeartIcon;
+      } else if (titleLower.includes('comment') || titleLower.includes('replied')) {
+        return ChatBubbleOvalLeftIcon;
+      } else if (titleLower.includes('follow') || titleLower.includes('started following')) {
+        return UserPlusIcon;
+      }
+      
+      // Default fallback
+      return BellIcon;
+  }
 };
 
 export function NotificationItems({
   notification,
   onReadChange,
 }: NotificationItemProps) {
-  const IconComponent =
-    iconMap[notification.type as keyof typeof iconMap] || BellIcon;
-
-  const handleClick = () => {
-    if (!notification.is_read && onReadChange) {
-      onReadChange(notification.id);
-    }
-  };
+  const IconComponent = getNotificationIcon(notification);
 
   return (
     <div
-      onClick={handleClick}
-      className={`px-4 py-3 flex items-start hover:bg-gray-900 cursor-pointer transition-all ${
+      className={`px-4 py-3 flex items-start transition-all border-b border-gray-700 last:border-b-0 ${
         notification.is_read ? "opacity-70" : ""
       }`}
     >
