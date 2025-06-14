@@ -59,13 +59,14 @@ const notificationsDB: NotificationsDB = {
 
 // Helpers
 const categorizeNotifications = (allNotifications: Notification[]): NotificationsDB => {
-  const now = new Date();
   const result: NotificationsDB = { recent: [], earlier: [] };
 
   allNotifications.forEach(notif => {
-    const notifTime = new Date(notif.time);
-    const diffInHours = (now.getTime() - notifTime.getTime()) / (1000 * 60 * 60);
-    diffInHours < 24 ? result.recent.push(notif) : result.earlier.push(notif);
+    if (!notif.isRead) {
+      result.recent.push(notif);
+    } else {
+      result.earlier.push(notif);
+    }
   });
 
   return result;
