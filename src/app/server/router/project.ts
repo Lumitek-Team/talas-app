@@ -411,8 +411,6 @@ export const projectRouter = router({
 				}
 			}
 
-			console.log("imagesWithUrls:", imagesWithUrls);
-
 			try {
 				const newProject = await retryConnect(() =>
 					prisma.project.create({

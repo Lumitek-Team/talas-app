@@ -8,7 +8,7 @@ import {
 	SelectCollabType,
 	UserProjectsCondition,
 } from "@/lib/type";
-import { retryConnect } from "@/lib/utils";
+import { getPublicUrl, retryConnect } from "@/lib/utils";
 import { Notification } from "@prisma/client";
 import { z } from "zod";
 
@@ -337,12 +337,17 @@ export const userRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
+				const photoPublicUrl = await getPublicUrl(input.data.photo_profile);
+
 				await retryConnect(() =>
 					prisma.user.update({
 						where: {
 							id: input.id,
 						},
-						data: input.data,
+						data: {
+							...input.data,
+							photo_profile: photoPublicUrl, // Updated line
+						},
 					})
 				);
 
@@ -382,8 +387,6 @@ export const userRouter = router({
 				throw new Error("Error updating user: " + error);
 			}
 		}),
-
-	
 
 	// use infinite query
 	getBookmarked: protectedProcedure
