@@ -347,9 +347,8 @@ export default function HomePage() {
         <div className={`overflow-hidden ${isMobile ? 'bg-background' : 'bg-card rounded-3xl border border-white/10'}`}>
           {!isMobile && user && (
             <PostComposer
-              avatarSrc={user.imageUrl || '/img/dummy/profile-photo-dummy.jpg'} // This will be overridden in PostComposer
-              username={user.fullName || user.username || 'User'} // This will be overridden in PostComposer
-              onSubmit={handleNewPost}
+              avatarSrc={user.imageUrl || '/img/dummy/profile-photo-dummy.jpg'}
+              username={user.fullName || user.username || 'User'}
               className="border-b border-white/10"
             />
           )}

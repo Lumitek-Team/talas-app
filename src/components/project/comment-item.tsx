@@ -65,12 +65,11 @@ export function CommentItem({
   };
 
   const handleConfirmDelete = () => {
-    // This is called when user confirms in the dialog
-    if (!currentUserId || currentUserId !== comment.user.id) return; // Double check
+    if (!currentUserId || currentUserId !== comment.user.id) return;
     deleteCommentMutation.mutate({
-      id: comment.id,
-      id_user: currentUserId,
-      id_project: projectId,
+        id: comment.id,
+        id_user: currentUserId,    // Changed back to snake_case
+        id_project: projectId,     // Changed back to snake_case
     });
   };
 
