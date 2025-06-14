@@ -90,7 +90,6 @@ export default function EditProfile() {
   const [gitHub, setGitHub] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
-  
   // Cek akses pengguna
   useEffect(() => {
     if (
@@ -130,7 +129,6 @@ export default function EditProfile() {
       setUsernameInput(userData.username ?? "");
       setBio(userData.bio ?? "");
       setGender(userData.gender);
-      setGender(userData.gender);
       setInstagram(userData.instagram ?? "");
       setLinkedIn(userData.linkedin ?? "");
       setGitHub(userData.github ?? "");
@@ -140,7 +138,6 @@ export default function EditProfile() {
       setEmail(user.primaryEmailAddress.emailAddress);
     }
   }, [userData, user]);
-console.log(userData?.gender)
 console.log(userData?.gender)
   useEffect(() => {
     return () => {
@@ -152,11 +149,7 @@ console.log(userData?.gender)
 
   const handleFileChange = async (file: File) => {
   if (!file || !user?.id) return;
-  if (!file || !user?.id) return;
 
-  // Buat preview sementara
-  const previewObjectUrl = URL.createObjectURL(file);
-  setPreviewUrl(previewObjectUrl);
   // Buat preview sementara
   const previewObjectUrl = URL.createObjectURL(file);
   setPreviewUrl(previewObjectUrl);
@@ -164,25 +157,6 @@ console.log(userData?.gender)
   // Ekstensi file aman
   const extension = file.name.split(".").pop() || "jpg";
   const filePath = `profile_photos/${user.id}-${Date.now()}.${extension}`;
-  // Ekstensi file aman
-  const extension = file.name.split(".").pop() || "jpg";
-  const filePath = `profile_photos/${user.id}-${Date.now()}.${extension}`;
-
-  try {
-    const result = await uploadFile("talas-image", filePath, file);
-    const publicUrl = await getImageUrl("talas-image", result.path);
-
-    if (publicUrl) {
-      if (previewObjectUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(previewObjectUrl);
-      }
-      setPreviewUrl(publicUrl);
-    }
-  } catch (error: any) {
-    console.error("Upload error:", error.message);
-    alert("Upload foto gagal. Silakan coba lagi.");
-  }
-};
 
   try {
     const result = await uploadFile("talas-image", filePath, file);
