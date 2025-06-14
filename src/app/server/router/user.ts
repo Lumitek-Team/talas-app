@@ -35,6 +35,7 @@ export const userRouter = router({
 			const username = input.email.split("@")[0];
 			try {
 				if (!existingUser) {
+					// FIX: Use a nested create to make the User and their count_summary at the same time.
 					const user = await retryConnect(() =>
 						prisma.user.create({
 							data: {
@@ -44,6 +45,10 @@ export const userRouter = router({
 								email: input.email,
 								auth_type: input.auth_type,
 								photo_profile: input.photo_profile,
+								// This line creates the associated count_summary record automatically
+								count_summary: {
+									create: {},
+								},
 							},
 						})
 					);
@@ -54,10 +59,16 @@ export const userRouter = router({
 						data: user,
 					};
 				} else {
-					//
+					// User already exists, no action needed
+					return {
+						success: true,
+						message: "User already exists.",
+						data: existingUser,
+					};
 				}
 			} catch (error) {
-				throw new Error("Error creating project: " + error);
+				// The original error message here was incorrect
+				throw new Error("Error syncing user: " + error);
 			}
 		}),
 

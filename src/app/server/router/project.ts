@@ -1,4 +1,5 @@
-// lib/trpc/routes/project.ts (or your actual path)
+// src/app/server/router/project.ts
+
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { retryConnect, deleteImage } from "@/lib/utils";
@@ -349,127 +350,125 @@ export const projectRouter = router({
 		}
 	}),
 
-	create: protectedProcedure
-		.input(
-			z.object({
-				id_user: z.string(),
-				id_category: z.string(),
-				title: z.string(),
-				content: z.string().min(1),
-				is_archived: z.boolean().default(false),
-				image1: z.any().optional(),
-				image2: z.any().optional(),
-				image3: z.any().optional(),
-				image4: z.any().optional(),
-				image5: z.any().optional(),
-				video: z.any().optional(),
-				collaborators: z.array(
-					z.object({
-						id: z.string(),
-						name: z.string(),
-						username: z.string(),
-						photo_profile: z.string().optional(),
-					})
-				),
-				link_figma: z.string().optional(),
-				link_github: z.string().optional(),
-			})
-		)
-		.mutation(async ({ input }) => {
-			let slug = slugify(input.title, {
-				lower: true,
-				strict: true,
-			});
+	  create: protectedProcedure
+    .input(
+      z.object({
+        id_user: z.string(),
+        id_category: z.string(),
+        title: z.string(),
+        content: z.string().min(1),
+        is_archived: z.boolean().default(false),
+        image1: z.any().optional(),
+        image2: z.any().optional(),
+        image3: z.any().optional(),
+        image4: z.any().optional(),
+        image5: z.any().optional(),
+        video: z.any().optional(),
+        collaborators: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            username: z.string(),
+            photo_profile: z.string().optional(),
+          })
+        ).optional(),
+        link_figma: z.string().optional().nullable(),
+        link_github: z.string().optional().nullable(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      let slug = slugify(input.title, {
+        lower: true,
+        strict: true,
+      });
 
-			const existingSlug = await retryConnect(() =>
-				prisma.project.findFirst({
-					where: {
-						slug: slug,
-					},
-				})
-			);
+      const existingSlug = await retryConnect(() =>
+        prisma.project.findFirst({
+          where: {
+            slug: slug,
+          },
+        })
+      );
 
-			if (existingSlug) {
-				slug = `${slug}-${Math.floor(Math.random() * 1000)}`;
-			}
+      if (existingSlug) {
+        slug = `${slug}-${Math.floor(Math.random() * 1000)}`;
+      }
 
-			try {
-				const newProject = await retryConnect(() =>
-					prisma.project.create({
-						data: {
-							id_category: input.id_category,
-							title: input.title,
-							slug: slug,
-							is_archived: input.is_archived,
-							content: input.content,
-							image1: input.image1,
-							image2: input.image2,
-							image3: input.image3,
-							image4: input.image4,
-							image5: input.image5,
-							video: input.video,
-							link_figma: input.link_figma, // Prisma handles null correctly here
-							link_github: input.link_github, // Prisma handles null correctly here
-						},
-					})
-				);
+      try {
+        const newProject = await retryConnect(() =>
+          prisma.project.create({
+            data: {
+              id_category: input.id_category,
+              title: input.title,
+              slug: slug,
+              is_archived: input.is_archived,
+              content: input.content,
+              image1: input.image1,
+              image2: input.image2,
+              image3: input.image3,
+              image4: input.image4,
+              image5: input.image5,
+              video: input.video,
+              link_figma: input.link_figma,
+              link_github: input.link_github,
+            },
+          })
+        );
 
-				const ownerCollab = {
-					id_user: input.id_user,
-					id_project: newProject.id,
-					ownership: ownershipType.OWNER,
-					collabStatus: collabStatusType.ACCEPTED,
-				};
+        const ownerCollab = {
+          id_user: input.id_user,
+          id_project: newProject.id,
+          ownership: ownershipType.OWNER,
+          collabStatus: collabStatusType.ACCEPTED,
+        };
 
-				const dataCollab = [
-					ownerCollab,
-					...input.collaborators.map((collab) => ({
-						id_user: collab.id,
-						id_project: newProject.id,
-						ownership: ownershipType.COLLABORATOR,
-						collabStatus: collabStatusType.PENDING,
-					})),
-				];
+        const collaboratorUsers = input.collaborators || [];
 
-				const [] = await retryConnect(() =>
-					prisma.$transaction([
-						// request collab
-						prisma.projectUser.createMany({
-							data: dataCollab,
-						}),
+        const dataCollab = [
+          ownerCollab,
+          ...collaboratorUsers.map((collab) => ({
+            id_user: collab.id,
+            id_project: newProject.id,
+            ownership: ownershipType.COLLABORATOR,
+            collabStatus: collabStatusType.PENDING,
+          })),
+        ];
 
-						prisma.category.update({
-							where: {
-								id: input.id_category,
-							},
-							data: {
-								count_projects: {
-									increment: 1,
-								},
-							},
-						}),
-						prisma.count_summary.update({
-							where: {
-								id_user: input.id_user,
-							},
-							data: {
-								count_project: {
-									increment: 1,
-								},
-							},
-						}),
-					])
-				);
+        if (dataCollab.length > 0) {
+          await retryConnect(() =>
+            prisma.projectUser.createMany({
+              data: dataCollab,
+            })
+          );
+        }
 
-				return {
-					success: true,
-					message: "Successfully create project",
-					data: newProject,
-				};
-			} catch (error) {
-				throw new Error("Error creating project: " + error);
-			}
-		}),
+        await retryConnect(() =>
+          prisma.$transaction([
+            prisma.category.update({
+              where: { id: input.id_category },
+              data: { count_projects: { increment: 1 } },
+            }),
+            // FIX: Changed 'update' to 'upsert' for robustness.
+            // This will now create the count_summary record if it doesn't exist.
+            prisma.count_summary.upsert({
+              where: { id_user: input.id_user },
+              // This runs if the record IS found
+              update: { count_project: { increment: 1 } },
+              // This runs if the record is NOT found
+              create: { id_user: input.id_user, count_project: 1 },
+            }),
+          ])
+        );
+
+        return {
+          success: true,
+          message: "Successfully create project",
+          data: newProject,
+        };
+      } catch (error) {
+        throw new Error("Error creating project: " + error);
+      }
+    }),
 
 	edit: protectedProcedure
 		.input(
@@ -656,7 +655,9 @@ export const projectRouter = router({
 							where: { id: existingProject.id_category },
 							data: { count_projects: { decrement: 1 } },
 						}),
-						prisma.count_summary.update({
+						// FIX: Changed 'update' to 'updateMany' for resilience.
+						// This will no longer throw an error if the count_summary record doesn't exist.
+						prisma.count_summary.updateMany({
 							where: { id_user: input.id_user },
 							data: { count_project: { decrement: 1 } },
 						}),
