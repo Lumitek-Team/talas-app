@@ -19,6 +19,7 @@ import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { uploadImage, getPublicUrl } from "@/lib/utils";
 import { ProjectOneType } from "@/lib/type";
+import { ProjectCollaborators } from "./ProjectCollaborators";
 
 const projectFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title must be 100 characters or less"),
@@ -26,6 +27,7 @@ const projectFormSchema = z.object({
   githubUrl: z.string().url("Please enter a valid URL if provided, or leave empty to clear.").optional().or(z.literal("")),
   figmaUrl: z.string().url("Please enter a valid URL if provided, or leave empty to clear.").optional().or(z.literal("")),
   category: z.string().min(1, "Category is required"),
+  // collaborators: z.array(z.string()).default([]),
 });
 
 export type ProjectFormValues = z.infer<typeof projectFormSchema>;

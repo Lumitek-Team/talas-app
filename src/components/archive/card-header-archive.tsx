@@ -43,7 +43,7 @@ export function CardHeaderArchive({
 
   return (
     <div className="relative flex justify-between items-end mb-5">
-      <h2 className="text-lg font-semibold">{title}</h2>
+      <h2 className="text-lg font-semibold cursor">{title}</h2>
       <button
         aria-label="More actions"
         onClick={(e) => {

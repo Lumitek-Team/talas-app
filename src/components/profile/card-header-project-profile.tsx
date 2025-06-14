@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
+import { useRouter } from "next/navigation";
 import { CustomAlertDialog } from "../ui/custom-alert-dialog";
 import { MoreVertical, 
   Archive, 
@@ -42,7 +43,7 @@ export function CardHeaderProjectProfile({
   onPin,
   onUnpin,
   isPinned,
-  isMyProfile
+  isMyProfile,
 }: CardHeaderArchiveProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -76,6 +77,22 @@ export function CardHeaderProjectProfile({
     
   ]. filter(Boolean) as ActionItem[];
 
+  const router = useRouter();
+
+  const slugify = (str: string) =>
+  str
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9 -]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+  
+  const handleTitleClick = () => {
+    const slug = slugify(title);
+    router.push(`/project/${slug}`);
+  };
+
+  
   return (
     <div className="relative flex justify-between items-end mb-5">
       <div className="flex flex-col">
@@ -87,7 +104,7 @@ export function CardHeaderProjectProfile({
             </div>
           )}
         </h2>
-        <h2 className="text-lg font-semibold flex items-center gap-2">
+        <h2 onClick={handleTitleClick} className="text-lg font-semibold flex items-center gap-2 cursor-pointer">
           {title}
         </h2>
       </div>

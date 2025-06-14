@@ -27,6 +27,7 @@ type CardProjectProfileProps = {
   isPinned?: boolean;
   onMutateSuccess?: () => void;
   isMyProfile?: boolean;
+  titleProjectProfile?: string;
 };
 
 export function CardProjectProfile({
@@ -34,7 +35,8 @@ export function CardProjectProfile({
   userId,
   isPinned,
   onMutateSuccess,
-  isMyProfile
+  isMyProfile,
+  titleProjectProfile,
 }: CardProjectProfileProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
@@ -95,11 +97,6 @@ export function CardProjectProfile({
     archive.mutate({ id: project.id, id_user: userId });
   };
 
-  const handleCardClick = () => {
-    const slug = slugify(project.title);
-    router.push(`/project/${slug}`);
-  };
-
   const handleDelete = () => {
     deleteProject.mutate({ id: project.id, id_user: userId });
   };
@@ -126,7 +123,7 @@ export function CardProjectProfile({
   };
 
   return (
-    <div onClick={handleCardClick} className="mt-5 border-b border-white/10 ">
+    <div className="mt-5 border-b border-white/10 ">
       <CardHeaderProjectProfile
         title={project.title}
         createAt={project.created_at}
