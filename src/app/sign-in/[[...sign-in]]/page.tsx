@@ -12,18 +12,32 @@ export default function LoginPage() {
     const googleLogo = document.querySelector(".cl-socialButtonsProviderIcon");
     const googleButton = document.querySelector(".cl-socialButtons") as HTMLElement;
     const buttonText = document.querySelector(".cl-socialButtonsBlockButtonText") as HTMLElement;
+    const border = document.querySelector(".cl-card") as HTMLElement
+
+    if (border) {
+      border.style.border = "none"
+    }
 
     if (buttonText) {
         buttonText.style.fontWeight = "bold";
         buttonText.style.fontSize = "14px";
+        buttonText.style.color = "white";
     }
 
     if (googleButton) {
         googleButton.style.borderRadius = '10px';
         googleButton.style.height = '40px';
-        googleButton.style.backgroundColor = '#53B253';
+        googleButton.style.backgroundColor = 'oklch(72.3% 0.219 149.579)';
+        googleButton.addEventListener("mouseenter", () => {
+          googleButton.style.backgroundColor = "oklch(0.81 0.191 143.55)";
+        });
+        googleButton.addEventListener("mouseleave", () => {
+          googleButton.style.backgroundColor = "oklch(72.3% 0.219 149.579)";
+        });
+
     }
 
+   
     if (googleLogo) {
         googleLogo.removeAttribute('srcSet');
         googleLogo.setAttribute('src', '/logo/social-google.svg');

@@ -17,7 +17,7 @@ export function ProfileButtonEdit({ username }: ProfileButtonEditProps) {
   return (
     <div
       onClick={handleClick}
-      className="flex justify-center w-full items-center border rounded-xl border-[#ffffff] p-2 text-sm mt-6 mb-6 cursor-pointer select-none hover:bg-white/10 transition"
+      className="flex justify-center w-full items-center border rounded-xl border-[#ffffff] p-2 text-sm mt-6 mb-1 cursor-pointer select-none hover:bg-white/10 transition"
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {

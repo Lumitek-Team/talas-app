@@ -39,14 +39,14 @@ export function ProfileStats({
         <div className="flex items-center gap-2">
           <span
             onClick={() => handleOpenPopup("followers")}
-            className="hover:underline cursor-pointer"
+            className="hover:text-white/60 cursor-pointer"
           >
             {summary.count_follower} Follower
           </span>
           <span className="text-[#ffffff]">|</span>
           <span
             onClick={() => handleOpenPopup("following")}
-            className="hover:underline cursor-pointer"
+            className="hover:text-white/60 cursor-pointer"
           >
             {summary.count_following} Following
           </span>
@@ -62,7 +62,7 @@ export function ProfileStats({
               target="_blank"
               rel="noreferrer"
             >
-              <Instagram className="w-5 h-5" />
+              <Instagram className="w-5 h-5 hover:text-primary" />
             </a>
           )}
           {linkedin && (
@@ -71,7 +71,7 @@ export function ProfileStats({
               target="_blank"
               rel="noreferrer"
             >
-              <FaLinkedin className="w-5 h-5" />
+              <FaLinkedin className="w-5 h-5 hover:text-primary" />
             </a>
           )}
           {github && (
@@ -80,7 +80,7 @@ export function ProfileStats({
               target="_blank"
               rel="noreferrer"
             >
-              <FaGithub className="w-5 h-5" />
+              <FaGithub className="w-5 h-5 hover:text-primary" />
             </a>
           )}
         </div>

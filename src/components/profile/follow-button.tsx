@@ -71,7 +71,7 @@ export function ProfileFollow({
   return (
     <div
       onClick={handleClick}
-      className={`flex justify-center w-full items-center border rounded-xl p-2 text-sm mt-6 mb-6 cursor-pointer select-none transition
+      className={`flex justify-center w-full items-center border rounded-xl p-2 text-sm mt-6 mb-1 cursor-pointer select-none transition
         ${isLoading ? "border-white text-white" : data?.isFollowing ? "border-white text-white hover:bg-white/10" : "bg-primary border-primary"}
       `}
       role="button"

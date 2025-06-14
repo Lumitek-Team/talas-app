@@ -54,13 +54,12 @@ export function SidebarMore({ isCollapsed }: { isCollapsed: boolean }) {
   }, [showPopup]);
 
   return (
-// <<<<<<< HEAD
     <div
       ref={containerRef}
       className={`relative ${isCollapsed ? "flex justify-center" : ""}`}
     >
       <button
-        className="flex items-center gap-3 w-full px-6 py-4 text-base font-medium transition-transform duration-200 active:scale-90 text-white hover:bg-white/10 rounded-md"
+        className="flex items-center gap-3 w-full px-6 py-4 text-base font-medium transition-transform duration-200 active:scale-90 text-white hover:bg-white/10 rounded-md cursor-pointer"
         onClick={() => setShowPopup((prev) => !prev)}
       >
         <EllipsisHorizontalIcon className="w-6 h-6" />

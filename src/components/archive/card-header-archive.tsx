@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { MoreVertical, 
   ArchiveRestore, 
   Trash2 
@@ -25,6 +26,8 @@ export function CardHeaderArchive({
   onUnarchive,
   onDelete,
 }: CardHeaderArchiveProps) {
+
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const actions = [
@@ -43,14 +46,14 @@ export function CardHeaderArchive({
 
   return (
     <div className="relative flex justify-between items-end mb-5">
-      <h2 className="text-lg font-semibold">{title}</h2>
+      <h2 onClick={() => router.push(`/project/${title}`)} className="text-lg font-semibold cursor cursor-pointer">{title}</h2>
       <button
         aria-label="More actions"
         onClick={(e) => {
           setMenuOpen(!menuOpen);
           e.stopPropagation();
         }}
-        className="p-1 rounded hover:bg-white/10 transition"
+        className="p-1 rounded hover:bg-white/10 transition cursor-pointer"
       >
         <MoreVertical className="w-5 h-5 text-gray-400" />
       </button>

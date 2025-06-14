@@ -20,7 +20,7 @@ export function ImageContainer({ images }: ImageContainerProps) {
       }}
     >
       <div
-        className={`flex gap-2 pt-2 pb-2 ${
+        className={`flex gap-2 ${
           isCarouselActive ? "w-max" : "w-full justify-center"
         }`}
         style={{

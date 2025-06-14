@@ -57,7 +57,7 @@ export default function ProfilePage() {
     <>
       <Sidebar activeItem={isMyProfile ? "Profile" : ""} />
       <PageContainer title={isMyProfile ? "Profile" : "@" + profileData.data.username}>
-        <div className="flex justify-center px-4">
+        <div className="flex justify-center">
           <ProfileCard
             user={profileData.data}
             isMobile={isMobile}

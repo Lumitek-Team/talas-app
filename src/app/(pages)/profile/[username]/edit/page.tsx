@@ -89,7 +89,7 @@ export default function EditProfile() {
   const [linkedIn, setLinkedIn] = useState("");
   const [gitHub, setGitHub] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
+  
   // Cek akses pengguna
   useEffect(() => {
     if (
@@ -128,7 +128,7 @@ export default function EditProfile() {
       setName(userData.name ?? "");
       setUsernameInput(userData.username ?? "");
       setBio(userData.bio ?? "");
-      setGender(userData.gender ?? "FEMALE");
+      setGender(userData.gender);
       setInstagram(userData.instagram ?? "");
       setLinkedIn(userData.linkedin ?? "");
       setGitHub(userData.github ?? "");
@@ -138,7 +138,7 @@ export default function EditProfile() {
       setEmail(user.primaryEmailAddress.emailAddress);
     }
   }, [userData, user]);
-
+console.log(userData?.gender)
   useEffect(() => {
     return () => {
       if (previewUrl?.startsWith("blob:")) {
@@ -148,23 +148,32 @@ export default function EditProfile() {
   }, [previewUrl]);
 
   const handleFileChange = async (file: File) => {
-    if (!file || !user?.id) return;
+  if (!file || !user?.id) return;
 
-    setPreviewUrl(URL.createObjectURL(file));
+  // Buat preview sementara
+  const previewObjectUrl = URL.createObjectURL(file);
+  setPreviewUrl(previewObjectUrl);
 
-    const filePath = `profile_photos/${user.id}-${Date.now()}.${file.name.split(".").pop()}`;
+  // Ekstensi file aman
+  const extension = file.name.split(".").pop() || "jpg";
+  const filePath = `profile_photos/${user.id}-${Date.now()}.${extension}`;
 
-    try {
-      const result = await uploadFile("talas-image", filePath, file);
-      const publicUrl = await getImageUrl("talas-image", result.path);
-      if (publicUrl) {
-        setPreviewUrl(publicUrl);
+  try {
+    const result = await uploadFile("talas-image", filePath, file);
+    const publicUrl = await getImageUrl("talas-image", result.path);
+
+    if (publicUrl) {
+      if (previewObjectUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewObjectUrl);
       }
-    } catch (error: any) {
-      console.error("Upload error:", error.message);
-      alert("Upload foto gagal. Silakan coba lagi.");
+      setPreviewUrl(publicUrl);
     }
-  };
+  } catch (error: any) {
+    console.error("Upload error:", error.message);
+    alert("Upload foto gagal. Silakan coba lagi.");
+  }
+};
+
 
   const handleSubmit = useCallback(() => {
     if (!userData || !user) {
@@ -302,7 +311,7 @@ export default function EditProfile() {
 
             <button
               onClick={handleSubmit}
-              className="bg-primary text-white px-4 py-2 mt-6 rounded hover:bg-primary/80 disabled:opacity-50"
+              className="bg-primary text-white px-4 py-2 mt-6 rounded disabled:opacity-50 hover:bg-primary-foreground cursor-pointer"
               disabled={updateMutation.isPending}
               type="button"
             >

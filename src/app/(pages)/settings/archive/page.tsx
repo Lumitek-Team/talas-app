@@ -9,7 +9,7 @@ import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { CardArchive } from "@/components/archive/card-archive";
 import type { ProjectType } from "@/components/archive/card-archive";
-import { PostSkeleton } from "@/components/project/skeleton";
+import { LoadingSpinner } from "@/components/ui/loading";
 
 export default function Archive() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -48,7 +48,7 @@ export default function Archive() {
         showBackButton={true}
       >
         <div
-          className={`text-white shadow-md space-y-4 p-6 pt-10 ${
+          className={`text-white shadow-md space-y-4  ${
             isMobile
               ? "bg-background"
               : "bg-card rounded-3xl border border-white/10"
@@ -58,14 +58,14 @@ export default function Archive() {
             <div className="w-full max-w-3xl space-y-6">
               {isLoading ? (
                 <>
-                  <PostSkeleton />
+                  <LoadingSpinner />
                 </>
               ) : data?.projects?.length ? (
                 data.projects.map((project: ProjectType, index: number) => (
                   <div key={project.title}>
                     <div
-                      onClick={() => router.push(`/project/${project.title}`)}
-                      className="cursor-pointer"
+                      // onClick={() => router.push(`/project/${project.title}`)}
+                      // className="cursor-pointer"
                     >
                       <CardArchive
                         project={project}
@@ -74,7 +74,7 @@ export default function Archive() {
                       />
                     </div>
                     {index < data.projects.length - 1 && (
-                      <div className="my-1 border-t border-white/10 mb-5" />
+                      <div className=" border-t border-white/10" />
                     )}
                   </div>
                 ))

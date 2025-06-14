@@ -16,7 +16,7 @@ export async function retryConnect(fn: () => Promise<any>, retries = 3) {
 		if (retries <= 0) throw err;
 		console.log("Retrying DB connection...", err);
 		await new Promise((res) => setTimeout(res, 1000));
-		return await retryConnect(fn, retries - 1);
+		return retryConnect(fn, retries - 1);
 	}
 }
 
