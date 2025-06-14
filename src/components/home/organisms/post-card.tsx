@@ -105,9 +105,9 @@ export function PostCard({
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
     if (slug) {
-        router.push(`/project/${slug}#comments`);
+      router.push(`/project/${slug}#comments`);
     } else {
-        router.push(`/project/${id}#comments`);
+      router.push(`/project/${id}#comments`);
     }
   };
 
@@ -178,30 +178,27 @@ export function PostCard({
 
       {allDisplayImages.length > 0 && (
         <div
-          className={`grid gap-2 mb-4 ${
-            allDisplayImages.length === 1 ? 'grid-cols-1' :
+          className={`grid gap-2 mb-4 ${allDisplayImages.length === 1 ? 'grid-cols-1' :
             allDisplayImages.length === 2 ? 'grid-cols-2' :
-            allDisplayImages.length === 3 ? 'grid-cols-3' :
-            allDisplayImages.length === 4 ? 'grid-cols-2' : 'grid-cols-3'
-          }`}
+              allDisplayImages.length === 3 ? 'grid-cols-3' :
+                allDisplayImages.length === 4 ? 'grid-cols-2' : 'grid-cols-3'
+            }`}
           onClick={e => e.stopPropagation()} // Prevent card click
           data-prevent-card-click="true"
         >
           {allDisplayImages.slice(0, 5).map((imagePath, index) => {
-            const imageUrl = imagePath.startsWith('http') ? imagePath : getPublicUrl(imagePath);
             return (
               <div
                 key={index}
-                className={`aspect-video bg-muted rounded-md overflow-hidden relative ${
-                  (allDisplayImages.length === 3 && index === 0) ? 'md:col-span-3 row-span-2' :
+                className={`aspect-video bg-muted rounded-md overflow-hidden relative ${(allDisplayImages.length === 3 && index === 0) ? 'md:col-span-3 row-span-2' :
                   (allDisplayImages.length === 5 && index === 0) ? 'col-span-3 md:col-span-2 row-span-2' :
-                  (allDisplayImages.length === 5 && (index === 1 || index ===2)) ? 'col-span-1 md:col-span-1 row-span-1' :
-                  (allDisplayImages.length > 3 && index > 0 && allDisplayImages.length % 2 !== 0 && index === allDisplayImages.length -1 ) ? 'col-span-2' :
-                  ''
-                } ${ isMobile && allDisplayImages.length > 2 && index === 0 ? 'col-span-full' : '' }`}
+                    (allDisplayImages.length === 5 && (index === 1 || index === 2)) ? 'col-span-1 md:col-span-1 row-span-1' :
+                      (allDisplayImages.length > 3 && index > 0 && allDisplayImages.length % 2 !== 0 && index === allDisplayImages.length - 1) ? 'col-span-2' :
+                        ''
+                  } ${isMobile && allDisplayImages.length > 2 && index === 0 ? 'col-span-full' : ''}`}
               >
                 <Image
-                  src={imageUrl}
+                  src={imagePath}
                   alt={`${title || 'Project'} image ${index + 1}`}
                   fill
                   className="object-cover"

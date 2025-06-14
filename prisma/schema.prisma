@@ -195,7 +195,9 @@ enum notifType {
   FOLLOW
   LIKE_PROJECT
   LIKE_COMMENT
+  COMMENT_PROJECT
   COMMENT
+  REPLY_COMMENT
 }
 
 enum ownershipType {

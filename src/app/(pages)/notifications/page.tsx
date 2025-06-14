@@ -4,14 +4,15 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { PageContainer } from "@/components/ui/page-container";
 import { NotificationItems } from "@/components/notification/notifItem";
+import { LoadingSpinner } from "@/components/ui/loading";
 import { BellIcon } from "@heroicons/react/24/outline";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 
 export default function NotificationPage() {
   const { user, isLoaded } = useUser();
-
+  const [hasVisited, setHasVisited] = useState(false);
   const {
     data,
     isLoading,
@@ -19,6 +20,7 @@ export default function NotificationPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    refetch,
   } = trpc.user.getNotification.useInfiniteQuery(
     {
       id_user: user?.id ?? "",
@@ -30,33 +32,31 @@ export default function NotificationPage() {
     }
   );
 
-  const markAllAsRead = trpc.notification.makeReaded.useMutation();
+  const markAllAsRead = trpc.notification.makeReaded.useMutation({
+    onSuccess: () => {
+      // Refetch data after marking as read to update the UI
+      refetch();
+    }
+  });
 
   useEffect(() => {
-    if (!isLoaded || !user?.id || !data) return;
+    if (!isLoaded || !user?.id || !data || hasVisited) return;
 
     const allNotifications = data.pages.flatMap((page) => page.items);
     const hasUnread = allNotifications.some((n) => !n.is_read);
     if (hasUnread) {
       markAllAsRead.mutate({ id_user: user.id });
+      setHasVisited(true);
+    } else {
+      setHasVisited(false);
     }
-  }, [isLoaded, user, data]);
+  }, [isLoaded, user, data, hasVisited]);
 
   const renderContent = () => {
     if (isLoading) {
-      return (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-pulse flex space-x-2">
-            {[0, 0.1, 0.2].map((delay) => (
-              <div
-                key={delay}
-                className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
-                style={{ animationDelay: `${delay}s` }}
-              />
-            ))}
-          </div>
-        </div>
-      );
+      if (isLoading) {
+        return <LoadingSpinner />;
+      }
     }
 
     if (error) {
@@ -66,7 +66,7 @@ export default function NotificationPage() {
           <p className="text-sm mb-2">{error.message}</p>
           <button
             onClick={() => window.location.reload()}
-            className="text-sm text-green-500 hover:text-green-400"
+            className="text-sm text-green-500 pointer hover:text-green-400"
           >
             Try again
           </button>
@@ -85,16 +85,8 @@ export default function NotificationPage() {
       );
     }
 
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-
-    const recent = allNotifications.filter(
-      (n) => new Date(n.created_at) > yesterday
-    );
-    const earlier = allNotifications.filter(
-      (n) => new Date(n.created_at) <= yesterday
-    );
+    const recent = allNotifications.filter((n) => !n.is_read);
+    const earlier = allNotifications.filter((n) => n.is_read);
 
     return (
       <>
@@ -105,7 +97,6 @@ export default function NotificationPage() {
               <NotificationItems
                 key={notification.id}
                 notification={notification}
-                onReadChange={() => {}}
               />
             ))}
           </section>
@@ -113,12 +104,11 @@ export default function NotificationPage() {
 
         {earlier.length > 0 && (
           <section className="space-y-4">
-            <h2 className="text-sm text-gray-400 font-medium mb-2">Earlier</h2>
+            <h2 className="text-sm text-gray-400 font-medium mb-2">Previous</h2>
             {earlier.map((notification) => (
               <NotificationItems
                 key={notification.id}
                 notification={notification}
-                onReadChange={() => {}}
               />
             ))}
           </section>

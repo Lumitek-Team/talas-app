@@ -110,6 +110,38 @@ export const notificationRouter = router({
 				});
 			}
 		}),
+
+	getIsUnread: protectedProcedure
+		.input(
+			z.object({
+				id_user: z.string(),
+			})
+		)
+		.query(async ({ input }) => {
+			try {
+				const count = await retryConnect(() =>
+					prisma.notification.count({
+						where: {
+							id_user: input.id_user,
+							is_read: false,
+						},
+					})
+				);
+				const isUnread: boolean = count > 0 ? true : false;
+				return {
+					success: true,
+					message: "Unread notifications count retrieved successfully",
+					data: isUnread,
+				};
+			} catch (error) {
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: `Failed to get unread notifications count: ${
+						error instanceof Error ? error.message : "Unknown error"
+					}`,
+				});
+			}
+		}),
 });
 
 export type NotificationRouter = typeof notificationRouter;

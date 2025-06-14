@@ -5,19 +5,19 @@ import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { trpc } from "@/app/_trpc/client"
 import { cn } from "@/lib/utils"; // Ensure cn is imported
-import { 
-  HomeIcon, 
-  BookmarkIcon, 
-  MagnifyingGlassIcon, 
-  BellIcon, 
-  UserIcon 
+import {
+  HomeIcon,
+  BookmarkIcon,
+  MagnifyingGlassIcon,
+  BellIcon,
+  UserIcon
 } from "@heroicons/react/24/outline";
-import { 
-  HomeIcon as HomeIconSolid, 
-  BookmarkIcon as BookmarkIconSolid, 
-  MagnifyingGlassIcon as MagnifyingGlassIconSolid, 
-  BellIcon as BellIconSolid, 
-  UserIcon as UserIconSolid 
+import {
+  HomeIcon as HomeIconSolid,
+  BookmarkIcon as BookmarkIconSolid,
+  MagnifyingGlassIcon as MagnifyingGlassIconSolid,
+  BellIcon as BellIconSolid,
+  UserIcon as UserIconSolid
 } from "@heroicons/react/24/solid";
 
 interface NavItem {
@@ -42,7 +42,11 @@ export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: Sideba
     { enabled: !!userId } // hanya fetch kalau userId sudah ada
   );
   const username = data?.data?.username;
-  console.log(user)
+
+  const isUnRead = trpc.notification.getIsUnread.useQuery(
+    { id_user: userId || "" }, // default empty string to avoid undefined
+    { enabled: !!userId } // hanya fetch kalau userId sudah ada
+  )
 
   const navItems: NavItem[] = [
     { icon: "home", label: "Home", href: "/feeds" },
@@ -61,10 +65,10 @@ export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: Sideba
       <nav className="w-full">
         <ul className="flex justify-evenly w-full">
           {navItems.map((item) => {
-            const isActive = activeItem 
-              ? item.label.toLowerCase() === activeItem.toLowerCase() 
+            const isActive = activeItem
+              ? item.label.toLowerCase() === activeItem.toLowerCase()
               : pathname === item.href;
-              
+
             return (
               <li key={item.label}>
                 <Link
@@ -81,7 +85,18 @@ export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: Sideba
                   {item.icon === "home" && (isActive ? <HomeIconSolid className="w-6 h-6" /> : <HomeIcon className="w-6 h-6" />)}
                   {item.icon === "bookmark" && (isActive ? <BookmarkIconSolid className="w-6 h-6" /> : <BookmarkIcon className="w-6 h-6" />)}
                   {item.icon === "search" && (isActive ? <MagnifyingGlassIconSolid className="w-6 h-6" /> : <MagnifyingGlassIcon className="w-6 h-6" />)}
-                  {item.icon === "bell" && (isActive ? <BellIconSolid className="w-6 h-6" /> : <BellIcon className="w-6 h-6" />)}
+                  {item.icon === "bell" && (
+                    isActive ? (
+                      <BellIconSolid className="w-6 h-6" />
+                    ) : (
+                      <span className="relative">
+                        <BellIcon className="w-6 h-6" />
+                        {isUnRead.data?.data ? (
+                          <span className="absolute top-0 right-0 block w-2.5 h-2.5 bg-red-500 rounded-full" />
+                        ) : ""}
+                      </span>
+                    )
+                  )}
                   {item.icon === "user" && (isActive ? <UserIconSolid className="w-6 h-6" /> : <UserIcon className="w-6 h-6" />)}
                 </Link>
               </li>
@@ -96,10 +111,10 @@ export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: Sideba
     <nav>
       <ul className="flex flex-col gap-y-2">
         {navItems.map((item) => {
-          const isActive = activeItem 
-            ? item.label.toLowerCase() === activeItem.toLowerCase() 
+          const isActive = activeItem
+            ? item.label.toLowerCase() === activeItem.toLowerCase()
             : pathname === item.href;
-            
+
           return (
             <li key={item.label}>
               <Link
@@ -117,7 +132,18 @@ export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: Sideba
                 {item.icon === "home" && (isActive ? <HomeIconSolid className="w-6 h-6" /> : <HomeIcon className="w-6 h-6" />)}
                 {item.icon === "bookmark" && (isActive ? <BookmarkIconSolid className="w-6 h-6" /> : <BookmarkIcon className="w-6 h-6" />)}
                 {item.icon === "search" && (isActive ? <MagnifyingGlassIconSolid className="w-6 h-6" /> : <MagnifyingGlassIcon className="w-6 h-6" />)}
-                {item.icon === "bell" && (isActive ? <BellIconSolid className="w-6 h-6" /> : <BellIcon className="w-6 h-6" />)}
+                {item.icon === "bell" && (
+                  isActive ? (
+                    <BellIconSolid className="w-6 h-6" />
+                  ) : (
+                    <span className="relative">
+                      <BellIcon className="w-6 h-6" />
+                      {isUnRead.data?.data ? (
+                        <span className="absolute top-0 right-0 block w-2.5 h-2.5 bg-red-500 rounded-full" />
+                      ) : ""}
+                    </span>
+                  )
+                )}
                 {item.icon === "user" && (isActive ? <UserIconSolid className="w-6 h-6" /> : <UserIcon className="w-6 h-6" />)}
 
                 {!isCollapsed && <span>{item.label}</span>}
