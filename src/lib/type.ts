@@ -1,8 +1,4 @@
-import { 
-	collabStatusType, 
-	ownershipType 
-} from "@prisma/client";
-
+import { collabStatusType, ownershipType } from "@prisma/client";
 
 export interface ProjectWithInteractionsType {
 	id: string;
@@ -157,6 +153,7 @@ export interface ProjectOnMutationType {
 
 export interface ProjectOnArchiveType {
 	id: string;
+	id_category: string;
 	project_user: {
 		id_user: string;
 		ownership: string;
@@ -219,11 +216,11 @@ export interface FollowerType {
 }
 
 export interface FollowingType {
-  following: {
-    username: string;
-    name: string;
-    photo_profile: string | null;
-  };
+	following: {
+		username: string;
+		name: string;
+		photo_profile: string | null;
+	};
 }
 
 export interface SelectCollabType {

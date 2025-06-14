@@ -787,6 +787,7 @@ export const projectRouter = router({
 						},
 						select: {
 							id: true,
+							id_category: true,
 							project_user: {
 								select: {
 									id_user: true,
@@ -809,11 +810,21 @@ export const projectRouter = router({
 					throw new Error("Project not found or access denied.");
 				}
 
-				const project = await retryConnect(() =>
-					prisma.project.update({
-						where: { id: input.id },
-						data: { is_archived: true },
-					})
+				const [project] = await retryConnect(() =>
+					prisma.$transaction([
+						prisma.project.update({
+							where: { id: input.id },
+							data: { is_archived: true },
+						}),
+						prisma.category.update({
+							where: { id: existingProject.id_category },
+							data: { count_projects: { decrement: 1 } },
+						}),
+						prisma.count_summary.updateMany({
+							where: { id_user: input.id_user },
+							data: { count_project: { decrement: 1 } },
+						}),
+					])
 				);
 
 				return {
@@ -841,6 +852,7 @@ export const projectRouter = router({
 						},
 						select: {
 							id: true,
+							id_category: true,
 							project_user: {
 								select: {
 									id_user: true,
@@ -863,11 +875,21 @@ export const projectRouter = router({
 					throw new Error("Project not found or access denied.");
 				}
 
-				const project = await retryConnect(() =>
-					prisma.project.update({
-						where: { id: input.id },
-						data: { is_archived: false },
-					})
+				const [project] = await retryConnect(() =>
+					prisma.$transaction([
+						prisma.project.update({
+							where: { id: input.id },
+							data: { is_archived: false },
+						}),
+						prisma.category.update({
+							where: { id: existingProject.id_category },
+							data: { count_projects: { increment: 1 } },
+						}),
+						prisma.count_summary.updateMany({
+							where: { id_user: input.id_user },
+							data: { count_project: { increment: 1 } },
+						}),
+					])
 				);
 
 				return {
