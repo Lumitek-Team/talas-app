@@ -82,7 +82,7 @@ export function CardArchive({
     .map((img) => getPublicUrl(img!));
 
   return (
-    <div className="pl-1 pr-1">
+    <div className="p-5">
       <CardHeaderArchive
         title={project.title}
         onUnarchive={() => setOpenUnarchiveDialog(true)}

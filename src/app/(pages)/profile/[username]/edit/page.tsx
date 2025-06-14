@@ -311,7 +311,7 @@ console.log(userData?.gender)
 
             <button
               onClick={handleSubmit}
-              className="bg-primary text-white px-4 py-2 mt-6 rounded disabled:opacity-50 hover:bg-primary-foreground"
+              className="bg-primary text-white px-4 py-2 mt-6 rounded disabled:opacity-50 hover:bg-primary-foreground cursor-pointer"
               disabled={updateMutation.isPending}
               type="button"
             >

@@ -1,7 +1,7 @@
 "use client";
 
 import { Avatar } from "@/components/ui/avatar-gatau-error";
-import { useRouter } from "next/router"; 
+import { useRouter } from "next/navigation"; 
 
 interface PostHeaderProps {
   username: string;

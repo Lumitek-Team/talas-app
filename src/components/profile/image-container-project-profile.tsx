@@ -50,8 +50,8 @@ export function ImageContainerProjectProfile({ images }: ImageContainerProps) {
       {images.map((src, idx) => (
         <div
           key={idx}
-          className={`shrink-0 w-full max-w-[650px] ${
-            isCarouselActive ? "" : ""
+          className={`shrink-0 w-full  ${
+            isCarouselActive ? "max-w-[690px]" : ""
           }`}
         >
           <img

@@ -48,7 +48,7 @@ export default function Archive() {
         showBackButton={true}
       >
         <div
-          className={`text-white shadow-md space-y-4 p-6 pt-10 ${
+          className={`text-white shadow-md space-y-4  ${
             isMobile
               ? "bg-background"
               : "bg-card rounded-3xl border border-white/10"
@@ -74,7 +74,7 @@ export default function Archive() {
                       />
                     </div>
                     {index < data.projects.length - 1 && (
-                      <div className="my-1 border-t border-white/10 mb-5" />
+                      <div className=" border-t border-white/10" />
                     )}
                   </div>
                 ))

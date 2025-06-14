@@ -93,48 +93,51 @@ export function ProfileCard({
   return (
     <div
       className={`w-full rounded-2xl space-y-4 text-white ${
-        isMobile ? "bg-background p-2" : "bg-card border p-7 border-white/10"
+        isMobile ? "bg-background" : "bg-card border border-white/10"
       }`}
     >
-      <FlexHeader>
-        <ProfileHeader
-          name={user.name}
-          username={user.username}
-          bio={user.bio || ""}
-          gender={user.gender}
-        />
-        <PhotoProfileUser photoUrl={user.photo_profile || undefined} />
-      </FlexHeader>
+      <div className="p-7 border-white/20">
+        <FlexHeader>
+          <ProfileHeader
+            name={user.name}
+            username={user.username}
+            bio={user.bio || ""}
+            gender={user.gender}
+          />
+          <PhotoProfileUser photoUrl={user.photo_profile || undefined} />
+        </FlexHeader>
 
-      <ProfileStats
-        summary={
-          user.count_summary ?? {
-            count_project: 0,
-            count_follower: 0,
-            count_following: 0,
+        <ProfileStats
+          summary={
+            user.count_summary ?? {
+              count_project: 0,
+              count_follower: 0,
+              count_following: 0,
+            }
           }
-        }
-        instagram={user.instagram}
-        linkedin={user.linkedin}
-        github={user.github}
-        userId={user.id}
-      />
-
-      {/* Tombol Edit atau Follow */}
-      {isMyProfile ? (
-        <ProfileButtonEdit username={user.username} />
-      ) : typeof isFollowing === "boolean" ? (
-        <ProfileFollow
-          key={user.id}
-          username={user.username}
-          idCurrentUser={currentUserId}
-          idTargetUser={user.id}
+          instagram={user.instagram}
+          linkedin={user.linkedin}
+          github={user.github}
+          userId={user.id}
         />
-      ) : (
-        <div className="text-sm text-muted-foreground text-center mt-6 mb-6">
-          Checking follow status...
-        </div>
-      )}
+
+        {/* Tombol Edit atau Follow */}
+        {isMyProfile ? (
+          <ProfileButtonEdit username={user.username} />
+        ) : typeof isFollowing === "boolean" ? (
+          <ProfileFollow
+            key={user.id}
+            username={user.username}
+            idCurrentUser={currentUserId}
+            idTargetUser={user.id}
+          />
+        ) : (
+          <div className="text-sm text-muted-foreground text-center mt-6 mb-6">
+            Checking follow status...
+          </div>
+        )}
+
+      </div>
 
       {/* Projek */}
       <ContainerProject>

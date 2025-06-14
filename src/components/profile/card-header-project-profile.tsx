@@ -3,14 +3,7 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from "next/navigation";
-import { CustomAlertDialog } from "../ui/custom-alert-dialog";
-import { MoreVertical, 
-  Archive, 
-  Trash2, 
-  PenBoxIcon,
-  Pin,
-  PinOff
- } from "lucide-react";
+import { MoreVertical, Archive, Trash2, PenBoxIcon, Pin, PinOff } from "lucide-react";
 import { ActionMenu } from "@/components/setting/action-menu";
 
 type ActionItem = {
@@ -30,6 +23,9 @@ type CardHeaderArchiveProps = {
   onUnpin?: () => void;
   isArchiving?: boolean;
   isPinned?: boolean;
+  isPin?: boolean;      
+  isUnPin?: boolean;    
+  isDeleted?: boolean;
   isMyProfile?: boolean;
 };
 
@@ -38,26 +34,38 @@ export function CardHeaderProjectProfile({
   createAt,
   onArchive,
   onDelete,
-  onEdit, 
-  isArchiving,
+  onEdit,
   onPin,
   onUnpin,
+  isArchiving,
   isPinned,
+  isPin,
+  isUnPin,
+  isDeleted,
   isMyProfile,
 }: CardHeaderArchiveProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
+
+  const isActionInProgress = isArchiving || isPin || isUnPin;
+
+  let buttonText = null;
+  if (isArchiving) buttonText = "Archiving...";
+  else if (isPin) buttonText = "Pinning...";
+  else if (isUnPin) buttonText = "Unpinning...";
+  else if (isDeleted) buttonText = "Delete...";
 
   const actions = [
-  isPinned && onUnpin && {
-    label: "Unpin",
-    icon: <PinOff className="w-4 h-4 rotate-180" />,
-    onClick: onUnpin,
-  },
-  !isPinned && onPin && {
-    label: "Pin",
-    icon: <Pin className="w-4 h-4" />,
-    onClick: onPin,
-  },
+    isPinned && onUnpin && {
+      label: "Unpin",
+      icon: <PinOff className="w-4 h-4 rotate-180" />,
+      onClick: onUnpin,
+    },
+    !isPinned && onPin && {
+      label: "Pin",
+      icon: <Pin className="w-4 h-4" />,
+      onClick: onPin,
+    },
     onEdit && {
       label: "Edit",
       icon: <PenBoxIcon className="w-4 h-4" />,
@@ -66,7 +74,7 @@ export function CardHeaderProjectProfile({
     onArchive && {
       label: "Archive",
       icon: <Archive className="w-4 h-4" />,
-      onClick: onArchive
+      onClick: onArchive,
     },
     onDelete && {
       label: "Delete",
@@ -74,42 +82,41 @@ export function CardHeaderProjectProfile({
       onClick: onDelete,
       className: "text-red-500 hover:bg-red-500/10",
     },
-    
-  ]. filter(Boolean) as ActionItem[];
+  ].filter(Boolean) as ActionItem[];
 
-  const router = useRouter();
 
   const slugify = (str: string) =>
-  str
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9 -]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
-  
+    str
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9 -]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+
   const handleTitleClick = () => {
     const slug = slugify(title);
     router.push(`/project/${slug}`);
   };
-
-  
+console.log("onPin exists?", !!onPin);
+console.log("onUnpin exists?", !!onUnpin);
   return (
     <div className="relative flex justify-between items-end mb-5">
       <div className="flex flex-col">
-        <h2>
-          {isPinned && (
-            <div className="flex items-center gap-2 text-md  px-0">
-              <Pin className="w-5 h-5 text-green-500"/>
-              <h2>Pinned Project</h2>
-            </div>
-          )}
-        </h2>
-        <h2 onClick={handleTitleClick} className="text-lg font-semibold flex items-center gap-2 cursor-pointer">
+        {isPinned && (
+          <div className="flex items-center gap-2 text-md px-0">
+            <Pin className="w-5 h-5 text-green-500" />
+            <h2>Pinned Project</h2>
+          </div>
+        )}
+        <h2
+          onClick={handleTitleClick}
+          className="text-lg font-semibold flex items-center gap-2 cursor-pointer"
+        >
           {title}
         </h2>
       </div>
-      
-        {isMyProfile ? (
+
+      {isMyProfile ? (
         <button
           aria-label="More actions"
           onClick={(e) => {
@@ -117,10 +124,10 @@ export function CardHeaderProjectProfile({
             e.stopPropagation();
           }}
           className="p-1 rounded hover:bg-white/10 transition"
-          disabled={isArchiving}
+          disabled={isActionInProgress}
         >
-          {isArchiving ? (
-            <span className="text-xs text-gray-400">Archiving...</span>
+          {buttonText ? (
+            <span className="text-xs text-gray-400">{buttonText}</span>
           ) : (
             <MoreVertical className="w-5 h-5 text-gray-400" />
           )}

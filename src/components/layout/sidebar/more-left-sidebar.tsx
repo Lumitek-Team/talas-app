@@ -65,7 +65,7 @@ export function MoreLeftSidebar({
                 {item.isLogout ? (
                   <SignOutButton>
                     <button
-                      className={`flex items-center justify-center p-2 rounded-md transition-colors cursor-pointer ${
+                      className={`flex items-center justify-center p-2 rounded-md transition-colors ${
                         isActive ? "text-primary" : "text-white hover:bg-white/10"
                       }`}
                       title={item.label}
@@ -76,7 +76,7 @@ export function MoreLeftSidebar({
                 ) : (
                   <Link
                     href={item.href}
-                    className={`flex items-center justify-center p-2 rounded-md transition-colors cursor-pointer ${
+                    className={`flex items-center justify-center p-2 rounded-md transition-colors ${
                       isActive ? "text-primary" : "text-white hover:bg-white/10"
                     }`}
                     title={item.label}
