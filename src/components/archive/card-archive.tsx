@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { CardHeaderArchive } from "./card-header-archive";
 import { CardContentArchive } from "./content-archive";
 import { ImageContainer } from "./image-container";
 import { getPublicUrl } from "@/lib/utils";
 import { trpc } from "@/app/_trpc/client";
+import { CustomAlertDialog } from "../ui/custom-alert-dialog";
 
 export interface ProjectType {
   id: string;
@@ -41,6 +43,9 @@ export function CardArchive({
       utils.project.getArchived.invalidate();
     },
   });
+
+  const [openUnarchiveDialog, setOpenUnarchiveDialog] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
   const handleUnarchive = () => {
     setIsProcessing(true);
@@ -80,11 +85,35 @@ export function CardArchive({
     <div className="pl-1 pr-1">
       <CardHeaderArchive
         title={project.title}
-        onUnarchive={handleUnarchive}
-        onDelete={handleDelete}
+        onUnarchive={() => setOpenUnarchiveDialog(true)}
+        onDelete={() => setOpenDeleteDialog(true)}
       />
       <CardContentArchive content={project.content} />
       <ImageContainer images={imageUrls} />
+
+      {/* Dialog konfirmasi Unarchive */}
+      <CustomAlertDialog
+        isOpen={openUnarchiveDialog}
+        onOpenChange={setOpenUnarchiveDialog}
+        title="Unarchive Project"
+        description="Are you sure you want to unarchive this project?"
+        onConfirm={handleUnarchive}
+        confirmText="Yes, unarchive"
+        cancelText="Cancel"
+        confirmButtonVariant="default"
+      />
+
+      {/* Dialog konfirmasi Delete */}
+      <CustomAlertDialog
+        isOpen={openDeleteDialog}
+        onOpenChange={setOpenDeleteDialog}
+        title="Delete Project"
+        description="This action cannot be undone. Are you sure you want to delete this project permanently?"
+        onConfirm={handleDelete}
+        confirmText="Yes, delete"
+        cancelText="Cancel"
+        confirmButtonVariant="destructive"
+      />
     </div>
   );
 }
