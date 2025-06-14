@@ -3,6 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { UserRound, Plus } from "lucide-react";
 import Image from "next/image";
+import ImageCropperModal from "@/components/imageCropper"; // ⬅️ sesuaikan path-nya
 
 interface PhotoProfileProps {
   photoUrl?: string;
@@ -12,6 +13,8 @@ interface PhotoProfileProps {
 export function PhotoProfile({ photoUrl, onChange }: PhotoProfileProps) {
   const inputFileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [rawImage, setRawImage] = useState<string | null>(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
 
   const handleClick = () => {
     inputFileRef.current?.click();
@@ -21,9 +24,15 @@ export function PhotoProfile({ photoUrl, onChange }: PhotoProfileProps) {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      setPreview(url);
-      onChange?.(file); 
+      setRawImage(url);            // tampilkan modal crop
+      setCropModalOpen(true);
     }
+  };
+
+  const handleCropDone = (file: File) => {
+    const croppedUrl = URL.createObjectURL(file);
+    setPreview(croppedUrl);
+    onChange?.(file);              // hasil crop dikirim ke parent
   };
 
   useEffect(() => {
@@ -62,6 +71,19 @@ export function PhotoProfile({ photoUrl, onChange }: PhotoProfileProps) {
           onChange={handleFileChange}
         />
       </div>
+
+      {rawImage && (
+        <ImageCropperModal
+          open={cropModalOpen}
+          imageSrc={rawImage}
+          aspectRatio={1} // untuk foto profil (square)
+          onClose={() => {
+            setCropModalOpen(false);
+            setRawImage(null); // bersihkan setelah modal ditutup
+          }}
+          onCropDone={handleCropDone}
+        />
+      )}
     </div>
   );
 }

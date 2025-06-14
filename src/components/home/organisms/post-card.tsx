@@ -11,6 +11,7 @@ import { Github, Figma } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getPublicUrl } from "@/lib/utils";
 import { formatDistanceToNow } from 'date-fns';
+import { useToast } from "@/contexts/toast-context";
 
 interface PostCardProps {
   id: string;
@@ -70,6 +71,7 @@ export function PostCard({
 }: PostCardProps) {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
+  const { showToast } = useToast(); // This should work now
 
   const allDisplayImages = [...images];
   if (image1) allDisplayImages.push(image1);
@@ -126,6 +128,18 @@ export function PostCard({
 
   const postActionsVariant = displayContext === 'saved-page' ? 'bookmark-only' : 'full';
 
+  const handleShare = () => {
+    const projectUrl = `${window.location.origin}/project/${slug || id}`;
+    navigator.clipboard.writeText(projectUrl)
+      .then(() => {
+        showToast('Project link copied to clipboard!', 'success');
+      })
+      .catch(err => {
+        console.error('Failed to copy link: ', err);
+        showToast('Failed to copy link', 'error');
+      });
+  };
+
   return (
     <div
       className={`p-4 ${isMobile ? 'bg-background' : ''}`}
@@ -138,12 +152,24 @@ export function PostCard({
       />
 
       <div className="mb-6">
-        <h2 className="text-lg font-bold">{displayTitle}</h2>
-        {category && (
-          <p className="text-sm text-muted-foreground mb-3 inline-block">
-            {category.title}
-          </p>
-        )}
+      {/* This div acts as a block-level container for the title link */}
+      <div>
+        <Link 
+          href={`/project/${slug || id}`} 
+          onClick={(e) => e.stopPropagation()} 
+          data-prevent-card-click="true"
+        >
+          <h2 className="text-lg font-bold hover:text-primary transition-colors duration-200 inline-block">
+            {displayTitle}
+          </h2>
+        </Link>
+      </div>
+      {category && (
+        // Ensure the category is also a block-level element
+        <p className="text-sm text-muted-foreground mb-3">
+          {category.title}
+        </p>
+      )}
         <p className="text-white text-sm whitespace-pre-line">
           {displayContent}
         </p>
@@ -221,18 +247,13 @@ export function PostCard({
         <PostActions
           likes={likes}
           comments={comments}
-          onLikeToggle={onToggleLike} // Passed for 'full' variant
-          onComment={handleCommentClick} // Passed for 'full' variant
-          onShare={() => { // Passed for 'full' variant
-            const projectUrl = `${window.location.origin}/project/${slug || id}`;
-            navigator.clipboard.writeText(projectUrl)
-              .then(() => alert('Project link copied to clipboard!'))
-              .catch(err => console.error('Failed to copy link: ', err));
-          }}
-          isLiked={isLiked} // Passed for 'full' variant
+          onLikeToggle={onToggleLike}
+          onComment={handleCommentClick}
+          onShare={handleShare} // Use the new handleShare function
+          isLiked={isLiked}
           isBookmarked={isBookmarked}
-          onBookmarkToggle={onToggleBookmark} // Used by both variants
-          variant={postActionsVariant} // Set the variant
+          onBookmarkToggle={onToggleBookmark}
+          variant={postActionsVariant}
         />
       </div>
     </div>

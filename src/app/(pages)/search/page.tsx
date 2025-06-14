@@ -13,12 +13,12 @@ import { SearchInput } from "@/components/search/search-input";
 import { FilterButton } from "@/components/search/filter-button";
 import { CategorySelect } from "@/components/search/category-select";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
+import { LoadingSpinner } from "@/components/ui/loading";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { cn, getPublicUrl } from "@/lib/utils";
 import { ProjectOneType } from "@/lib/type";
 import { PostCard } from "@/components/home/organisms/post-card";
-import { PostSkeleton } from "@/components/project/skeleton";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
 
 type FilterType = "Project" | "Profile" | "Category";
@@ -76,15 +76,18 @@ const ProfileAvatar = ({ src, alt, fallback }: { src?: string; alt?: string; fal
 const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike, handleToggleBookmark, optimisticLikes, optimisticBookmarks }: any) => {
   const { data, isLoading, isError, error, isFetchingNextPage, hasNextPage, fetchNextPage } = queryResult;
   const projects = useMemo(() => data?.pages.flatMap((page: any) => page.data) || [], [data]);
+  
   const handleScroll = useCallback(() => {
     if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 200 && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
+  
   return (
     <div>
       <div className="flex items-center justify-between p-4 border-b border-neutral-700/50">
@@ -100,11 +103,23 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
         </h3>
         <div className="h-8 w-8" />
       </div>
-      {isLoading && Array.from({ length: 3 }).map((_, i) => <PostSkeleton key={`cat-view-skeleton-${i}`} />)}
-      {isError && <div className="text-center py-8"><p className="text-red-400">Error: {error.message}</p></div>}
-      {!isLoading && !isError && projects.length === 0 && (
-        <div className="text-center py-8"><p className="text-muted-foreground">No projects found in this category.</p></div>
+      
+      {isLoading && (
+        <LoadingSpinner />
       )}
+      
+      {isError && (
+        <div className="text-center py-8">
+          <p className="text-red-400">Error: {error.message}</p>
+        </div>
+      )}
+      
+      {!isLoading && !isError && projects.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No projects found in this category.</p>
+        </div>
+      )}
+      
       <div>
         {projects.map((project: ProjectOneType) => {
             const post = transformProjectToPost(project, optimisticLikes, optimisticBookmarks);
@@ -115,11 +130,13 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
             )
         })}
       </div>
-      {isFetchingNextPage && <PostSkeleton />}
+      
+      {isFetchingNextPage && (
+        <LoadingSpinner className="h-32" />
+      )}
     </div>
   );
 };
-
 
 export default function SearchPage() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("Project");
@@ -261,83 +278,116 @@ export default function SearchPage() {
   if (!user) { /* ... */ }
   const showInitialPrompt = !committedValues.query || (committedValues.query.trim().length === 0);
 
+  // Always render the layout structure
   return (
     <>
       <Sidebar activeItem="Search" />
       <PageContainer title="Search">
         <div className={`overflow-hidden ${isMobile ? "bg-background" : "bg-card rounded-3xl border border-neutral-700/50"}`}>
-          <div className={cn("p-4 border-b border-neutral-700/50", { 'hidden': !!viewingCategory })}>
-              <SearchInput value={formValues.query || ''} onChange={(e) => form.setValue("query", e.target.value)} placeholder="Search projects, profiles, or categories..." />
-              <div className="flex flex-col gap-y-3 sm:flex-row sm:items-center sm:justify-between mt-4">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
-                  <FilterButton label="Project" isActive={activeFilter === "Project"} onClick={() => form.setValue("type", "PROJECT")} />
-                  <FilterButton label="Profile" isActive={activeFilter === "Profile"} onClick={() => form.setValue("type", "USER")} />
-                  <FilterButton label="Category" isActive={activeFilter === "Category"} onClick={() => form.setValue("type", "CATEGORY")} />
-                </div>
-                {activeFilter === "Project" && (
-                  <div className="w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]">
-                    <CategorySelect categories={categoryResponse?.data || []} value={formValues.category || ""} onChange={(e) => form.setValue("category", e.target.value)} disabled={isCategoryLoading} />
+          
+          {/* Show loading when user is not loaded */}
+          {!isLoaded && (
+            <LoadingSpinner />
+          )}
+          
+          {/* Show sign-in message when user is loaded but not authenticated */}
+          {isLoaded && !user && (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold mb-2">Sign In Required</h3>
+                <p className="text-muted-foreground">Please sign in to search for projects and profiles.</p>
+              </div>
+            </div>
+          )}
+          
+          {/* Show main content when user is loaded and authenticated */}
+          {isLoaded && user && (
+            <>
+              <div className={cn("p-4 border-b border-neutral-700/50", { 'hidden': !!viewingCategory })}>
+                  <SearchInput value={formValues.query || ''} onChange={(e) => form.setValue("query", e.target.value)} placeholder="Search projects, profiles, or categories..." />
+                  <div className="flex flex-col gap-y-3 sm:flex-row sm:items-center sm:justify-between mt-4">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
+                      <FilterButton label="Project" isActive={activeFilter === "Project"} onClick={() => form.setValue("type", "PROJECT")} />
+                      <FilterButton label="Profile" isActive={activeFilter === "Profile"} onClick={() => form.setValue("type", "USER")} />
+                      <FilterButton label="Category" isActive={activeFilter === "Category"} onClick={() => form.setValue("type", "CATEGORY")} />
+                    </div>
+                    {activeFilter === "Project" && (
+                      <div className="w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]">
+                        <CategorySelect categories={categoryResponse?.data || []} value={formValues.category || ""} onChange={(e) => form.setValue("category", e.target.value)} disabled={isCategoryLoading} />
+                      </div>
+                    )}
+                  </div>
+              </div>
+              
+              <div className="min-h-[400px]">
+                {viewingCategory ? (
+                    <CategoryProjectsView
+                        category={viewingCategory}
+                        onBack={() => setViewingCategory(null)}
+                        queryResult={searchQuery}
+                        handleToggleLike={handleToggleLike}
+                        handleToggleBookmark={handleToggleBookmark}
+                        optimisticLikes={optimisticLikes}
+                        optimisticBookmarks={optimisticBookmarks}
+                    />
+                ) : (
+                  <div>
+                    {showInitialPrompt ? (
+                      <p className="text-neutral-400 p-4">Type a keyword to find: <span className="font-semibold text-neutral-200">{activeFilter}</span></p>
+                    ) : isLoading ? (
+                      <LoadingSpinner />
+                    ) : searchError ? (
+                      <div className="text-center py-8">
+                        <p className="text-red-400">Error: {searchError.message}</p>
+                      </div>
+                    ) : allRawResults.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">No results found for "{committedValues.query}"</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-neutral-400 p-4">Showing results for: <span className="font-semibold text-neutral-200">"{committedValues.query}"</span></p>
+                        
+                        {activeFilter === 'Project' && committedValues.type === 'PROJECT' && displayablePosts.filter(Boolean).map(post => (
+                            <div key={`project-${post.id}`} className="border-b border-white/10 last:border-b-0 p-1">
+                                <PostCard {...post} onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)} onToggleLike={() => handleToggleLike(post.id, post.isLiked)} />
+                            </div>
+                        ))}
+
+                        {activeFilter === 'Profile' && committedValues.type === 'USER' && allRawResults.filter(Boolean).map((item: any) => (
+                            <div key={`profile-${item.username}`} className="cursor-pointer border border-neutral-700/50 rounded-lg p-4 m-4 hover:bg-neutral-800/30 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <ProfileAvatar src={item.photo_profile ? getPublicUrl(item.photo_profile) : undefined} alt={item.name || item.username} fallback={item.name?.[0]?.toUpperCase() || "U"}/>
+                                    <div className="flex-1">
+                                        <Link href={`/user/${item.username}`} className="font-semibold text-neutral-200 hover:text-white">{item.name || item.username}</Link>
+                                        <div className="text-sm text-neutral-400">@{item.username}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        {activeFilter === 'Category' && committedValues.type === 'CATEGORY' && allRawResults.filter(Boolean).map((item: any) => (
+                          <div key={`category-${item.id}`} className="border border-neutral-700/50 rounded-lg p-4 m-4 cursor-pointer hover:bg-neutral-800/30 transition-colors">
+                            <button type="button" className="w-full text-left cursor-pointer" onClick={() => setViewingCategory({ slug: item.slug, title: item.title })}>
+                              <h3 className="text-lg font-semibold text-neutral-200 hover:text-white">{item.title}</h3>
+                              <p className="text-sm text-neutral-500 mt-1">{item.count_projects || 0} projects</p>
+                            </button>
+                          </div>
+                        ))}
+
+                        {isFetchingNextPage && (
+                          <LoadingSpinner className="h-32" />
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-          </div>
-          <div className="min-h-[400px]">
-            {viewingCategory ? (
-                <CategoryProjectsView
-                    category={viewingCategory}
-                    onBack={() => setViewingCategory(null)}
-                    queryResult={searchQuery}
-                    handleToggleLike={handleToggleLike}
-                    handleToggleBookmark={handleToggleBookmark}
-                    optimisticLikes={optimisticLikes}
-                    optimisticBookmarks={optimisticBookmarks}
-                />
-            ) : (
-              <div>
-                {showInitialPrompt ? <p className="text-neutral-400 p-4">Type a keyword to find: <span className="font-semibold text-neutral-200">{activeFilter}</span></p>
-                  : isLoading ? <>{Array.from({ length: 3 }).map((_, i) => <PostSkeleton key={`search-skeleton-${i}`} />)}</>
-                  : searchError ? <div className="text-center py-8"><p className="text-red-400">Error: {searchError.message}</p></div>
-                  : allRawResults.length === 0 ? <div className="text-center py-8"><p className="text-muted-foreground">No results found for "{committedValues.query}"</p></div>
-                  : (
-                    <div>
-                      <p className="text-neutral-400 p-4">Showing results for: <span className="font-semibold text-neutral-200">"{committedValues.query}"</span></p>
-                      
-                      {activeFilter === 'Project' && committedValues.type === 'PROJECT' && displayablePosts.filter(Boolean).map(post => (
-                          <div key={`project-${post.id}`} className="border-b border-white/10 last:border-b-0 p-1">
-                              <PostCard {...post} onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)} onToggleLike={() => handleToggleLike(post.id, post.isLiked)} />
-                          </div>
-                      ))}
-
-                      {activeFilter === 'Profile' && committedValues.type === 'USER' && allRawResults.filter(Boolean).map((item: any) => (
-                          <div key={`profile-${item.username}`} className="cursor-pointer border border-neutral-700/50 rounded-lg p-4 m-4 hover:bg-neutral-800/30 transition-colors">
-                              <div className="flex items-center gap-4">
-                                  <ProfileAvatar src={item.photo_profile ? getPublicUrl(item.photo_profile) : undefined} alt={item.name || item.username} fallback={item.name?.[0]?.toUpperCase() || "U"}/>
-                                  <div className="flex-1">
-                                      <Link href={`/user/${item.username}`} className="font-semibold text-neutral-200 hover:text-white">{item.name || item.username}</Link>
-                                      <div className="text-sm text-neutral-400">@{item.username}</div>
-                                  </div>
-                              </div>
-                          </div>
-                      ))}
-
-                      {activeFilter === 'Category' && committedValues.type === 'CATEGORY' && allRawResults.filter(Boolean).map((item: any) => (
-                        <div key={`category-${item.id}`} className="border border-neutral-700/50 rounded-lg p-4 m-4 cursor-pointer hover:bg-neutral-800/30 transition-colors">
-                          <button type="button" className="w-full text-left cursor-pointer" onClick={() => setViewingCategory({ slug: item.slug, title: item.title })}>
-                            <h3 className="text-lg font-semibold text-neutral-200 hover:text-white">{item.title}</h3>
-                            <p className="text-sm text-neutral-500 mt-1">{item.count_projects || 0} projects</p>
-                          </button>
-                        </div>
-                      ))}
-
-                      {isFetchingNextPage && <PostSkeleton />}
-                    </div>
-                  )
-                }
-              </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </PageContainer>
+      
       <FloatingActionButton onClick={handleCreateProjectClick} />
     </>
   );

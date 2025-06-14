@@ -18,7 +18,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
-// FIX 2: Import AvatarImage and AvatarFallback
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getPublicUrl } from "@/lib/utils";
 
@@ -54,6 +53,12 @@ export function CommentForm({
     const { user, isLoaded: isUserLoaded } = useUser();
     const [isSubmittingLocal, setIsSubmittingLocal] = useState(false);
     const utils = trpc.useUtils();
+
+    // Fetch the latest user data from your database
+    const { data: userProfile } = trpc.user.getById.useQuery(
+        { id: user?.id ?? "" },
+        { enabled: !!user?.id }
+    );
 
     const form = useForm<CommentFormValues>({
         resolver: zodResolver(commentFormSchema),
@@ -105,14 +110,12 @@ export function CommentForm({
         form.clearErrors("root.serverError");
 
         if (mode === "create") {
-            if (mode === "create") {
             createCommentMutation.mutate({
                 id_project: projectId,
-                id_user: user.id, // <-- ADD THIS LINE
+                id_user: user.id,
                 content: values.content,
                 parent_id: parentId,
             });
-        }
         } else if (mode === "edit" && currentCommentId) {
             editCommentMutation.mutate({
                 id: currentCommentId,
@@ -137,15 +140,20 @@ export function CommentForm({
         }
     }
 
-    const userAvatarSrc = user?.imageUrl || "/img/dummy/profile-photo-dummy.jpg";
+    // Use database photo if available, otherwise fallback to Clerk's imageUrl
+    const currentAvatarSrc = userProfile?.data?.photo_profile 
+        ? getPublicUrl(userProfile.data.photo_profile)
+        : user?.imageUrl || "/img/dummy/profile-photo-dummy.jpg";
+
+    // Use database name/username if available, otherwise use Clerk's data
+    const currentUsername = userProfile?.data?.name || userProfile?.data?.username || user.fullName || user.username || "User";
 
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className={`flex gap-3 items-start ${compact ? 'pt-2 pb-1' : 'py-4'}`}>
-                {/* FIX 2: Use the correct Avatar structure */}
                 <Avatar className={`mt-1 ${compact ? 'w-6 h-6' : 'w-8 h-8'}`}>
-                <AvatarImage src={userAvatarSrc} alt={user.fullName || user.username || "User"} />
-                <AvatarFallback>{user.fullName?.[0] || user.username?.[0] || 'U'}</AvatarFallback>
+                    <AvatarImage src={currentAvatarSrc} alt={currentUsername} />
+                    <AvatarFallback>{currentUsername?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1">

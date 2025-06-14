@@ -2,6 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
 const isPublicRoute = createRouteMatcher([
     "/",
+    "/about", // Add this line to make about page public
     '/sign-in(.*)',
     '/api/trpc/(.*)'])
 
