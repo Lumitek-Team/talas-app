@@ -219,19 +219,27 @@ export function getPublicUrl(path: string | null | undefined): string { // Allow
 }
 
 type PrismaClientType = typeof prisma;
-export async function getAllDescendantCommentIds(
-	prisma: PrismaClientType,
-	parentId: string
-): Promise<string[]> {
-	const children = await prisma.comment.findMany({
-		where: { parent_id: parentId },
-		select: { id: true },
-	});
-	let allIds: string[] = [];
-	for (const child of children) {
-		allIds.push(child.id);
-		const descendants = await getAllDescendantCommentIds(prisma, child.id);
-		allIds = allIds.concat(descendants);
-	}
-	return allIds;
+
+// DELETE the old getAllDescendantCommentIds function
+
+// ADD this new, efficient function
+export async function getCommentTreeIds(parentId: string): Promise<string[]> {
+	// This raw SQL query is extremely efficient and runs in a single database roundtrip.
+	// Note: The table name "Comment" must exactly match your database table name (it's case-sensitive).
+	const result = await prisma.$queryRaw<Array<{ id: string }>>`
+        WITH RECURSIVE CommentTree AS (
+            -- This is the starting point: the direct parent comment
+            SELECT id FROM "Comment" WHERE id = ${parentId}
+            UNION ALL
+            -- This part runs repeatedly, finding all children of the previous set
+            SELECT c.id
+            FROM "Comment" c
+            JOIN CommentTree ct ON c.parent_id = ct.id
+        )
+        -- Finally, select all the IDs found, excluding the original parent
+        SELECT id FROM CommentTree WHERE id != ${parentId}
+    `;
+
+	// Extracts just the ID strings from the result
+	return result.map((row) => row.id);
 }
