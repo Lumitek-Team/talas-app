@@ -105,7 +105,7 @@ export default function HomePage() {
           ...oldData,
           pages: oldData.pages.map(page => ({
             ...page,
-            projects: page.projects.map((p: ProjectOneType) => 
+            projects: page.projects.map((p: ProjectOneType) =>
               p.id === variables.id_project ? { ...p, is_bookmarked: true } : p
             ),
           })),
@@ -147,7 +147,7 @@ export default function HomePage() {
     },
     onError: (err, variables, context) => {
       setOptimisticBookmarks((prev) => ({ ...prev, [variables.id_project]: true }));
-      if (context?.previousQueryData) { 
+      if (context?.previousQueryData) {
         utils.project.getAll.setInfiniteData(queryClientKeyProjectGetAll, context.previousQueryData);
       }
     },
@@ -161,21 +161,21 @@ export default function HomePage() {
 
   const likeMutation = trpc.likeProject.like.useMutation({
     onMutate: async (variables) => {
-        await utils.project.getAll.cancel(queryClientKeyProjectGetAll);
-        const previousQueryData = utils.project.getAll.getInfiniteData(queryClientKeyProjectGetAll);
-        utils.project.getAll.setInfiniteData(queryClientKeyProjectGetAll, (oldData) => {
-            if (!oldData) return oldData;
-            return {
-                ...oldData,
-                pages: oldData.pages.map(page => ({
-                    ...page,
-                    projects: page.projects.map((p: ProjectOneType) =>
-                        p.id === variables.id_project ? { ...p, is_liked: true, count_likes: (p.count_likes || 0) + 1 } : p
-                    ),
-                })),
-            };
-        });
-        return { previousQueryData };
+      await utils.project.getAll.cancel(queryClientKeyProjectGetAll);
+      const previousQueryData = utils.project.getAll.getInfiniteData(queryClientKeyProjectGetAll);
+      utils.project.getAll.setInfiniteData(queryClientKeyProjectGetAll, (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map(page => ({
+            ...page,
+            projects: page.projects.map((p: ProjectOneType) =>
+              p.id === variables.id_project ? { ...p, is_liked: true, count_likes: (p.count_likes || 0) + 1 } : p
+            ),
+          })),
+        };
+      });
+      return { previousQueryData };
     },
     onError: (err, variables, context) => {
       // If the error is a CONFLICT, it means the post was already liked.
@@ -210,21 +210,21 @@ export default function HomePage() {
 
   const unlikeMutation = trpc.likeProject.unlike.useMutation({
     onMutate: async (variables) => {
-        await utils.project.getAll.cancel(queryClientKeyProjectGetAll);
-        const previousQueryData = utils.project.getAll.getInfiniteData(queryClientKeyProjectGetAll);
-        utils.project.getAll.setInfiniteData(queryClientKeyProjectGetAll, (oldData) => {
-            if (!oldData) return oldData;
-            return {
-                ...oldData,
-                pages: oldData.pages.map(page => ({
-                    ...page,
-                    projects: page.projects.map((p: ProjectOneType) =>
-                        p.id === variables.id_project ? { ...p, is_liked: false, count_likes: Math.max(0, (p.count_likes || 0) - 1) } : p
-                    ),
-                })),
-            };
-        });
-        return { previousQueryData };
+      await utils.project.getAll.cancel(queryClientKeyProjectGetAll);
+      const previousQueryData = utils.project.getAll.getInfiniteData(queryClientKeyProjectGetAll);
+      utils.project.getAll.setInfiniteData(queryClientKeyProjectGetAll, (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          pages: oldData.pages.map(page => ({
+            ...page,
+            projects: page.projects.map((p: ProjectOneType) =>
+              p.id === variables.id_project ? { ...p, is_liked: false, count_likes: Math.max(0, (p.count_likes || 0) - 1) } : p
+            ),
+          })),
+        };
+      });
+      return { previousQueryData };
     },
     onError: (err, variables, context) => {
       // If the error is NOT_FOUND, it means the post was already not liked.
@@ -292,8 +292,8 @@ export default function HomePage() {
   const handleFabClick = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  
-  const handleNewPost = (content: string) => { // Added handleNewPost from original file
+
+  const handleNewPost = (content: string) => {
     alert("New post created (mock): " + content);
   };
 
@@ -319,13 +319,13 @@ export default function HomePage() {
 
   if (!isUserLoaded) { // Simplified initial loading check
     return (
-        <> <Sidebar activeItem="Home" /> <PageContainer title="Home"> <div className="space-y-4 p-4 md:p-0"> {Array.from({ length: 3 }).map((_, index) => ( <PostSkeleton key={`initial-skeleton-${index}`} /> ))} </div> </PageContainer> </>
+      <> <Sidebar activeItem="Home" /> <PageContainer title="Home"> <div className="space-y-4 p-4 md:p-0"> {Array.from({ length: 3 }).map((_, index) => (<PostSkeleton key={`initial-skeleton-${index}`} />))} </div> </PageContainer> </>
     );
   }
 
   if (!user && isUserLoaded) {
     return (
-        <> <Sidebar activeItem="Home" /> <PageContainer title="Home"> <div className="flex items-center justify-center h-64"> <div className="text-center"> <h3 className="text-lg font-semibold text-muted-foreground mb-2">Welcome to Feeds</h3> <p className="text-muted-foreground">Please sign in to view and interact with posts.</p> </div> </div> </PageContainer> </>
+      <> <Sidebar activeItem="Home" /> <PageContainer title="Home"> <div className="flex items-center justify-center h-64"> <div className="text-center"> <h3 className="text-lg font-semibold text-muted-foreground mb-2">Welcome to Feeds</h3> <p className="text-muted-foreground">Please sign in to view and interact with posts.</p> </div> </div> </PageContainer> </>
     );
   }
 
@@ -344,11 +344,10 @@ export default function HomePage() {
             <PostComposer
               avatarSrc={user.imageUrl || '/img/dummy/profile-photo-dummy.jpg'}
               username={user.fullName || user.username || 'User'}
-              onSubmit={handleNewPost} // Added onSubmit prop
               className="border-b border-white/10"
             />
           )}
-          
+
           {isLoadingPosts && allPosts.length === 0 && (
             <div className="space-y-4 p-4 md:p-0">
               {Array.from({ length: 3 }).map((_, index) => (
@@ -356,7 +355,7 @@ export default function HomePage() {
               ))}
             </div>
           )}
-          
+
           {allPosts.map((post) => (
             <div key={post.id} className="border-b border-white/10 p-1">
               <PostCard
@@ -366,7 +365,7 @@ export default function HomePage() {
               />
             </div>
           ))}
-          
+
           {isFetchingNextPage && (
             <div className="space-y-4 p-4 md:p-0">
               {Array.from({ length: 2 }).map((_, index) => (
@@ -374,13 +373,13 @@ export default function HomePage() {
               ))}
             </div>
           )}
-          
+
           {!hasNextPage && allPosts.length > 0 && !isFetchingNextPage && (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">You've reached the end of the feed</p>
+              <p className="text-muted-foreground">You&#39;ve reached the end of the feed</p>
             </div>
           )}
-          
+
           {!isLoadingPosts && !isFetchingNextPage && allPosts.length === 0 && hasNextPage !== false && (
             <div className="text-center py-16">
               <h3 className="text-lg font-semibold mb-2">No posts yet</h3>

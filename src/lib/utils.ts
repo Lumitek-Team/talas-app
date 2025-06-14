@@ -2,7 +2,6 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import imageCompression from "browser-image-compression";
 import { supabase } from "./supabase/client";
-import { randomUUID } from "crypto";
 import prisma from "./prisma";
 
 export function cn(...inputs: ClassValue[]) {
@@ -167,7 +166,7 @@ function createImage(url: string): Promise<HTMLImageElement> {
 export async function uploadImage(file: File, folder: string): Promise<string> {
 	const buffer = Buffer.from(await file.arrayBuffer());
 	const fileExt = file.name.split(".").pop();
-	
+
 	// Use the browser's crypto.randomUUID()
 	const uniqueId = self.crypto.randomUUID();
 	const fileName = `${folder}/${Date.now()}-${uniqueId}.${fileExt}`;
@@ -176,7 +175,7 @@ export async function uploadImage(file: File, folder: string): Promise<string> {
 		.from("talas-image") // Ensure this bucket name is correct
 		.upload(fileName, buffer, {
 			contentType: file.type,
-      // Consider adding cacheControl for browser caching, e.g., 'public, max-age=31536000'
+			// Consider adding cacheControl for browser caching, e.g., 'public, max-age=31536000'
 		});
 
 	if (error) {
@@ -191,23 +190,25 @@ export async function deleteImage(path: string): Promise<void> {
 	const { error } = await supabase.storage.from("talas-image").remove([path]);
 
 	if (error) {
-        console.error("Supabase delete error:", error);
+		console.error("Supabase delete error:", error);
 		throw new Error(`Failed to delete image: ${error.message}`);
 	}
 }
 
-export function getPublicUrl(path: string | null | undefined): string { // Allow null/undefined input
-	if (!path) { // Handle cases where path might be null, undefined, or empty
-        // console.warn("getPublicUrl called with empty or invalid path.");
-        return ""; // Return empty or a fallback placeholder URL
-    }
+export function getPublicUrl(path: string | null | undefined): string {
+	// Allow null/undefined input
+	if (!path) {
+		// Handle cases where path might be null, undefined, or empty
+		// console.warn("getPublicUrl called with empty or invalid path.");
+		return ""; // Return empty or a fallback placeholder URL
+	}
 
-    // Check if the path is already an absolute URL
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-        return path; // It's already a full URL, return it as is
-    }
+	// Check if the path is already an absolute URL
+	if (path.startsWith("http://") || path.startsWith("https://")) {
+		return path; // It's already a full URL, return it as is
+	}
 
-    // If it's a relative path, then construct the Supabase public URL
+	// If it's a relative path, then construct the Supabase public URL
 	const { data } = supabase.storage.from("talas-image").getPublicUrl(path);
 
 	if (!data.publicUrl) {
@@ -217,8 +218,6 @@ export function getPublicUrl(path: string | null | undefined): string { // Allow
 
 	return data.publicUrl;
 }
-
-type PrismaClientType = typeof prisma;
 
 // DELETE the old getAllDescendantCommentIds function
 

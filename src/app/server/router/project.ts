@@ -2,7 +2,7 @@
 
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { retryConnect, deleteImage } from "@/lib/utils";
+import { retryConnect, deleteImage, getPublicUrl } from "@/lib/utils";
 import { z } from "zod";
 import slugify from "slugify";
 import {
@@ -207,7 +207,7 @@ export const projectRouter = router({
 								? {
 										where: { id_user: id_user },
 										select: { id: true },
-									}
+								  }
 								: false,
 						},
 						orderBy: {
@@ -350,131 +350,150 @@ export const projectRouter = router({
 		}
 	}),
 
-	  create: protectedProcedure
-    .input(
-      z.object({
-        id_user: z.string(),
-        id_category: z.string(),
-        title: z.string(),
-        content: z.string().min(1),
-        is_archived: z.boolean().default(false),
-        image1: z.any().optional(),
-        image2: z.any().optional(),
-        image3: z.any().optional(),
-        image4: z.any().optional(),
-        image5: z.any().optional(),
-        video: z.any().optional(),
-        collaborators: z.array(
-          z.object({
-            id: z.string(),
-            name: z.string(),
-            username: z.string(),
-            photo_profile: z.string().optional(),
-          })
-        ).optional(),
-        link_figma: z.string().optional().nullable(),
-        link_github: z.string().optional().nullable(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      let slug = slugify(input.title, {
-        lower: true,
-        strict: true,
-      });
+	create: protectedProcedure
+		.input(
+			z.object({
+				id_user: z.string(),
+				id_category: z.string(),
+				title: z.string(),
+				content: z.string().min(1),
+				is_archived: z.boolean().default(false),
+				image1: z.any().optional(),
+				image2: z.any().optional(),
+				image3: z.any().optional(),
+				image4: z.any().optional(),
+				image5: z.any().optional(),
+				video: z.any().optional(),
+				collaborators: z
+					.array(
+						z.object({
+							id: z.string(),
+							name: z.string(),
+							username: z.string(),
+							photo_profile: z.string().optional(),
+						})
+					)
+					.optional(),
+				link_figma: z.string().optional().nullable(),
+				link_github: z.string().optional().nullable(),
+			})
+		)
+		.mutation(async ({ input }) => {
+			let slug = slugify(input.title, {
+				lower: true,
+				strict: true,
+			});
 
-      const existingSlug = await retryConnect(() =>
-        prisma.project.findFirst({
-          where: {
-            slug: slug,
-          },
-        })
-      );
+			const existingSlug = await retryConnect(() =>
+				prisma.project.findFirst({
+					where: {
+						slug: slug,
+					},
+				})
+			);
 
-      if (existingSlug) {
-        slug = `${slug}-${Math.floor(Math.random() * 1000)}`;
-      }
+			if (existingSlug) {
+				slug = `${slug}-${Math.floor(Math.random() * 1000)}`;
+			}
 
-      try {
-        const newProject = await retryConnect(() =>
-          prisma.project.create({
-            data: {
-              id_category: input.id_category,
-              title: input.title,
-              slug: slug,
-              is_archived: input.is_archived,
-              content: input.content,
-              image1: input.image1,
-              image2: input.image2,
-              image3: input.image3,
-              image4: input.image4,
-              image5: input.image5,
-              video: input.video,
-              link_figma: input.link_figma,
-              link_github: input.link_github,
-            },
-          })
-        );
+			const imagesToGetUrl = [
+				input.image1,
+				input.image2,
+				input.image3,
+				input.image4,
+				input.image5,
+			];
+			const imagesWithUrls: string[] = [];
+			for (const image of imagesToGetUrl) {
+				// getPublicUrl for all imagesToGetUrl
+				if (image) {
+					imagesWithUrls.push(await getPublicUrl(image));
+				}
+			}
 
-        const ownerCollab = {
-          id_user: input.id_user,
-          id_project: newProject.id,
-          ownership: ownershipType.OWNER,
-          collabStatus: collabStatusType.ACCEPTED,
-        };
+			console.log("imagesWithUrls:", imagesWithUrls);
 
-        const collaboratorUsers = input.collaborators || [];
+			try {
+				const newProject = await retryConnect(() =>
+					prisma.project.create({
+						data: {
+							id_category: input.id_category,
+							title: input.title,
+							slug: slug,
+							is_archived: input.is_archived,
+							content: input.content,
+							image1: imagesWithUrls[0],
+							image2: imagesWithUrls[1] || null,
+							image3: imagesWithUrls[2] || null,
+							image4: imagesWithUrls[3] || null,
+							image5: imagesWithUrls[4] || null,
+							video: input.video,
+							link_figma: input.link_figma,
+							link_github: input.link_github,
+						},
+					})
+				);
 
-        const dataCollab = [
-          ownerCollab,
-          ...collaboratorUsers.map((collab) => ({
-            id_user: collab.id,
-            id_project: newProject.id,
-            ownership: ownershipType.COLLABORATOR,
-            collabStatus: collabStatusType.PENDING,
-          })),
-        ];
+				const ownerCollab = {
+					id_user: input.id_user,
+					id_project: newProject.id,
+					ownership: ownershipType.OWNER,
+					collabStatus: collabStatusType.ACCEPTED,
+				};
 
-        if (dataCollab.length > 0) {
-          await retryConnect(() =>
-            prisma.projectUser.createMany({
-              data: dataCollab,
-            })
-          );
-        }
+				const collaboratorUsers = input.collaborators || [];
 
-        await retryConnect(() =>
-          prisma.$transaction([
-            prisma.category.update({
-              where: { id: input.id_category },
-              data: { count_projects: { increment: 1 } },
-            }),
-            // FIX: Changed 'update' to 'upsert' for robustness.
-            // This will now create the count_summary record if it doesn't exist.
-            prisma.count_summary.upsert({
-              where: { id_user: input.id_user },
-              // This runs if the record IS found
-              update: { count_project: { increment: 1 } },
-              // This runs if the record is NOT found
-              create: { id_user: input.id_user, count_project: 1 },
-            }),
-          ])
-        );
+				const dataCollab = [
+					ownerCollab,
+					...collaboratorUsers.map((collab) => ({
+						id_user: collab.id,
+						id_project: newProject.id,
+						ownership: ownershipType.COLLABORATOR,
+						collabStatus: collabStatusType.PENDING,
+					})),
+				];
 
-        return {
-          success: true,
-          message: "Successfully create project",
-          data: newProject,
-        };
-      } catch (error) {
-        throw new Error("Error creating project: " + error);
-      }
-    }),
+				if (dataCollab.length > 0) {
+					await retryConnect(() =>
+						prisma.projectUser.createMany({
+							data: dataCollab,
+						})
+					);
+				}
+
+				await retryConnect(() =>
+					prisma.$transaction([
+						prisma.category.update({
+							where: { id: input.id_category },
+							data: { count_projects: { increment: 1 } },
+						}),
+						// FIX: Changed 'update' to 'upsert' for robustness.
+						// This will now create the count_summary record if it doesn't exist.
+						prisma.count_summary.upsert({
+							where: { id_user: input.id_user },
+							// This runs if the record IS found
+							update: { count_project: { increment: 1 } },
+							// This runs if the record is NOT found
+							create: { id_user: input.id_user, count_project: 1 },
+						}),
+					])
+				);
+
+				return {
+					success: true,
+					message: "Successfully create project",
+					data: newProject,
+				};
+			} catch (error) {
+				throw new Error("Error creating project: " + error);
+			}
+		}),
 
 	edit: protectedProcedure
 		.input(
 			z.object({
-				id: z.string(), 
-				id_user: z.string(), 
+				id: z.string(),
+				id_user: z.string(),
 				id_category: z.string().optional(),
 				title: z.string().optional(),
 				content: z.string().optional(),
@@ -532,7 +551,10 @@ export const projectRouter = router({
 					}
 				}
 
-				if (input.id_category && input.id_category !== existingProject.id_category) {
+				if (
+					input.id_category &&
+					input.id_category !== existingProject.id_category
+				) {
 					await retryConnect(() =>
 						prisma.$transaction([
 							prisma.category.update({
@@ -546,11 +568,11 @@ export const projectRouter = router({
 						])
 					);
 				}
-				
+
 				const updateData: {
 					id_category?: string;
 					title?: string;
-					slug: string; 
+					slug: string;
 					content?: string;
 					link_figma?: string | null;
 					link_github?: string | null;
@@ -636,7 +658,7 @@ export const projectRouter = router({
 					existingProject.image3,
 					existingProject.image4,
 					existingProject.image5,
-				].filter(Boolean) as string[]; 
+				].filter(Boolean) as string[];
 
 				for (const imagePath of images) {
 					await deleteImage(imagePath);
@@ -651,7 +673,6 @@ export const projectRouter = router({
 							where: { id_project: input.id },
 						}),
 						prisma.category.update({
-
 							where: { id: existingProject.id_category },
 							data: { count_projects: { decrement: 1 } },
 						}),
