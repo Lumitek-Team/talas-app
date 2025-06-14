@@ -1,4 +1,5 @@
-// components/project/comment-form.tsx (NEW FILE)
+// components/project/comment-form.tsx
+
 "use client";
 
 import { z } from "zod";
@@ -17,7 +18,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
-import { Avatar } from "@/components/ui/avatar";
+// FIX 2: Import AvatarImage and AvatarFallback
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getPublicUrl } from "@/lib/utils";
 
 const commentFormSchema = z.object({
@@ -103,17 +105,19 @@ export function CommentForm({
         form.clearErrors("root.serverError");
 
         if (mode === "create") {
+            if (mode === "create") {
             createCommentMutation.mutate({
                 id_project: projectId,
+                id_user: user.id, // <-- ADD THIS LINE
                 content: values.content,
                 parent_id: parentId,
-                // id_user is derived from context in your backend commentRouter.create
             });
+        }
         } else if (mode === "edit" && currentCommentId) {
             editCommentMutation.mutate({
                 id: currentCommentId,
                 content: values.content,
-                id_user: user.id, // Backend 'edit' expects id_user for auth
+                id_user: user.id,
             });
         } else {
             setIsSubmittingLocal(false);
@@ -128,7 +132,7 @@ export function CommentForm({
     if (!user) {
         if (mode === 'create' && !parentId && !compact) {
             return <div className="py-4"><p className="text-sm text-muted-foreground">Please <a href="/sign-in" className="underline hover:text-primary">sign in</a> to post a comment.</p></div>;
-        } else if (mode === 'edit' || (mode === 'create' && parentId)) { 
+        } else {
             return null; 
         }
     }
@@ -138,12 +142,11 @@ export function CommentForm({
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className={`flex gap-3 items-start ${compact ? 'pt-2 pb-1' : 'py-4'}`}>
-                {(compact && parentId) || (!compact && mode === "create" && !parentId) ? ( 
-                    <Avatar src={userAvatarSrc} alt={user?.fullName || user?.username || "User"} className={`mt-1 ${compact ? 'w-6 h-6' : 'w-8 h-8'}`} />
-                ) : null }
-                {mode === "edit" && !compact && ( 
-                    <Avatar src={userAvatarSrc} alt={user?.fullName || user?.username || "User"} className="w-8 h-8 mt-1" />
-                )}
+                {/* FIX 2: Use the correct Avatar structure */}
+                <Avatar className={`mt-1 ${compact ? 'w-6 h-6' : 'w-8 h-8'}`}>
+                <AvatarImage src={userAvatarSrc} alt={user.fullName || user.username || "User"} />
+                <AvatarFallback>{user.fullName?.[0] || user.username?.[0] || 'U'}</AvatarFallback>
+                </Avatar>
 
                 <div className="flex-1">
                     <FormField

@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { getAllDescendantCommentIds, retryConnect } from "@/lib/utils";
+import { getCommentTreeIds, retryConnect } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
 import { Comment, Project } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
@@ -51,19 +51,22 @@ export const commentRouter = router({
 				}
 			}
 			const project: ProjectOneType = await retryConnect(() =>
-				prisma.project.findUnique({
-					where: { id: input.id_project },
-					include: {
-						project_user: true,
-					},
-				})
-			);
-			if (!project) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Project not found",
-				});
-			}
+    prisma.project.findUnique({
+        where: { id: input.id_project },
+        include: {
+            project_user: {
+                // This correctly includes the nested user object for each project_user record
+                include: {
+                    user: {
+                        select: {
+                            id: true // We only need the ID for the logic that follows
+                        }
+                    }
+                }
+            }
+        },
+    })
+);
 
 			const projectUsers = project?.project_user;
 			if (!projectUsers || projectUsers.length === 0) {
@@ -198,10 +201,7 @@ export const commentRouter = router({
 
 			try {
 				// Ambil semua id turunan (anak, cucu, dst)
-				const descendantIds = await getAllDescendantCommentIds(
-					prisma,
-					input.id
-				);
+				const descendantIds = await getCommentTreeIds(input.id);
 				// Hapus semua komentar (root + semua turunan)
 				await retryConnect(() =>
 					prisma.$transaction([

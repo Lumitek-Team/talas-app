@@ -2,7 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import { Avatar } from "@/components/ui/avatar";
+// MODIFICATION: Add AvatarImage and AvatarFallback
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { EllipsisHorizontalIcon, HeartIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
@@ -14,7 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CommentsInProjectType } from "@/lib/type";
 import { trpc } from "@/app/_trpc/client";
-import { getPublicUrl } from "@/lib/utils";
+// MODIFICATION: Add getInitials
+import { getPublicUrl, getInitials } from "@/lib/utils";
 import { CommentForm } from "./comment-form";
 import { formatDistanceToNow } from 'date-fns';
 import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog"; // Import the new dialog
@@ -118,7 +120,12 @@ export function CommentItem({
     <>
       <div className={itemContainerClasses}> {/* This will now have mb-4 for level 0 comments */}
         <div className="flex gap-3 py-1">
-          <Avatar src={userAvatar} alt={comment.user.name || comment.user.username} className="w-8 h-8 mt-1" />
+          <Avatar className="w-8 h-8 mt-1">
+            <AvatarImage src={userAvatar} alt={comment.user.name || comment.user.username} />
+            <AvatarFallback>
+              {getInitials(comment.user.name || comment.user.username || 'U')}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-2">
