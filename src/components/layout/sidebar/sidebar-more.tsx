@@ -1,12 +1,9 @@
 "use client";
 
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/outline";
-<<<<<<< HEAD
 import { useEffect, useRef, useState } from "react";
 import { MoreLeftSidebar } from "./more-left-sidebar";
-=======
-import { cn } from "@/lib/utils"; // Ensure cn is imported
->>>>>>> origin/rafi
+import { cn } from "@/lib/utils"; 
 
 export function SidebarMore({ isCollapsed }: { isCollapsed: boolean }) {
   const [showPopup, setShowPopup] = useState(false);
