@@ -1,19 +1,23 @@
 "use client";
 
 import { UserRound } from "lucide-react";
+import Image from "next/image";
 
 interface PhotoProfileUserProps {
   photoUrl?: string | null;
 }
 
 export function PhotoProfileUser({ photoUrl }: PhotoProfileUserProps) {
+  console.log("PhotoProfileUser:", photoUrl);
   return (
     <div className="space-y-2">
       <div className="relative w-24 h-24">
         {photoUrl ? (
-          <img
+          <Image
             src={photoUrl}
             alt="User Photo"
+            width={240}
+            height={240}
             className="w-full h-full rounded-full object-cover"
             referrerPolicy="no-referrer"
           />

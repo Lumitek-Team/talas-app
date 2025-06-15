@@ -42,8 +42,9 @@ export function Hero() {
   }, [displayedText, isTyping, currentWordIndex, words]);
 
   return (
-    <section className="mb-65 text-center py-30 px-4">
-      <h1 className="text-white font-bold text-5xl sm:text-6xl max-w-4xl mx-auto mb-8">
+    <section className="text-center px-4 h-screen flex flex-col items-center justify-center">
+      <div className="h-70 flex items-center justify-center ">
+      <h1 className="text-white font-bold text-5xl sm:text-6xl max-w-4xl mx-auto">
         SHOWCASE AND COLLABORATE ON YOUR NEXT{" "}
         <motion.span
           className="text-primary inline-block min-w-[80px] sm:min-w-[10px]"
@@ -64,7 +65,8 @@ export function Hero() {
         </motion.span>{" "}
         PROJECT
       </h1>
-      <p className="mt-8 text-lg text-slate-400 tracking-wide max-w-xl mx-auto">
+      </div>
+      <p className="mt-2 text-lg text-slate-400 tracking-wide max-w-xl mx-auto">
         Talas is a platform to showcase your projects, receive feedback, and
         collaborate with other creators.
       </p>

@@ -37,30 +37,31 @@ model User {
 }
 
 model Project {
-  id             String        @id @default(ulid())
-  id_category    String
-  slug           String        @unique
-  title          String
-  content        String
-  is_archived    Boolean       @default(false)
-  image1         String?
-  image2         String?
-  image3         String?
-  image4         String?
-  image5         String?
-  video          String?
-  link_github    String?
-  link_figma     String?
-  count_likes    Int           @default(0)
-  count_comments Int           @default(0)
-  created_at     DateTime      @default(now())
-  updated_at     DateTime      @updatedAt
-  bookmarks      Bookmark[]
-  Comment        Comment[]
-  LikeProject    LikeProject[]
-  category       Category      @relation(fields: [id_category], references: [id], onDelete: Cascade)
-  project_user   ProjectUser[]
-  pinProject     pinProject[]
+  id               String        @id @default(ulid())
+  id_category      String
+  slug             String        @unique
+  title            String
+  content          String
+  is_archived      Boolean       @default(false)
+  image1           String?
+  image2           String?
+  image3           String?
+  image4           String?
+  image5           String?
+  video            String?
+  link_github      String?
+  link_figma       String?
+  count_likes      Int           @default(0)
+  count_comments   Int           @default(0)
+  popularity_score Float?        @default(0)
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+  bookmarks        Bookmark[]
+  Comment          Comment[]
+  LikeProject      LikeProject[]
+  category         Category      @relation(fields: [id_category], references: [id], onDelete: Cascade)
+  project_user     ProjectUser[]
+  pinProject       pinProject[]
 
   @@index([id_category], map: "idx_category")
   @@index([slug], map: "idx_slug_project")

@@ -14,6 +14,7 @@ import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { uploadFile, getImageUrl } from "@/lib/supabase/storage";
+import { getPublicUrl, uploadImage } from "@/lib/utils";
 
 type genderType = "MALE" | "FEMALE";
 
@@ -89,7 +90,7 @@ export default function EditProfile() {
   const [linkedIn, setLinkedIn] = useState("");
   const [gitHub, setGitHub] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  
+
   // Cek akses pengguna
   useEffect(() => {
     if (
@@ -138,7 +139,7 @@ export default function EditProfile() {
       setEmail(user.primaryEmailAddress.emailAddress);
     }
   }, [userData, user]);
-console.log(userData?.gender)
+  console.log(userData?.gender)
   useEffect(() => {
     return () => {
       if (previewUrl?.startsWith("blob:")) {
@@ -148,31 +149,33 @@ console.log(userData?.gender)
   }, [previewUrl]);
 
   const handleFileChange = async (file: File) => {
-  if (!file || !user?.id) return;
+    if (!file || !user?.id) return;
 
-  // Buat preview sementara
-  const previewObjectUrl = URL.createObjectURL(file);
-  setPreviewUrl(previewObjectUrl);
+    // Buat preview sementara
+    const previewObjectUrl = URL.createObjectURL(file);
+    setPreviewUrl(previewObjectUrl);
 
-  // Ekstensi file aman
-  const extension = file.name.split(".").pop() || "jpg";
-  const filePath = `profile_photos/${user.id}-${Date.now()}.${extension}`;
+    // Ekstensi file aman
+    // const extension = file.name.split(".").pop() || "jpg";
+    // const filePath = `profile_photos/${user.id}-${Date.now()}.${extension}`;
 
-  try {
-    const result = await uploadFile("talas-image", filePath, file);
-    const publicUrl = await getImageUrl("talas-image", result.path);
+    try {
+      const result = await uploadImage(file, "profile_photos");
+      console.log("Uploading file:", result);
+      const publicUrl = await getPublicUrl(result);
+      console.log("Public file:", publicUrl);
 
-    if (publicUrl) {
-      if (previewObjectUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(previewObjectUrl);
+      if (publicUrl) {
+        if (previewObjectUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(previewObjectUrl);
+        }
+        setPreviewUrl(publicUrl);
       }
-      setPreviewUrl(publicUrl);
+    } catch (error: any) {
+      console.error("Upload error:", error.message);
+      alert("Upload foto gagal. Silakan coba lagi.");
     }
-  } catch (error: any) {
-    console.error("Upload error:", error.message);
-    alert("Upload foto gagal. Silakan coba lagi.");
-  }
-};
+  };
 
 
   const handleSubmit = useCallback(() => {
@@ -243,11 +246,10 @@ console.log(userData?.gender)
       <Sidebar activeItem="Edit Profile" />
       <PageContainer title="Edit Profile" showBackButton>
         <div
-          className={`overflow-hidden ${
-            isMobile
-              ? "bg-background"
-              : "bg-card rounded-3xl border border-white/10 max-w-4xl mx-auto"
-          }`}
+          className={`overflow-hidden ${isMobile
+            ? "bg-background"
+            : "bg-card rounded-3xl border border-white/10 max-w-4xl mx-auto"
+            }`}
         >
           <FormWrapper>
             <ProfileRow gap="gap-10">
