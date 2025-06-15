@@ -31,7 +31,6 @@ export default function SettingsPage() {
     { label: "Archive", icon: Archive, noChevron: true, onClick: () => router.push("/settings/archive") },
     { label: "Privacy policy", icon: Shield, content: <PrivacyPolicyContent /> },
     { label: "Support", icon: LifeBuoy, content: <SupportContent /> },
-    { label: "Delete account", icon: UserX, danger: true },
   ];
 
   return (
@@ -41,26 +40,23 @@ export default function SettingsPage() {
       <div className="flex flex-col flex-1">
         <PageContainer title="Settings" className="flex-1 flex flex-col min-h-screen">
           <div
-            className={`flex-1 p-6 ${
-              isMobile
-                ? "bg-background"
-                : "bg-card rounded-3xl border border-white/10"
-            }`}
+            className={`flex-1 p-6 ${isMobile
+              ? "bg-background"
+              : "bg-card rounded-3xl border border-white/10"
+              }`}
           >
             <div className="text-white text-sm">
-              {settingsData.map(({ 
-                label, 
-                icon, 
-                danger, 
+              {settingsData.map(({
+                label,
+                icon,
                 noChevron,
                 content,
                 onClick
               }, index) => (
                 <Fragment key={label}>
-                  <SettingItem 
-                    label={label} 
-                    icon={icon} 
-                    danger={danger} 
+                  <SettingItem
+                    label={label}
+                    icon={icon}
                     noChevron={noChevron}
                     content={content}
                     onClick={onClick}
@@ -89,10 +85,10 @@ type SettingItemProps = {
   onClick?: () => void;
 };
 
-function SettingItem({ 
-  label, 
-  icon: Icon, 
-  danger = false, 
+function SettingItem({
+  label,
+  icon: Icon,
+  danger = false,
   noChevron = false,
   content,
   onClick
@@ -101,7 +97,7 @@ function SettingItem({
 
   const handleClick = () => {
     if (onClick) {
-      onClick(); 
+      onClick();
       return;
     }
     if (!danger && !noChevron && content) {
@@ -112,9 +108,8 @@ function SettingItem({
     <div className="w-full">
       <div
         onClick={handleClick}
-        className={`flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${
-          danger ? "text-red-500 hover:bg-red-500/10" : "text-white hover:bg-white/5"
-        }`}
+        className={`flex items-center justify-between px-4 py-3 rounded-xl transition cursor-pointer ${danger ? "text-red-500 hover:bg-red-500/10" : "text-white hover:bg-white/5"
+          }`}
       >
         <div className="flex items-center gap-3">
           <Icon className={`w-4 h-4 ${danger ? "text-red-500" : "text-[#68DE68]"}`} />
@@ -122,9 +117,8 @@ function SettingItem({
         </div>
         {!danger && !noChevron && content && (
           <ChevronDown
-            className={`w-4 h-4 opacity-50 transition-transform duration-300 ${
-              isOpen ? "rotate-180" : ""
-            }`}
+            className={`w-4 h-4 opacity-50 transition-transform duration-300 ${isOpen ? "rotate-180" : ""
+              }`}
           />
         )}
       </div>
