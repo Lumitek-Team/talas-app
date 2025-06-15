@@ -49,7 +49,7 @@ const teamMemberVariants: Variants = {
 const teamMembers = [
   {
     id: 1,
-    name: "Rafi Nazhmi N.",
+    name: "Rafi Nazhmi N",
     role: "Project Manager",
     image: "/team/member1.jpeg",
     description: "A highly organized and communicative Project Manager with experience leading cross-functional teams and ensuring timely, goal-oriented project execution.",
@@ -61,7 +61,7 @@ const teamMembers = [
   },
   {
     id: 2,
-    name: "M. Padli Septiana",
+    name: "M Padli Septiana",
     role: "Backend Developer",
     image: "/team/member2.jpeg",
     description: "I am the Soulflame Igniter of Servers, commanding the machine's essence from the shadow dimension. Every system bows to my will, for I am the unstoppable primordial force, the puppeteer behind reality's veil..",
@@ -73,7 +73,7 @@ const teamMembers = [
   },
   {
     id: 3,
-    name: "M. Shandy Winata",
+    name: "M Shandy Winata",
     role: "Backend Developer",
     image: "/team/member3.jpeg",
     description: "A lifelong learner with a passion for building robust systems, actively diving into the world of backend development and keen to master its intricacies.",
@@ -85,7 +85,7 @@ const teamMembers = [
   },
   {
     id: 4,
-    name: "Gregorius Christian S.",
+    name: "Gregorius Christian S",
     role: "Frontend Developer",
     image: "/team/member4.jpeg",
     description: "I'm Gregorius Christian Sunaryo, a web developer currently diving deep into frontend development. I'm passionate about creating responsive, user-friendly, and visually appealing interfaces.",
@@ -97,7 +97,7 @@ const teamMembers = [
   },
   {
     id: 5,
-    name: "Nidda Adzliya N.",
+    name: "Nidda Adzliya N",
     role: "UI UX Designer",
     image: "/team/member5.jpeg",
     description: "Designs intuitive and visually appealing user interfaces that blend creativity with usability, ensuring every user interaction feels natural and engaging on Talas",
