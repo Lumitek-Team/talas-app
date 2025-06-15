@@ -27,7 +27,7 @@ export default function Archive() {
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 690);
-    handleResize(); 
+    handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -48,11 +48,10 @@ export default function Archive() {
         showBackButton={true}
       >
         <div
-          className={`text-white shadow-md space-y-4  ${
-            isMobile
+          className={`text-white shadow-md space-y-4  ${isMobile
               ? "bg-background"
               : "bg-card rounded-3xl border border-white/10"
-          }`}
+            }`}
         >
           <div className="w-full flex justify-center">
             <div className="w-full max-w-3xl space-y-6">
@@ -64,8 +63,8 @@ export default function Archive() {
                 data.projects.map((project: ProjectType, index: number) => (
                   <div key={project.title}>
                     <div
-                      // onClick={() => router.push(`/project/${project.title}`)}
-                      // className="cursor-pointer"
+                    // onClick={() => router.push(`/project/${project.title}`)}
+                    // className="cursor-pointer"
                     >
                       <CardArchive
                         project={project}
@@ -79,7 +78,7 @@ export default function Archive() {
                   </div>
                 ))
               ) : (
-                <p className="text-muted-foreground text-center mb-3">
+                <p className="text-muted-foreground text-center my-20">
                   No archived projects.
                 </p>
               )}
