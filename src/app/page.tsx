@@ -153,14 +153,14 @@ export default function LandingPage() {
           <Navbar />
         </motion.div>
 
-        <div className="pt-28 md:pt-32">
+        <div className="">
           {/* Hero Section - Changed to use whileInView for re-entering animation */}
           <motion.div
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
             viewport={{ margin: "-100px" }} // Added viewport with re-animation
-            className="mb-20 md:mb-32"
+            className=""
           >
             <motion.div variants={fadeInUp}>
               <Hero />
@@ -168,7 +168,7 @@ export default function LandingPage() {
           </motion.div>
 
           {/* Tech Icons without reveal animation */}
-          <div className="mb-100 md:mb-90">
+          <div className="mb-85 md:mb-70">
             <TechIcons />
           </div>
 

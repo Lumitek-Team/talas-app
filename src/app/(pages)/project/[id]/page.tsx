@@ -7,20 +7,21 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { PageContainer } from "@/components/ui/page-container";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { CommentSection } from "@/components/project/comment-section";
+import { LoadingSpinner } from "@/components/ui/loading"; // Added import
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { PostSkeleton } from '@/components/project/skeleton';
 import { getPublicUrl } from "@/lib/utils";
 import { ProjectOneType } from "@/lib/type";
-import { Button } from "@/components/ui/button"; // Added
-import Link from "next/link"; // Added
-import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog"; // Added
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog";
 
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isLoaded: isUserLoaded } = useUser();
-  const projectId = params.id as string; // Assuming slug or ID is passed as 'id'
+  const projectId = params.id as string;
   const [isMobile, setIsMobile] = useState(false);
 
   const [optimisticLike, setOptimisticLike] = useState<boolean | undefined>(undefined);
@@ -35,7 +36,7 @@ export default function ProjectDetailPage() {
   const currentUserId = user?.id || "";
 
   const queryClientKeyProjectGetOne = useMemo(() => ({
-    id: projectId, // Use projectId which could be slug or ID
+    id: projectId,
     id_user: currentUserId,
   }), [projectId, currentUserId]);
 
@@ -192,29 +193,77 @@ export default function ProjectDetailPage() {
     unarchiveProjectMutation.mutate({ id: project.data.id, id_user: user.id });
   };
 
-  if (!isUserLoaded || (currentUserId && !user)) { /* ... loading user ... */ return <><Sidebar /><PageContainer title="Loading User..." showBackButton={true}><div className="space-y-4 p-4"><PostSkeleton /></div></PageContainer></>; }
-  if (isLoading) { /* ... loading project ... */  return <><Sidebar /><PageContainer title="Loading Project..." showBackButton={true}><div className="space-y-4 p-4"><PostSkeleton /></div></PageContainer></>; }
-  if (error || !project) { /* ... error or not found ... */ return <><Sidebar /><PageContainer title={error ? "Error" : "Project Not Found"} showBackButton={true}><div className="p-8 text-center"><h2 className="text-xl font-bold mb-4">{error ? "Could not load project" : "Project not found"}</h2><p>{error ? error.message : "The project you're looking for doesn't exist or has been removed."}</p><button onClick={() => router.push('/')} className="mt-6 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-foreground transition-colors">Go to Home</button></div></PageContainer></>; }
+  // Updated loading states
+  if (!isUserLoaded || (currentUserId && !user)) {
+    return (
+      <>
+        <Sidebar />
+        <PageContainer title="Loading..." showBackButton={true}>
+          <LoadingSpinner className="h-96" />
+        </PageContainer>
+      </>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <>
+        <Sidebar />
+        <PageContainer title="Loading Project..." showBackButton={true}>
+          <LoadingSpinner className="h-96" />
+        </PageContainer>
+      </>
+    );
+  }
+
+  if (error || !project) {
+    return (
+      <>
+        <Sidebar />
+        <PageContainer title={error ? "Error" : "Project Not Found"} showBackButton={true}>
+          <div className="p-8 text-center">
+            <h2 className="text-xl font-bold mb-4">
+              {error ? "Could not load project" : "Project not found"}
+            </h2>
+            <p>
+              {error ? error.message : "The project you're looking for doesn't exist or has been removed."}
+            </p>
+            <button 
+              onClick={() => router.push('/')} 
+              className="mt-6 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-foreground transition-colors"
+            >
+              Go to Home
+            </button>
+          </div>
+        </PageContainer>
+      </>
+    );
+  }
 
   const primaryProjectUser = project.data.project_user && project.data.project_user[0]?.user;
   const isOwner = user && primaryProjectUser && user.id === primaryProjectUser.id;
 
-  const postCardData = { /* ... as before ... */
-    id: project.data.id, slug: project.data.slug, title: project.data.title,
-    username: primaryProjectUser?.username || 'Unknown User', userRole: 'Developer',
+  const postCardData = {
+    id: project.data.id, 
+    slug: project.data.slug, 
+    title: project.data.title,
+    username: primaryProjectUser?.username || 'Unknown User', 
+    userRole: 'Developer',
     avatarSrc: getPublicUrl(primaryProjectUser?.photo_profile) || '/img/dummy/profile-photo-dummy.jpg',
-    timestamp: project.data.created_at, // Pass raw date string
+    timestamp: project.data.created_at,
     content: project.data.content,
     image1: project.data.image1 ? getPublicUrl(project.data.image1) : undefined,
     image2: project.data.image2 ? getPublicUrl(project.data.image2) : undefined,
     image3: project.data.image3 ? getPublicUrl(project.data.image3) : undefined,
     image4: project.data.image4 ? getPublicUrl(project.data.image4) : undefined,
     image5: project.data.image5 ? getPublicUrl(project.data.image5) : undefined,
-    likes: project.data.count_likes, comments: project.data.count_comments,
-    link_figma: project.data.link_figma, link_github: project.data.link_github,
+    likes: project.data.count_likes, 
+    comments: project.data.count_comments,
+    link_figma: project.data.link_figma, 
+    link_github: project.data.link_github,
     category: project.data.category,
     isBookmarked: optimisticBookmark !== undefined ? optimisticBookmark : !!project.data.is_bookmarked,
-    isLiked: optimisticLike !== undefined ? optimisticLike : !!project?.data.is_liked, // Ensure project.is_liked is used as fallback
+    isLiked: optimisticLike !== undefined ? optimisticLike : !!project?.data.is_liked,
     onToggleBookmark: handleToggleBookmark,
     onToggleLike: handleToggleLike,
   };
@@ -247,7 +296,7 @@ export default function ProjectDetailPage() {
                 {archiveProjectMutation.isPending ? "Archiving..." : "Archive"}
               </Button>
             )}
-            <Link href={`/project/${project.data.slug}/edit`}> {/* Assuming edit page uses slug */}
+            <Link href={`/project/${project.data.slug}/edit`}>
               <Button variant="outline" size="sm" className="border-slate-700 hover:bg-slate-700/80">Edit</Button>
             </Link>
             <Button
@@ -262,7 +311,7 @@ export default function ProjectDetailPage() {
         )}
 
         <div className={`overflow-hidden ${isMobile ? 'bg-background' : 'bg-card rounded-3xl border border-white/10'}`}>
-          <div className={isOwner && !isMobile ? "p-2" : "p-2"}> {/* Adjust padding if owner actions are present */}
+          <div className={isOwner && !isMobile ? "p-2" : "p-2"}>
             <PostCard {...postCardData} />
             <div className="my-1 border-t border-white/10 mx-4"></div>
             <div>
