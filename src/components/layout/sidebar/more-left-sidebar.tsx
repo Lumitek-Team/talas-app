@@ -103,7 +103,7 @@ export function MoreLeftSidebar({
               {item.isLogout ? (
                 <SignOutButton>
                   <button
-                    className={`flex items-center ${
+                    className={`flex items-center cursor-pointer${
                       isCollapsed ? "justify-center" : ""
                     } gap-3 w-full px-6 py-4 text-base font-medium transition-tranformation duration-200 active:scale-90 ${
                       isActive ? "text-primary" : "text-white hover:bg-white/10"
