@@ -67,7 +67,7 @@ export function PopupFollow({ open, onClose, userId, type }: PopupFollowProps) {
           <h2 className="text-white text-lg text-center font-semibold">
             {type === "followers" ? "Followers" : "Following"}
           </h2>
-          <button onClick={onClose} className="text-white hover:opacity-70 text-xl">
+          <button onClick={onClose} className="text-white hover:opacity-70 text-xl cursor-pointer">
             ✕
           </button>
         </div>
@@ -84,7 +84,7 @@ export function PopupFollow({ open, onClose, userId, type }: PopupFollowProps) {
                 key={index}
                 href={`/profile/${user.username}`}
                 className="block"
-                onClick={onClose} 
+                onClick={onClose}
               >
                 <div className="flex items-center gap-3 border-b border-white/10 pb-3 mt-2 hover:bg-white/5 px-2 py-1  transition">
                   <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 flex items-center justify-center">
