@@ -1,12 +1,12 @@
 // components/home/molecules/post-composer.tsx
 "use client";
 
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { getPublicUrl } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface PostComposerProps {
   avatarSrc: string;
@@ -17,7 +17,7 @@ interface PostComposerProps {
 export function PostComposer({ avatarSrc, username, className = "" }: PostComposerProps) {
   const router = useRouter();
   const { user } = useUser();
-  
+
   // Fetch the latest user data from your database
   const { data: userProfile } = trpc.user.getById.useQuery(
     { id: user?.id ?? "" },
@@ -29,7 +29,7 @@ export function PostComposer({ avatarSrc, username, className = "" }: PostCompos
   };
 
   // Use database photo if available, otherwise fallback to Clerk's imageUrl
-  const currentAvatarSrc = userProfile?.data?.photo_profile 
+  const currentAvatarSrc = userProfile?.data?.photo_profile
     ? getPublicUrl(userProfile.data.photo_profile)
     : avatarSrc;
 
@@ -54,7 +54,7 @@ export function PostComposer({ avatarSrc, username, className = "" }: PostCompos
         </div>
         <Button
           onClick={handleRedirect}
-          className="rounded-full px-6 bg-primary text-white hover:bg-primary-foreground ml-3" 
+          className="rounded-full px-6 bg-primary text-white hover:bg-primary-foreground ml-3"
         >
           Post
         </Button>

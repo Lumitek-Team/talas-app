@@ -1,7 +1,8 @@
 "use client";
 
-import { Avatar } from "@/components/ui/avatar-gatau-error";
-import { useRouter } from "next/navigation"; 
+import { Avatar } from "@/components/ui/avatar";
+import { AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
+import { useRouter } from "next/navigation";
 
 interface PostHeaderProps {
   username: string;
@@ -16,7 +17,10 @@ export function PostHeader({ username, userRole, avatarSrc, timestamp }: PostHea
   return (
     <div className="flex items-center gap-3 mb-4">
       <div className="flex gap-3 items-center cursor-pointer" onClick={() => router.push(`profile/${username}`)}>
-        <Avatar src={avatarSrc} alt={username} />
+        <Avatar>
+          <AvatarImage src={avatarSrc} />
+          <AvatarFallback>CN</AvatarFallback>
+        </Avatar>
         <div className="flex flex-col">
           <h3 className="font-medium text-foreground">{username}</h3>
           <p className="text-xs text-muted-foreground">{userRole}</p>

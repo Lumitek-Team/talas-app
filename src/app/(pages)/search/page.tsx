@@ -20,6 +20,7 @@ import { cn, getPublicUrl } from "@/lib/utils";
 import { ProjectOneType } from "@/lib/type";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
+import { Separator } from "@/components/ui/separator";
 
 type FilterType = "Project" | "Profile" | "Category";
 type BackendFilterType = "PROJECT" | "USER" | "CATEGORY";
@@ -76,18 +77,20 @@ const ProfileAvatar = ({ src, alt, fallback }: { src?: string; alt?: string; fal
 const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike, handleToggleBookmark, optimisticLikes, optimisticBookmarks }: any) => {
   const { data, isLoading, isError, error, isFetchingNextPage, hasNextPage, fetchNextPage } = queryResult;
   const projects = useMemo(() => data?.pages.flatMap((page: any) => page.data) || [], [data]);
-  
+
   const handleScroll = useCallback(() => {
     if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 200 && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-  
+
+
+
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
-  
+
   return (
     <div>
       <div className="flex items-center justify-between p-4 border-b border-neutral-700/50">
@@ -103,34 +106,34 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
         </h3>
         <div className="h-8 w-8" />
       </div>
-      
+
       {isLoading && (
         <LoadingSpinner />
       )}
-      
+
       {isError && (
         <div className="text-center py-8">
           <p className="text-red-400">Error: {error.message}</p>
         </div>
       )}
-      
+
       {!isLoading && !isError && projects.length === 0 && (
         <div className="text-center py-8">
           <p className="text-muted-foreground">No projects found in this category.</p>
         </div>
       )}
-      
+
       <div>
         {projects.map((project: ProjectOneType) => {
-            const post = transformProjectToPost(project, optimisticLikes, optimisticBookmarks);
-            return (
-                <div key={post.id} className="border-b border-white/10 last:border-b-0 p-1">
-                    <PostCard {...post} onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)} onToggleLike={() => handleToggleLike(post.id, post.isLiked)} />
-                  </div>
-            )
+          const post = transformProjectToPost(project, optimisticLikes, optimisticBookmarks);
+          return (
+            <div key={post.id} className="border-b border-white/10 last:border-b-0 p-1">
+              <PostCard {...post} onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)} onToggleLike={() => handleToggleLike(post.id, post.isLiked)} />
+            </div>
+          )
         })}
       </div>
-      
+
       {isFetchingNextPage && (
         <LoadingSpinner className="h-32" />
       )}
@@ -158,21 +161,30 @@ export default function SearchPage() {
     resolver: zodResolver(formSchema),
     defaultValues: { type: initialType, query: initialQuery, category: initialCategory }
   });
+  const [allpopularProjects, setAllpopularProjects] = useState<ReturnType<typeof transformProjectToPost>[]>([]);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const formValues = form.watch();
+
   const { data: categoryResponse, isLoading: isCategoryLoading } = trpc.category.getAll.useQuery(undefined);
+
+  const { data: popularProjectsRaw, isLoading: loadingPopularProjectsRaw } = trpc.search.getPopularPost.useQuery({
+    id_user: user?.id || "",
+  })
+
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 690);
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
   useEffect(() => {
     if (!viewingCategory) {
-        const typeToFilter: Record<BackendFilterType, FilterType> = { "PROJECT": "Project", "USER": "Profile", "CATEGORY": "Category" };
-        setActiveFilter(typeToFilter[formValues.type] || "Project");
+      const typeToFilter: Record<BackendFilterType, FilterType> = { "PROJECT": "Project", "USER": "Profile", "CATEGORY": "Category" };
+      setActiveFilter(typeToFilter[formValues.type] || "Project");
     }
   }, [formValues.type, viewingCategory]);
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -188,7 +200,7 @@ export default function SearchPage() {
     }, 500);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) };
   }, [formValues, committedValues, router]);
-  
+
   const queryInput = useMemo(() => {
     if (viewingCategory) {
       return { limit: 10, id_user: user?.id || "", type: 'PROJECT' as BackendFilterType, search: '__all__', category: viewingCategory.slug };
@@ -198,26 +210,26 @@ export default function SearchPage() {
 
   const searchQuery = trpc.search.search.useInfiniteQuery(
     queryInput, {
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
-      enabled: !!user?.id && ( !!viewingCategory || (!!committedValues.query && committedValues.query.trim().length > 0) ),
-      refetchOnWindowFocus: false,
-    }
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    enabled: !!user?.id && (!!viewingCategory || (!!committedValues.query && committedValues.query.trim().length > 0)),
+    refetchOnWindowFocus: false,
+  }
   );
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch, error: searchError } = searchQuery;
-  
+
   useEffect(() => {
     const projects = data?.pages.flatMap(page => page.data as ProjectOneType[]) || [];
     if (projects.length > 0 && (queryInput.type === 'PROJECT')) {
-        const transformed = projects.map(project => transformProjectToPost(project, optimisticLikes, optimisticBookmarks));
-        setDisplayablePosts(transformed);
+      const transformed = projects.map(project => transformProjectToPost(project, optimisticLikes, optimisticBookmarks));
+      setDisplayablePosts(transformed);
     } else {
-        setDisplayablePosts([]);
+      setDisplayablePosts([]);
     }
   }, [data, queryInput.type, optimisticLikes, optimisticBookmarks]);
-  
+
   const allRawResults = useMemo(() => data?.pages.flatMap(page => page.data || []) || [], [data]);
-  
+
   // FUNCTIONALITY FIX: Add trpc utils and mutations from feeds page
   const utils = trpc.useUtils();
 
@@ -239,19 +251,28 @@ export default function SearchPage() {
   const bookmarkMutation = trpc.bookmark.create.useMutation({
     onSuccess: () => refetch(),
   });
-  
+
   const unbookmarkMutation = trpc.bookmark.delete.useMutation({
     onSuccess: () => refetch(),
   });
-  
+
   const likeMutation = trpc.likeProject.like.useMutation({
     onSuccess: () => refetch(),
   });
-  
+
   const unlikeMutation = trpc.likeProject.unlike.useMutation({
     onSuccess: () => refetch(),
   });
-  
+
+  useEffect(() => {
+    if (popularProjectsRaw?.data) {
+      const transformedPosts = popularProjectsRaw.data
+        .map(data => data as ProjectOneType)
+        .map(project => transformProjectToPost(project, optimisticLikes, optimisticBookmarks));
+      setAllpopularProjects(transformedPosts);
+    }
+  }, [popularProjectsRaw?.data, optimisticLikes, optimisticBookmarks]);
+
   // FUNCTIONALITY FIX: Implement the logic for the handlers
   const handleToggleBookmark = (projectId: string, currentIsBookmarked: boolean) => {
     if (!user) return;
@@ -278,18 +299,21 @@ export default function SearchPage() {
   if (!user) { /* ... */ }
   const showInitialPrompt = !committedValues.query || (committedValues.query.trim().length === 0);
 
+
+
+
   // Always render the layout structure
   return (
     <>
       <Sidebar activeItem="Search" />
       <PageContainer title="Search">
         <div className={`overflow-hidden ${isMobile ? "bg-background" : "bg-card rounded-3xl border border-neutral-700/50"}`}>
-          
+
           {/* Show loading when user is not loaded */}
           {!isLoaded && (
             <LoadingSpinner />
           )}
-          
+
           {/* Show sign-in message when user is loaded but not authenticated */}
           {isLoaded && !user && (
             <div className="flex items-center justify-center h-64">
@@ -299,41 +323,56 @@ export default function SearchPage() {
               </div>
             </div>
           )}
-          
+
           {/* Show main content when user is loaded and authenticated */}
           {isLoaded && user && (
             <>
               <div className={cn("p-4 border-b border-neutral-700/50", { 'hidden': !!viewingCategory })}>
-                  <SearchInput value={formValues.query || ''} onChange={(e) => form.setValue("query", e.target.value)} placeholder="Search projects, profiles, or categories..." />
-                  <div className="flex flex-col gap-y-3 sm:flex-row sm:items-center sm:justify-between mt-4">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
-                      <FilterButton label="Project" isActive={activeFilter === "Project"} onClick={() => form.setValue("type", "PROJECT")} />
-                      <FilterButton label="Profile" isActive={activeFilter === "Profile"} onClick={() => form.setValue("type", "USER")} />
-                      <FilterButton label="Category" isActive={activeFilter === "Category"} onClick={() => form.setValue("type", "CATEGORY")} />
-                    </div>
-                    {activeFilter === "Project" && (
-                      <div className="w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]">
-                        <CategorySelect categories={categoryResponse?.data || []} value={formValues.category || ""} onChange={(e) => form.setValue("category", e.target.value)} disabled={isCategoryLoading} />
-                      </div>
-                    )}
+                <SearchInput value={formValues.query || ''} onChange={(e) => form.setValue("query", e.target.value)} placeholder="Search projects, profiles, or categories..." />
+                <div className="flex flex-col gap-y-3 sm:flex-row sm:items-center sm:justify-between mt-4">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
+                    <FilterButton label="Project" isActive={activeFilter === "Project"} onClick={() => form.setValue("type", "PROJECT")} />
+                    <FilterButton label="Profile" isActive={activeFilter === "Profile"} onClick={() => form.setValue("type", "USER")} />
+                    <FilterButton label="Category" isActive={activeFilter === "Category"} onClick={() => form.setValue("type", "CATEGORY")} />
                   </div>
+                  {activeFilter === "Project" && (
+                    <div className="w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]">
+                      <CategorySelect categories={categoryResponse?.data || []} value={formValues.category || ""} onChange={(e) => form.setValue("category", e.target.value)} disabled={isCategoryLoading} />
+                    </div>
+                  )}
+                </div>
+                <p className="text-neutral-400 mt-4">Type a keyword to find: <span className="font-semibold text-neutral-200">{activeFilter}</span></p>
               </div>
-              
+
               <div className="min-h-[400px]">
                 {viewingCategory ? (
-                    <CategoryProjectsView
-                        category={viewingCategory}
-                        onBack={() => setViewingCategory(null)}
-                        queryResult={searchQuery}
-                        handleToggleLike={handleToggleLike}
-                        handleToggleBookmark={handleToggleBookmark}
-                        optimisticLikes={optimisticLikes}
-                        optimisticBookmarks={optimisticBookmarks}
-                    />
+                  <CategoryProjectsView
+                    category={viewingCategory}
+                    onBack={() => setViewingCategory(null)}
+                    queryResult={searchQuery}
+                    handleToggleLike={handleToggleLike}
+                    handleToggleBookmark={handleToggleBookmark}
+                    optimisticLikes={optimisticLikes}
+                    optimisticBookmarks={optimisticBookmarks}
+                  />
                 ) : (
                   <div>
                     {showInitialPrompt ? (
-                      <p className="text-neutral-400 p-4">Type a keyword to find: <span className="font-semibold text-neutral-200">{activeFilter}</span></p>
+                      loadingPopularProjectsRaw ?
+                        <LoadingSpinner />
+                        :
+                        <div>
+                          <p className="px-4  mt-4 text-lg font-semibold">Popular projects in each category</p>
+                          {allpopularProjects && allpopularProjects.map((post) => (
+                            <div key={post.id} className="border-b border-white/10 p-1">
+                              <PostCard
+                                {...post}
+                                onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)}
+                                onToggleLike={() => handleToggleLike(post.id, post.isLiked)}
+                              />
+                            </div>
+                          ))}
+                        </div>
                     ) : isLoading ? (
                       <LoadingSpinner />
                     ) : searchError ? (
@@ -347,24 +386,24 @@ export default function SearchPage() {
                     ) : (
                       <div>
                         <p className="text-neutral-400 p-4">Showing results for: <span className="font-semibold text-neutral-200">"{committedValues.query}"</span></p>
-                        
+
                         {activeFilter === 'Project' && committedValues.type === 'PROJECT' && displayablePosts.filter(Boolean).map(post => (
-                            <div key={`project-${post.id}`} className="border-b border-white/10 last:border-b-0 p-1">
-                                <PostCard {...post} onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)} onToggleLike={() => handleToggleLike(post.id, post.isLiked)} />
-                            </div>
+                          <div key={`project-${post.id}`} className="border-b border-white/10 last:border-b-0 p-1">
+                            <PostCard {...post} onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)} onToggleLike={() => handleToggleLike(post.id, post.isLiked)} />
+                          </div>
                         ))}
 
-                      {activeFilter === 'Profile' && committedValues.type === 'USER' && allRawResults.filter(Boolean).map((item: any) => (
+                        {activeFilter === 'Profile' && committedValues.type === 'USER' && allRawResults.filter(Boolean).map((item: any) => (
                           <div key={`profile-${item.username}`} className="cursor-pointer border border-neutral-700/50 rounded-lg p-4 m-4 hover:bg-neutral-800/30 transition-colors" onClick={() => router.push(`/profile/${item.username}`)}>
-                              <div className="flex items-center gap-4">
-                                  <ProfileAvatar src={item.photo_profile ? getPublicUrl(item.photo_profile) : undefined} alt={item.name || item.username} fallback={item.name?.[0]?.toUpperCase() || "U"}/>
-                                  <div className="flex-1">
-                                      <Link href={`/user/${item.username}`} className="font-semibold text-neutral-200 hover:text-white">{item.name || item.username}</Link>
-                                      <div className="text-sm text-neutral-400">@{item.username}</div>
-                                  </div>
+                            <div className="flex items-center gap-4">
+                              <ProfileAvatar src={item.photo_profile ? getPublicUrl(item.photo_profile) : undefined} alt={item.name || item.username} fallback={item.name?.[0]?.toUpperCase() || "U"} />
+                              <div className="flex-1">
+                                <Link href={`/user/${item.username}`} className="font-semibold text-neutral-200 hover:text-white">{item.name || item.username}</Link>
+                                <div className="text-sm text-neutral-400">@{item.username}</div>
                               </div>
+                            </div>
                           </div>
-                      ))}
+                        ))}
 
                         {activeFilter === 'Category' && committedValues.type === 'CATEGORY' && allRawResults.filter(Boolean).map((item: any) => (
                           <div key={`category-${item.id}`} className="border border-neutral-700/50 rounded-lg p-4 m-4 cursor-pointer hover:bg-neutral-800/30 transition-colors">
@@ -387,7 +426,7 @@ export default function SearchPage() {
           )}
         </div>
       </PageContainer>
-      
+
       <FloatingActionButton onClick={handleCreateProjectClick} />
     </>
   );

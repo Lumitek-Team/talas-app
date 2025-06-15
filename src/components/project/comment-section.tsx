@@ -17,7 +17,7 @@ interface CommentSectionProps {
 export function CommentSection({ projectId, currentUser }: CommentSectionProps) {
   const commentsQuery = trpc.project.getComments.useQuery(
     { id: projectId },
-    { 
+    {
       enabled: !!projectId, // Query runs if projectId is available
       // Consider adding placeholderData or initialData if you have SSR for comments
     }
