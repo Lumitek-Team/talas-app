@@ -6,10 +6,10 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { PageContainer } from "@/components/ui/page-container";
+import { LoadingSpinner } from "@/components/ui/loading";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { ProjectOneType, BookmarkType } from "@/lib/type";
-import { PostSkeleton } from '@/components/project/skeleton';
 import { useUser } from "@clerk/nextjs";
 import { getPublicUrl } from "@/lib/utils";
 import { redirect } from "next/navigation";
@@ -193,72 +193,68 @@ export default function SavedProjectsPage() {
     // as the like button won't be visible.
   };
 
-  if (!isUserLoaded) {
-    return (
-        <> <Sidebar activeItem="Saved" /> <PageContainer title="Saved Projects"> <div className="space-y-4"> {Array.from({ length: 3 }).map((_, index) => ( <PostSkeleton key={`initial-skeleton-${index}`} /> ))} </div> </PageContainer> </>
-    );
-  }
-
-  if (!user) {
-    useEffect(() => {
-        redirect("/sign-in");
-    }, [user]); // Dependency array ensures this runs once after user status is known
-    return (
-        <> <Sidebar activeItem="Saved" /> <PageContainer title="Saved Projects"> <div className="flex items-center justify-center h-64"> <p className="text-muted-foreground">Please sign in to view your saved projects.</p> </div> </PageContainer> </>
-    );
-  }
-
-  if (isError) {
-    return (
-      <> <Sidebar activeItem="Saved" /> <PageContainer title="Saved Projects"> <div className="flex items-center justify-center h-64"> <div className="text-center"> <h3 className="text-lg font-semibold text-red-500 mb-2">Error Loading Saved Projects</h3> <p className="text-muted-foreground"> {error?.message || 'Failed to load saved projects. Please try again later.'} </p> </div> </div> </PageContainer> </>
-    );
-  }
-
+  // Add this line to define trulySavedPosts
   const trulySavedPosts = allPosts.filter(post => 
     optimisticBookmarks[post.id] !== undefined ? optimisticBookmarks[post.id] : post.isBookmarked
   );
 
+  // Always render the layout structure
   return (
     <>
       <Sidebar activeItem="Saved projects" />
       <PageContainer title="Saved Projects">
         <div className={`overflow-hidden ${isMobile ? 'bg-background' : ''}`}>
           
-          {isLoading && trulySavedPosts.length === 0 && (
-            <div className="space-y-4 p-4 md:p-0">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <PostSkeleton key={`loading-skeleton-${index}`} />
-              ))}
+          {/* Show loading when user is not loaded or when initially loading data */}
+          {(!isUserLoaded || (isLoading && trulySavedPosts.length === 0)) && (
+            <LoadingSpinner />
+          )}
+          
+          {/* Show sign-in message when user is loaded but not authenticated */}
+          {isUserLoaded && !user && (
+            <div className="flex items-center justify-center h-64">
+              <p className="text-muted-foreground">Please sign in to view your saved projects.</p>
             </div>
           )}
           
-          {trulySavedPosts.length > 0 && trulySavedPosts.map((post) => (
-            <div key={post.id} className={`${isMobile ? '' : 'bg-card rounded-3xl border border-white/10 mb-4'}`}>
+          {/* Show error state */}
+          {isUserLoaded && user && isError && (
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-red-500 mb-2">Error Loading Saved Projects</h3>
+                <p className="text-muted-foreground">
+                  {error?.message || 'Failed to load saved projects. Please try again later.'}
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {/* Show posts when user is loaded, authenticated, and data is available */}
+          {isUserLoaded && user && !isError && trulySavedPosts.length > 0 && trulySavedPosts.map((post) => (
+            <div key={post.id} className={`${isMobile ? 'border-b border-white/10 p-1' : 'bg-card rounded-3xl border border-white/10 mb-4'}`}>
               <PostCard
                 {...post}
-                displayContext="saved-page" // Pass the display context
-                onToggleBookmark={() => promptUnsave(post.id)} // Trigger dialog
-                onToggleLike={handleToggleLikeDisabled} // Still need to pass it due to PostCardProps
-                                                        // but it won't be used by PostActions in this context
+                displayContext="saved-page"
+                onToggleBookmark={() => promptUnsave(post.id)}
+                onToggleLike={handleToggleLikeDisabled}
               />
             </div>
           ))}
           
+          {/* Show pagination loading */}
           {isFetchingNextPage && (
-            <div className="space-y-4 p-4 md:p-0">
-              {Array.from({ length: 2 }).map((_, index) => (
-                <PostSkeleton key={`loading-more-${index}`} />
-              ))}
-            </div>
+            <LoadingSpinner className="h-32" />
           )}
           
-          {!hasNextPage && !isLoading && trulySavedPosts.length > 0 && !isFetchingNextPage && (
+          {/* Show end of results message */}
+          {isUserLoaded && user && !isError && !hasNextPage && !isLoading && trulySavedPosts.length > 0 && !isFetchingNextPage && (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No more saved projects</p>
             </div>
           )}
           
-          {!isLoading && !isFetchingNextPage && trulySavedPosts.length === 0 && (
+          {/* Show empty state */}
+          {isUserLoaded && user && !isError && !isLoading && !isFetchingNextPage && trulySavedPosts.length === 0 && (
             <div className="text-center py-16">
               <h3 className="text-lg font-semibold mb-2">No Saved Projects</h3>
               <p className="text-muted-foreground">You haven't bookmarked any projects yet.</p>

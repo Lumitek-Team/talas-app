@@ -18,7 +18,7 @@ interface PostActionsProps {
   likes: number;
   comments: number;
   onLikeToggle: () => void;
-  onComment: () => void;
+  onComment: (e: React.MouseEvent) => void; // Changed from () => void to (e: React.MouseEvent) => void
   onShare: () => void;
   isLiked: boolean;
   isBookmarked: boolean;
@@ -30,7 +30,7 @@ interface PostActionsProps {
 interface ActionButtonProps {
   icon: React.ReactNode;
   label: string;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void; // Also update this to accept the event
   active?: boolean;
   disabled?: boolean;
   fullWidth?: boolean; // New prop for making button full width

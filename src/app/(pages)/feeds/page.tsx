@@ -6,10 +6,10 @@ import { PostComposer } from "@/components/home/organisms/post-composer";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { PageContainer } from "@/components/ui/page-container";
+import { LoadingSpinner } from "@/components/ui/loading";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { ProjectOneType } from "@/lib/type";
-import { PostSkeleton } from '@/components/project/skeleton';
 import { useUser } from "@clerk/nextjs";
 import { getPublicUrl } from "@/lib/utils";
 
@@ -317,9 +317,14 @@ export default function HomePage() {
     }
   };
 
-  if (!isUserLoaded) { // Simplified initial loading check
+  if (!isUserLoaded) {
     return (
-      <> <Sidebar activeItem="Home" /> <PageContainer title="Home"> <div className="space-y-4 p-4 md:p-0"> {Array.from({ length: 3 }).map((_, index) => (<PostSkeleton key={`initial-skeleton-${index}`} />))} </div> </PageContainer> </>
+      <>
+        <Sidebar activeItem="Home" />
+        <PageContainer title="Home">
+          <LoadingSpinner />
+        </PageContainer>
+      </>
     );
   }
 
@@ -349,11 +354,7 @@ export default function HomePage() {
           )}
 
           {isLoadingPosts && allPosts.length === 0 && (
-            <div className="space-y-4 p-4 md:p-0">
-              {Array.from({ length: 3 }).map((_, index) => (
-                <PostSkeleton key={`loading-skeleton-${index}`} />
-              ))}
-            </div>
+            <LoadingSpinner />
           )}
 
           {allPosts.map((post) => (
@@ -367,11 +368,7 @@ export default function HomePage() {
           ))}
 
           {isFetchingNextPage && (
-            <div className="space-y-4 p-4 md:p-0">
-              {Array.from({ length: 2 }).map((_, index) => (
-                <PostSkeleton key={`loading-more-${index}`} />
-              ))}
-            </div>
+            <LoadingSpinner className="h-32" />
           )}
 
           {!hasNextPage && allPosts.length > 0 && !isFetchingNextPage && (

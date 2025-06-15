@@ -59,7 +59,15 @@ export function SidebarMore({ isCollapsed }: { isCollapsed: boolean }) {
       className={`relative ${isCollapsed ? "flex justify-center" : ""}`}
     >
       <button
-        className="flex items-center gap-3 w-full px-6 py-4 text-base font-medium transition-transform duration-200 active:scale-90 text-white hover:bg-white/10 rounded-md cursor-pointer"
+
+        className={cn(
+          "flex items-center gap-3 w-full px-6 py-4 text-base font-medium rounded-md",
+          isCollapsed ? "justify-center" : "",
+          "transition-all duration-200 ease-in-out", // General transition for all properties
+          "hover:scale-105 active:scale-90", // Scale animations
+          "text-white hover:bg-white/10", // Consistent styling with nav items
+          "cursor-pointer"
+        )}
         onClick={() => setShowPopup((prev) => !prev)}
       >
         <EllipsisHorizontalIcon className="w-6 h-6" />

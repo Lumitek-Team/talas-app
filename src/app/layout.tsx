@@ -1,9 +1,14 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono, Comfortaa } from "next/font/google"
-import "./globals.css"
+import { Inter } from "next/font/google"
+import { Geist, Geist_Mono } from "next/font/google"
+import { Comfortaa } from "next/font/google"
 import { ClerkProvider } from "@clerk/nextjs"
 import { dark } from "@clerk/themes"
 import TRPCProvider from "@/app/_trpc/Provider";
+import { ToastProvider } from "@/contexts/toast-context";
+import "./globals.css"
+
+const inter = Inter({ subsets: ["latin"] })
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,13 +44,13 @@ export default async function RootLayout({
       }}
     >
       <TRPCProvider>
-        <html lang="en" className="dark">
-          <body
-            className={`${geistSans.variable} ${geistMono.variable} ${comfortaa.variable} antialiased`}
-          >
-            {children}
-          </body>
-        </html>
+        <ToastProvider>
+          <html lang="en" className="dark">
+            <body className={`${inter.className} ${geistSans.variable} ${geistMono.variable} ${comfortaa.variable}`} style={{ fontFamily: 'var(--font-comfortaa), var(--font-geist-sans), sans-serif' }}>
+              {children}
+            </body>
+          </html>
+        </ToastProvider>
       </TRPCProvider>
     </ClerkProvider>
   )

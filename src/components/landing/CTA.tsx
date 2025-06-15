@@ -1,7 +1,60 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { ScrollReveal } from "@/components/ui/scroll-reveal";
+import Link from "next/link"; // Add this import
+import { motion, Variants } from "framer-motion";
+import { memo } from "react";
+
+// Container variant for staggered children animation
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1, // Increased for better visibility
+      delayChildren: 0.2
+    }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" }
+  }
+};
+
+const teamMemberVariants: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" }
+  }
+};
+
+// Team member component with variants
+const TeamMember = memo(({ member }: { member: { id: number; image: string } }) => (
+  <motion.div 
+    className="w-44 h-52 rounded-3xl bg-gray-700/50 overflow-hidden group relative"
+    variants={teamMemberVariants}
+  >
+    <Image
+      src={member.image}
+      alt={`Team member ${member.id}`}
+      width={176}
+      height={208}
+      className="w-full h-full object-cover filter blur-sm grayscale hover:filter-none hover:scale-110 transition-all duration-300 ease-out"
+      loading="lazy"
+      priority={false}
+      quality={75}
+    />
+  </motion.div>
+));
+
+TeamMember.displayName = 'TeamMember';
 
 export function CTA() {
   const teamMembers = [
@@ -13,55 +66,59 @@ export function CTA() {
   ];
 
   return (
-    <section className="text-center py-50 px-4 bg-bg-primary relative overflow-hidden">
-      {/* Background SVG */}
+    <motion.section 
+      className="text-center py-50 px-4 bg-bg-primary relative overflow-hidden"
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: false, margin: "-100px" }}
+    >
+      {/* Static background */}
       <div 
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-50" 
-        style={{ backgroundImage: 'url("/img/aboutPage-bg.svg")' }}
-      ></div>
+        className="absolute inset-0 z-0 opacity-50" 
+        style={{ 
+          backgroundImage: 'url("/img/aboutPage-bg.svg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      />
       
-      {/* Content with higher z-index to appear above background */}
+      {/* Content */}
       <div className="relative z-10">
-        <ScrollReveal distance={20}>
-          <h2 className="text-4xl text-white font-bold mb-16">Behind Talas</h2>
-        </ScrollReveal>
+        <motion.h2 
+          className="text-4xl text-white font-bold mb-16"
+          variants={itemVariants}
+        >
+          Behind Talas
+        </motion.h2>
         
-        <div className="flex justify-center gap-6 mb-16 flex-wrap">
-          {/* Render team members in a single ScrollReveal to reduce observers */}
-          <ScrollReveal distance={15}>
-            <div className="flex justify-center gap-6 flex-wrap">
-              {teamMembers.map((member) => (
-                <div 
-                  key={member.id} 
-                  className="w-44 h-52 rounded-3xl bg-gray-700/50 overflow-hidden group relative"
-                >
-                  <Image
-                    src={member.image}
-                    alt={`Team member ${member.id}`}
-                    width={176}
-                    height={208}
-                    className="w-full h-full object-cover transition duration-250 ease-in-out transform filter blur-sm grayscale group-hover:filter-none group-hover:scale-110"
-                    loading="lazy"
-                  />
-                </div>
-              ))}
-            </div>
-          </ScrollReveal>
-        </div>
+        {/* Team members container */}
+        <motion.div 
+          className="flex justify-center gap-6 mb-16 flex-wrap"
+          variants={containerVariants}
+        >
+          {teamMembers.map((member) => (
+            <TeamMember key={member.id} member={member} />
+          ))}
+        </motion.div>
         
-        <ScrollReveal distance={15} delay={100}>
-          <p className="text-slate-400 tracking-wide mb-12 max-w-3xl mx-auto text-lg">
-            Meet the minds behind Talas—a team of developers and designers passionate about collaboration,
-            innovation, and building a thriving tech community.
-          </p>
-        </ScrollReveal>
+        <motion.p 
+          className="text-slate-400 tracking-wide mb-12 max-w-3xl mx-auto text-lg"
+          variants={itemVariants}
+        >
+          Meet the minds behind Talas—a team of developers and designers passionate about collaboration,
+          innovation, and building a thriving tech community.
+        </motion.p>
         
-        <ScrollReveal distance={10} delay={150}>
-          <Button onClick={() => (location.href = "/about")}>
+        <motion.div
+          variants={itemVariants}
+        >
+          <Button onClick={() => window.location.href = "/about"}>
             About
           </Button>
-        </ScrollReveal>
+        </motion.div>
       </div>
-    </section>
+    </motion.section>
   );
 }

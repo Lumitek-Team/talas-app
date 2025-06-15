@@ -2,6 +2,7 @@
 import { FormLabel } from "@/components/ui/form";
 import { X } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
+import { PlusIcon } from '@heroicons/react/24/outline'
 
 interface ImagesSectionProps {
   imagePreviews: string[];
@@ -94,11 +95,11 @@ export function ImagesSection({
             <div className="text-center">
               <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-background/80">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  {/* The path 'd' attribute has been changed to the plus icon's path */}
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
               </div>
-              {/* Use imageFiles.length for the counter as it reflects processed files */}
-              <p className="mt-1 text-xs">Upload image ({imageFiles.length}/{maxFiles})</p>
+              <p className="mt-1 text-xs">Add image ({imageFiles.length}/{maxFiles})</p>
             </div>
             <input
               type="file"
