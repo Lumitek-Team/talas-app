@@ -9,16 +9,16 @@ import Image from "next/image";
 
 // Animation variants
 const fadeInUp: Variants = {
-  hidden: { 
-    opacity: 0, 
+  hidden: {
+    opacity: 0,
     y: 60,
     scale: 0.95
   },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
     scale: 1,
-    transition: { 
+    transition: {
       duration: 0.8,
       ease: [0.25, 0.46, 0.45, 0.94]
     }
@@ -38,8 +38,8 @@ const staggerContainer: Variants = {
 
 const teamMemberVariants: Variants = {
   hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
     transition: { duration: 0.6, ease: "easeOut" }
   }
@@ -49,7 +49,7 @@ const teamMemberVariants: Variants = {
 const teamMembers = [
   {
     id: 1,
-    name: "Rafi Nazhmi Nugraha",
+    name: "Rafi Nazhmi N",
     role: "Project Manager",
     image: "/team/member1.jpeg",
     description: "A highly organized and communicative Project Manager with experience leading cross-functional teams and ensuring timely, goal-oriented project execution.",
@@ -85,7 +85,7 @@ const teamMembers = [
   },
   {
     id: 4,
-    name: "Gregorius Christian",
+    name: "Gregorius Christian S",
     role: "Frontend Developer",
     image: "/team/member4.jpeg",
     description: "I'm Gregorius Christian Sunaryo, a web developer currently diving deep into frontend development. I'm passionate about creating responsive, user-friendly, and visually appealing interfaces.",
@@ -120,23 +120,23 @@ export default function AboutPage() {
   const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [0.5, 0.8]);
 
   return (
-    <main 
+    <main
       ref={containerRef}
       className="bg-bg-primary min-h-screen font-sans relative overflow-hidden"
     >
       {/* Same background as landing page */}
-      <div 
+      <div
         className="fixed inset-0 z-0"
         style={{
           backgroundImage: "url('/img/landingPage-bg2.jpg')",
-          backgroundSize: "cover", 
+          backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat"
         }}
       />
-      
+
       {/* Animated Overlay */}
-      <motion.div 
+      <motion.div
         className="fixed inset-0 bg-black z-0"
         style={{
           opacity: overlayOpacity
@@ -162,7 +162,7 @@ export default function AboutPage() {
             viewport={{ once: false, margin: "-100px" }}
             className="mb-16 px-4"
           >
-            <motion.div 
+            <motion.div
               variants={fadeInUp}
               className="flex justify-center"
             >
@@ -184,7 +184,7 @@ export default function AboutPage() {
             viewport={{ once: false, margin: "-100px" }}
             className="mb-24 px-4"
           >
-            <motion.div 
+            <motion.div
               variants={fadeInUp}
               className="max-w-6xl mx-auto"
             >
@@ -208,7 +208,7 @@ export default function AboutPage() {
             viewport={{ once: false, margin: "-100px" }}
             className="mb-24 px-4"
           >
-            <motion.div 
+            <motion.div
               variants={fadeInUp}
               className="max-w-6xl mx-auto"
             >
@@ -231,7 +231,7 @@ export default function AboutPage() {
             viewport={{ once: false, margin: "-100px" }}
             className="mb-20 px-4"
           >
-            <motion.h2 
+            <motion.h2
               variants={fadeInUp}
               className="text-3xl md:text-4xl text-white font-bold text-center mb-16"
             >
@@ -241,9 +241,9 @@ export default function AboutPage() {
             <div className="max-w-7xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 justify-items-center">
                 {teamMembers.map((member) => (
-                  <TeamCard 
-                    key={member.id} 
-                    member={member} 
+                  <TeamCard
+                    key={member.id}
+                    member={member}
                     variants={teamMemberVariants}
                   />
                 ))}
@@ -255,8 +255,8 @@ export default function AboutPage() {
         {/* Footer */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
-          whileInView={{ 
-            opacity: 1, 
+          whileInView={{
+            opacity: 1,
             y: 0
           }}
           transition={{ duration: 0.6 }}

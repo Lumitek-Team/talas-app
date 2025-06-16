@@ -12,10 +12,10 @@ export function Preview() {
             <div
               className="absolute -inset-2 -z-10 rounded-[35px] bg-secondary opacity-40 blur-3xl 
               transition-all duration-500 ease-in-out 
-              group-hover:opacity-90 group-hover:blur-4xl group-hover:-inset-8" 
+              group-hover:opacity-90 group-hover:blur-4xl group-hover:-inset-8"
             />
             <Image
-              src="/img/home-preview.svg"
+              src="/img/home-preview.png"
               alt="App Preview"
               width={1000}
               height={563}

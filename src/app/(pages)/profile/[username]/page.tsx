@@ -10,6 +10,7 @@ import { LoadingSpinner } from "@/components/ui/loading";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 
+
 export default function ProfilePage() {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -18,6 +19,7 @@ export default function ProfilePage() {
 
   const { user, isLoaded } = useUser();
   const userId = user?.id ?? "";
+
 
   const { data: myUserData, isLoading: isMyUserLoading } = trpc.user.getById.useQuery(
     { id: userId },
