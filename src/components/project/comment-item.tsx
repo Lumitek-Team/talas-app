@@ -1,12 +1,15 @@
 // components/project/comment-item.tsx (Updated)
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 // MODIFICATION: Add AvatarImage and AvatarFallback
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar-gatau";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { EllipsisHorizontalIcon, HeartIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
+import {
+  HeartIcon as HeartIconSolid,
+} from "@heroicons/react/24/solid";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,12 +42,50 @@ export function CommentItem({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false); // State for delete dialog
+  const [optimisticLike, setOptimisticLike] = useState(comment.count_like || 0);
+  const [isLiked, setIsLiked] = useState(false);
 
-  // ... (handleLikeComment remains the same placeholder) ...
+  useEffect(() => {
+    // Check if the current user has already liked the comment
+    setIsLiked(comment.is_liked || false);
+  }, [comment.is_liked]);
+
+  const likeCommentMutation = trpc.likeComment.like.useMutation({
+    onMutate: async () => {
+      setOptimisticLike((prev) => prev + 1);
+      setIsLiked(true);
+    },
+    onError: () => {
+      setOptimisticLike((prev) => prev - 1);
+      setIsLiked(false);
+    },
+    onSettled: () => {
+      onCommentMutated();
+    },
+  });
+
+  const unlikeCommentMutation = trpc.likeComment.unlike.useMutation({
+    onMutate: async () => {
+      setOptimisticLike((prev) => Math.max(0, prev - 1));
+      setIsLiked(false);
+    },
+    onError: () => {
+      setOptimisticLike((prev) => prev + 1);
+      setIsLiked(true);
+    },
+    onSettled: () => {
+      onCommentMutated();
+    },
+  });
+
   const handleLikeComment = () => {
-    console.warn("Like functionality for comment ID:", comment.id, "is not fully implemented. Backend required.");
+    if (!currentUserId) return;
+    if (isLiked) {
+      unlikeCommentMutation.mutate({ id_user: currentUserId, id_comment: comment.id });
+    } else {
+      likeCommentMutation.mutate({ id_user: currentUserId, id_comment: comment.id });
+    }
   };
-
 
   const deleteCommentMutation = trpc.comment.deleteById.useMutation({
     onSuccess: () => {
@@ -167,9 +208,21 @@ export function CommentItem({
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white transition-all"
                 >
                   <ChatBubbleLeftIcon className="w-3.5 h-3.5" />
-                  <span>{showReplyForm ? "Cancel" : "Reply"}</span>
+                  <span>{showReplyForm ? "Cancel" : `${comment.reply_count} Reply`}</span>
                 </button>
               )}
+              {/* likes button */}
+              <button
+                onClick={handleLikeComment}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white transition-all"
+              >
+                {isLiked ? (
+                  <HeartIconSolid className={`w-3.5 h-3.5 text-primary`} />
+                ) : (
+                  <HeartIcon className={`w-3.5 h-3.5`} />
+                )}
+                <span>{optimisticLike} likes</span>
+              </button>
             </div>
             {canReply && showReplyForm && currentUserId && (
               <div className="mt-2">

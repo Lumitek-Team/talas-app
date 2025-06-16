@@ -16,7 +16,7 @@ export function PostHeader({ username, userRole, avatarSrc, timestamp }: PostHea
 
   return (
     <div className="flex items-center gap-3 mb-4">
-      <div className="flex gap-3 items-center cursor-pointer" onClick={() => router.push(`profile/${username}`)}>
+      <div className="flex gap-3 items-center cursor-pointer" onClick={() => router.push(`/profile/${username}`)}>
         <Avatar>
           <AvatarImage src={avatarSrc} />
           <AvatarFallback>CN</AvatarFallback>
