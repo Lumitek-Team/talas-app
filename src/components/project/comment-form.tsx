@@ -50,7 +50,11 @@ export function CommentForm({
     compact = false,
     autoFocus = false,
 }: CommentFormProps) {
-    const { user, isLoaded: isUserLoaded } = useUser();
+    const { user: userclerk, isLoaded: isUserLoaded } = useUser();
+    const user = trpc.user.getById.useQuery(
+        { id: userclerk?.id ?? "" },
+        { enabled: !!userclerk?.id }
+    ).data?.data;
     const [isSubmittingLocal, setIsSubmittingLocal] = useState(false);
     const utils = trpc.useUtils();
 
