@@ -23,8 +23,8 @@ type CardHeaderArchiveProps = {
   onUnpin?: () => void;
   isArchiving?: boolean;
   isPinned?: boolean;
-  isPin?: boolean;      
-  isUnPin?: boolean;    
+  isPin?: boolean;
+  isUnPin?: boolean;
   isDeleted?: boolean;
   isMyProfile?: boolean;
 };
@@ -97,8 +97,6 @@ export function CardHeaderProjectProfile({
     const slug = slugify(title);
     router.push(`/project/${slug}`);
   };
-console.log("onPin exists?", !!onPin);
-console.log("onUnpin exists?", !!onUnpin);
   return (
     <div className="relative flex justify-between items-end mb-5">
       <div className="flex flex-col">

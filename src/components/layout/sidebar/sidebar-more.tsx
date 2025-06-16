@@ -59,7 +59,6 @@ export function SidebarMore({ isCollapsed }: { isCollapsed: boolean }) {
       className={`relative ${isCollapsed ? "flex justify-center" : ""}`}
     >
       <button
-
         className={cn(
           "flex items-center gap-3 w-full px-6 py-4 text-base font-medium rounded-md",
           isCollapsed ? "justify-center" : "",

@@ -34,6 +34,8 @@ export interface ProjectWithInteractionsType {
 	}[];
 	bookmarks?: { id: string }[];
 	LikeProject?: { id: string }[];
+	is_bookmarked: boolean;
+	is_liked: boolean;
 }
 
 export interface UserSearchType {

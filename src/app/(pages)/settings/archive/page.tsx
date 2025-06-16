@@ -79,7 +79,7 @@ export default function Archive() {
                   </div>
                 ))
               ) : (
-                <p className="text-muted-foreground text-center mb-3">
+                <p className="text-muted-foreground text-center mb-20 mt-20">
                   No archived projects.
                 </p>
               )}

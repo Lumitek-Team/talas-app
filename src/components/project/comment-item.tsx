@@ -3,15 +3,15 @@
 
 import { useState } from "react";
 // MODIFICATION: Add AvatarImage and AvatarFallback
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar-gatau";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { EllipsisHorizontalIcon, HeartIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CommentsInProjectType } from "@/lib/type";
 import { trpc } from "@/app/_trpc/client";
@@ -67,9 +67,9 @@ export function CommentItem({
   const handleConfirmDelete = () => {
     if (!currentUserId || currentUserId !== comment.user.id) return;
     deleteCommentMutation.mutate({
-        id: comment.id,
-        id_user: currentUserId,    // Changed back to snake_case
-        id_project: projectId,     // Changed back to snake_case
+      id: comment.id,
+      id_user: currentUserId,    // Changed back to snake_case
+      id_project: projectId,     // Changed back to snake_case
     });
   };
 
@@ -100,8 +100,8 @@ export function CommentItem({
 
   if (isEditing) {
     return (
-      <div className={editFormContainerClasses}> 
-        <CommentForm /* ...props... */ 
+      <div className={editFormContainerClasses}>
+        <CommentForm /* ...props... */
           projectId={projectId}
           mode="edit"
           currentCommentId={comment.id}
@@ -141,8 +141,8 @@ export function CommentItem({
                     </Button>
                   </DropdownMenuTrigger>
                   {/* MODIFIED DropdownMenuContent Styling */}
-                  <DropdownMenuContent 
-                    align="end" 
+                  <DropdownMenuContent
+                    align="end"
                     className="bg-card border border-white/10 text-white shadow-lg" // Matching page container
                   >
                     <DropdownMenuItem onClick={() => setIsEditing(true)} className="cursor-pointer hover:!bg-slate-700/50 focus:!bg-slate-700/80">
@@ -162,25 +162,25 @@ export function CommentItem({
             <p className="text-sm mt-1 mb-2 text-slate-300 whitespace-pre-line">{comment.content}</p>
             <div className="flex items-center gap-3">
               {canReply && currentUserId && (
-                  <button 
-                    onClick={() => { setShowReplyForm(!showReplyForm); if (isEditing) setIsEditing(false); }}
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white transition-all"
-                  >
-                    <ChatBubbleLeftIcon className="w-3.5 h-3.5" />
-                    <span>{showReplyForm ? "Cancel" : "Reply"}</span>
-                  </button>
+                <button
+                  onClick={() => { setShowReplyForm(!showReplyForm); if (isEditing) setIsEditing(false); }}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white transition-all"
+                >
+                  <ChatBubbleLeftIcon className="w-3.5 h-3.5" />
+                  <span>{showReplyForm ? "Cancel" : "Reply"}</span>
+                </button>
               )}
             </div>
             {canReply && showReplyForm && currentUserId && (
               <div className="mt-2">
-                <CommentForm /* ...props... */ 
-                    projectId={projectId}
-                    parentId={comment.id}
-                    mode="create"
-                    onSuccess={() => { setShowReplyForm(false); onCommentMutated(); }}
-                    onCancel={() => setShowReplyForm(false)}
-                    compact={true}
-                    autoFocus={true}
+                <CommentForm /* ...props... */
+                  projectId={projectId}
+                  parentId={comment.id}
+                  mode="create"
+                  onSuccess={() => { setShowReplyForm(false); onCommentMutated(); }}
+                  onCancel={() => setShowReplyForm(false)}
+                  compact={true}
+                  autoFocus={true}
                 />
               </div>
             )}

@@ -67,7 +67,7 @@ export function PopupFollow({ open, onClose, userId, type }: PopupFollowProps) {
           <h2 className="text-white text-lg text-center font-semibold">
             {type === "followers" ? "Followers" : "Following"}
           </h2>
-          <button onClick={onClose} className="text-white hover:opacity-70 text-xl">
+          <button onClick={onClose} className="text-white hover:opacity-70 text-xl cursor-pointer">
             ✕
           </button>
         </div>

@@ -18,8 +18,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getPublicUrl } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const commentFormSchema = z.object({
     content: z.string().min(1, "Comment cannot be empty.").max(1000, "Comment is too long (max 1000 characters)."),
@@ -92,11 +92,11 @@ export function CommentForm({
         onSuccess: () => {
             setIsSubmittingLocal(false);
             utils.project.getComments.invalidate({ id: projectId });
-            if (onSuccess) onSuccess(); 
+            if (onSuccess) onSuccess();
         },
         onError: (error) => {
             setIsSubmittingLocal(false);
-            form.setError("root.serverError", { type: "manual", message: error.message || "Failed to update comment."});
+            form.setError("root.serverError", { type: "manual", message: error.message || "Failed to update comment." });
             console.error("Failed to edit comment:", error);
         },
     });
@@ -124,24 +124,24 @@ export function CommentForm({
             });
         } else {
             setIsSubmittingLocal(false);
-            form.setError("root.serverError", {type: "manual", message: "Invalid form mode or missing comment ID."})
+            form.setError("root.serverError", { type: "manual", message: "Invalid form mode or missing comment ID." })
         }
     };
-    
+
     if (!isUserLoaded) {
         return <div className={`py-2 ${compact ? 'pl-10' : ''}`}><p className="text-sm text-muted-foreground">Loading form...</p></div>;
     }
-    
+
     if (!user) {
         if (mode === 'create' && !parentId && !compact) {
             return <div className="py-4"><p className="text-sm text-muted-foreground">Please <a href="/sign-in" className="underline hover:text-primary">sign in</a> to post a comment.</p></div>;
         } else {
-            return null; 
+            return null;
         }
     }
 
     // Use database photo if available, otherwise fallback to Clerk's imageUrl
-    const currentAvatarSrc = userProfile?.data?.photo_profile 
+    const currentAvatarSrc = userProfile?.data?.photo_profile
         ? getPublicUrl(userProfile.data.photo_profile)
         : user?.imageUrl || "/img/dummy/profile-photo-dummy.jpg";
 
@@ -162,7 +162,7 @@ export function CommentForm({
                         name="content"
                         render={({ field }) => (
                             <FormItem>
-                                {(!compact && mode === "create" && !parentId) && <FormLabel className="sr-only">Your Comment</FormLabel> }
+                                {(!compact && mode === "create" && !parentId) && <FormLabel className="sr-only">Your Comment</FormLabel>}
                                 <FormControl>
                                     <Textarea
                                         placeholder={mode === "edit" ? "Edit your comment..." : (parentId ? "Write your reply..." : "Add a public comment...")}
@@ -187,9 +187,9 @@ export function CommentForm({
                                 Cancel
                             </Button>
                         )}
-                        <Button 
-                            type="submit" 
-                            disabled={isSubmittingLocal || createCommentMutation.isPending || editCommentMutation.isPending || !form.formState.isDirty || !form.formState.isValid} 
+                        <Button
+                            type="submit"
+                            disabled={isSubmittingLocal || createCommentMutation.isPending || editCommentMutation.isPending || !form.formState.isDirty || !form.formState.isValid}
                             size={compact ? "sm" : "sm"}
                         >
                             {isSubmittingLocal || createCommentMutation.isPending || editCommentMutation.isPending ? "Posting..." : (mode === "edit" ? "Save Changes" : (parentId ? "Reply" : "Comment"))}

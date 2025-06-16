@@ -18,7 +18,6 @@ export default function ProfilePage() {
 
   const { user, isLoaded } = useUser();
   const userId = user?.id ?? "";
-
   const { data: myUserData, isLoading: isMyUserLoading } = trpc.user.getById.useQuery(
     { id: userId },
     { enabled: !!userId }
