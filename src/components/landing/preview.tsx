@@ -15,7 +15,7 @@ export function Preview() {
               group-hover:opacity-90 group-hover:blur-4xl group-hover:-inset-8"
             />
             <Image
-              src="/img/home-preview.svg"
+              src="/img/home-preview.png"
               alt="App Preview"
               width={1000}
               height={563}

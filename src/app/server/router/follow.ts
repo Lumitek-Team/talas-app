@@ -177,6 +177,27 @@ export const followRouter = router({
 				});
 			}
 		}),
+
+	// Check isFollow?
+	checkIsFollowing: protectedProcedure
+	.input(
+		z.object({
+		id_follower: z.string(),
+		id_following: z.string(),
+		})
+	)
+	.query(async ({ input }) => {
+		const follow = await prisma.follow.findFirst({
+		where: {
+			id_follower: input.id_follower,
+			id_following: input.id_following,
+		},
+		});
+
+		return {
+		isFollowing: !!follow,
+		};
+	}),
 });
 
 export type FollowRouter = typeof followRouter;

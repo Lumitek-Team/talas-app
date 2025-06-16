@@ -1,13 +1,14 @@
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import {
+	FollowingType,
 	FollowerType,
 	ProjectWithInteractionsType,
 	RequestCollabType,
 	SelectCollabType,
 	UserProjectsCondition,
 } from "@/lib/type";
-import { retryConnect } from "@/lib/utils";
+import { getPublicUrl, retryConnect } from "@/lib/utils";
 import { Notification } from "@prisma/client";
 import { z } from "zod";
 
@@ -34,6 +35,7 @@ export const userRouter = router({
 			const username = input.email.split("@")[0];
 			try {
 				if (!existingUser) {
+					// FIX: Use a nested create to make the User and their count_summary at the same time.
 					const user = await retryConnect(() =>
 						prisma.user.create({
 							data: {
@@ -43,6 +45,10 @@ export const userRouter = router({
 								email: input.email,
 								auth_type: input.auth_type,
 								photo_profile: input.photo_profile,
+								// This line creates the associated count_summary record automatically
+								count_summary: {
+									create: {},
+								},
 							},
 						})
 					);
@@ -53,10 +59,16 @@ export const userRouter = router({
 						data: user,
 					};
 				} else {
-					//
+					// User already exists, no action needed
+					return {
+						success: true,
+						message: "User already exists.",
+						data: existingUser,
+					};
 				}
 			} catch (error) {
-				throw new Error("Error creating project: " + error);
+				// The original error message here was incorrect
+				throw new Error("Error syncing user: " + error);
 			}
 		}),
 
@@ -243,7 +255,7 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const followings: FollowerType[] = await retryConnect(() =>
+				const followings: FollowingType[] = await retryConnect(() =>
 					prisma.follow.findMany({
 						where: {
 							id_follower: input.id_follower,
@@ -251,7 +263,7 @@ export const userRouter = router({
 						take: input.limit,
 						skip: input.offset,
 						select: {
-							follower: {
+							following: {
 								select: {
 									username: true,
 									name: true,
@@ -263,7 +275,7 @@ export const userRouter = router({
 				);
 
 				const data = followings.map((follow) => ({
-					...follow.follower,
+					...follow.following,
 				}));
 
 				return {
@@ -318,19 +330,24 @@ export const userRouter = router({
 					instagram: z.string().optional(),
 					linkedin: z.string().optional(),
 					github: z.string().optional(),
-					gender: z.enum(["MALE", "FEMALE"]).optional(),
+					gender: z.enum(["MALE", "FEMALE"]).nullish(),
 					email_contact: z.string().optional(),
 				}),
 			})
 		)
 		.mutation(async ({ input }) => {
 			try {
+				const photoPublicUrl = await getPublicUrl(input.data.photo_profile);
+
 				await retryConnect(() =>
 					prisma.user.update({
 						where: {
 							id: input.id,
 						},
-						data: input.data,
+						data: {
+							...input.data,
+							photo_profile: photoPublicUrl, // Updated line
+						},
 					})
 				);
 

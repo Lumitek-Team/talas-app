@@ -1,109 +1,140 @@
+// components/home/molecules/post-actions.tsx
+
 "use client";
 
-import { IconButton } from "@/components/ui/icon-button";
+import { cn } from "@/lib/utils";
+import {
+  HeartIcon,
+  ChatBubbleLeftIcon,
+  BookmarkIcon,
+  ShareIcon,
+} from "@heroicons/react/24/outline";
+import {
+  HeartIcon as HeartIconSolid,
+  BookmarkIcon as BookmarkIconSolid,
+} from "@heroicons/react/24/solid";
 
 interface PostActionsProps {
   likes: number;
   comments: number;
-  onLike: () => void;
-  onComment: () => void;
-  onSave: () => void;
+  onLikeToggle: () => void;
+  onComment: (e: React.MouseEvent) => void; // Changed from () => void to (e: React.MouseEvent) => void
   onShare: () => void;
-  isLiked?: boolean;
-  isSaved?: boolean;
+  isLiked: boolean;
+  isBookmarked: boolean;
+  onBookmarkToggle: () => void;
+  variant?: 'full' | 'bookmark-only';
+}
+
+// Updated ActionButtonProps interface
+interface ActionButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  onClick: (e: React.MouseEvent) => void; // Also update this to accept the event
+  active?: boolean;
+  disabled?: boolean;
+  fullWidth?: boolean; // New prop for making button full width
+}
+
+// Updated ActionButton component
+function ActionButton({ 
+  icon, 
+  label, 
+  onClick, 
+  active = false, 
+  disabled = false, 
+  fullWidth = false // Destructure new prop
+}: ActionButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "flex items-center gap-1 px-2 py-1 rounded-md transition-all duration-200",
+        "hover:bg-gray-700/20 cursor-pointer focus:outline-none active:scale-90",
+        "text-xs transform",
+        active ? "text-primary" : "text-white/70",
+        disabled && "opacity-50 cursor-not-allowed",
+        fullWidth && "w-full justify-center" // Apply full width and center content if prop is true
+      )}
+      aria-label={label}
+    >
+      <span className={cn(
+        "transition-transform duration-200",
+        active ? "text-primary" : "text-white/70"
+      )}>
+        {icon}
+      </span>
+      <span className="font-medium">{label}</span>
+    </button>
+  );
 }
 
 export function PostActions({
   likes,
   comments,
-  onLike,
+  onLikeToggle,
   onComment,
-  onSave,
   onShare,
-  isLiked = false,
-  isSaved = false,
+  isLiked,
+  isBookmarked,
+  onBookmarkToggle,
+  variant = 'full',
 }: PostActionsProps) {
+
+  if (variant === 'bookmark-only') {
+    return (
+      // The parent div can be simpler as the button controls its width and content alignment.
+      // 'flex' ensures it behaves as a flex item if PostActions itself is in a flex layout.
+      <div className="flex items-center w-full"> {/* Ensure this div also takes full width if needed or rely on PostCard's layout */}
+        <ActionButton
+          icon={isBookmarked ? (
+            <BookmarkIconSolid className="w-5 h-5" />
+          ) : (
+            <BookmarkIcon className="w-5 h-5" />
+          )}
+          label={isBookmarked ? "Unsave" : "Save"}
+          onClick={onBookmarkToggle}
+          active={isBookmarked}
+          fullWidth={true} // Pass fullWidth prop to the ActionButton
+        />
+      </div>
+    );
+  }
+
+  // Full actions for other pages (remains the same)
   return (
-    <div className="flex items-center justify-between py-2">
-      <div className="flex items-center gap-4">
-        <button 
-          onClick={onLike}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="20" 
-            height="20" 
-            viewBox="0 0 24 24" 
-            fill={isLiked ? "currentColor" : "none"}
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-            className={isLiked ? "text-primary" : ""}
-          >
-            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-          </svg>
-          <span>{likes} Likes</span>
-        </button>
-        
-        <button 
-          onClick={onComment}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="20" 
-            height="20" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          <span>{comments} Comments</span>
-        </button>
-      </div>
-      
-      <div className="flex items-center gap-2">
-        <IconButton onClick={onSave}>
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="20" 
-            height="20" 
-            viewBox="0 0 24 24" 
-            fill={isSaved ? "currentColor" : "none"} 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-            className={isSaved ? "text-primary" : ""}
-          >
-            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
-          </svg>
-        </IconButton>
-        
-        <IconButton onClick={onShare}>
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="20" 
-            height="20" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          >
-            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-            <polyline points="16 6 12 2 8 6" />
-            <line x1="12" x2="12" y1="2" y2="15" />
-          </svg>
-        </IconButton>
-      </div>
+    <div className="flex justify-between items-center">
+      <ActionButton
+        icon={isLiked ? (
+          <HeartIconSolid className="w-5 h-5" />
+        ) : (
+          <HeartIcon className="w-5 h-5" />
+        )}
+        label={`${likes} Likes`}
+        onClick={onLikeToggle}
+        active={isLiked}
+      />
+      <ActionButton
+        icon={<ChatBubbleLeftIcon className="w-5 h-5" />}
+        label={`${comments} Comments`}
+        onClick={onComment}
+      />
+      <ActionButton
+        icon={isBookmarked ? (
+          <BookmarkIconSolid className="w-5 h-5" />
+        ) : (
+          <BookmarkIcon className="w-5 h-5" />
+        )}
+        label="Save"
+        onClick={onBookmarkToggle}
+        active={isBookmarked}
+      />
+      <ActionButton
+        icon={<ShareIcon className="w-5 h-5" />}
+        label="Share"
+        onClick={onShare}
+      />
     </div>
   );
 }

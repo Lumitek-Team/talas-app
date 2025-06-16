@@ -34,6 +34,59 @@ export interface ProjectWithInteractionsType {
 	}[];
 	bookmarks?: { id: string }[];
 	LikeProject?: { id: string }[];
+	is_bookmarked: boolean;
+	is_liked: boolean;
+}
+
+export interface UserSearchType {
+	name: string;
+	username: string;
+	photo_profile: string;
+	github: string;
+	instagram: string;
+	linkedin: string;
+	gender: string;
+	count_summary: {
+		count_project: number;
+		count_follower: number;
+		count_following: number;
+	};
+}
+
+export interface ProjectWithBookmarks {
+	id: string;
+	id_category: string;
+	slug: string;
+	title: string;
+	content: string;
+	is_archived: boolean;
+	image1?: string;
+	image2?: string;
+	image3?: string;
+	image4?: string;
+	image5?: string;
+	video?: string;
+	count_likes: number;
+	count_comments: number;
+	link_figma: string;
+	link_github: string;
+	created_at: string;
+	updated_at: string;
+	category: {
+		id: string;
+		title: string;
+		slug: string;
+	};
+	project_user: {
+		user: {
+			id: string;
+			name: string;
+			username: string;
+			photo_profile?: string;
+		};
+	}[];
+	bookmarks?: { id: string }[];
+	LikeProject?: { id: string }[];
 }
 
 export interface ProjectOneType {
@@ -102,6 +155,7 @@ export interface ProjectOnMutationType {
 
 export interface ProjectOnArchiveType {
 	id: string;
+	id_category: string;
 	project_user: {
 		id_user: string;
 		ownership: string;
@@ -157,6 +211,14 @@ export type BookmarkType = {
 
 export interface FollowerType {
 	follower: {
+		username: string;
+		name: string;
+		photo_profile: string | null;
+	};
+}
+
+export interface FollowingType {
+	following: {
 		username: string;
 		name: string;
 		photo_profile: string | null;

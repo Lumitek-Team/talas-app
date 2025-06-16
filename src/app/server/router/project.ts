@@ -1,6 +1,8 @@
+// src/app/server/router/project.ts
+
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { retryConnect, deleteImage } from "@/lib/utils";
+import { retryConnect, deleteImage, getPublicUrl } from "@/lib/utils";
 import { z } from "zod";
 import slugify from "slugify";
 import {
@@ -17,7 +19,7 @@ export const projectRouter = router({
 		.input(
 			z.object({
 				id: z.string(),
-				id_user: z.string(),
+				id_user: z.string(), // id_user is used for checking bookmark and like status
 			})
 		)
 		.query(async ({ input }) => {
@@ -139,7 +141,7 @@ export const projectRouter = router({
 			const { cursor, id_user } = input;
 
 			try {
-				const projects = await retryConnect(() =>
+				const projectsFromDb = await retryConnect(() =>
 					prisma.project.findMany({
 						where: {
 							is_archived: false,
@@ -218,13 +220,12 @@ export const projectRouter = router({
 
 				let nextCursor: typeof cursor | undefined = undefined;
 
-				if (projects.length > limit) {
-					const nextItem = projects.pop();
+				if (projectsFromDb.length > limit) {
+					const nextItem = projectsFromDb.pop();
 					nextCursor = nextItem!.id;
 				}
-
 				// Add is_bookmarked property
-				const ProjectWithInteractionsType = projects.map(
+				const ProjectWithInteractionsType = projectsFromDb.map(
 					(p: ProjectWithInteractionsType) => ({
 						...p,
 						is_bookmarked: id_user
@@ -363,16 +364,18 @@ export const projectRouter = router({
 				image4: z.any().optional(),
 				image5: z.any().optional(),
 				video: z.any().optional(),
-				collaborators: z.array(
-					z.object({
-						id: z.string(),
-						name: z.string(),
-						username: z.string(),
-						photo_profile: z.string().optional(),
-					})
-				),
-				link_figma: z.string().optional(),
-				link_github: z.string().optional(),
+				collaborators: z
+					.array(
+						z.object({
+							id: z.string(),
+							name: z.string(),
+							username: z.string(),
+							photo_profile: z.string().optional(),
+						})
+					)
+					.optional(),
+				link_figma: z.string().optional().nullable(),
+				link_github: z.string().optional().nullable(),
 			})
 		)
 		.mutation(async ({ input }) => {
@@ -393,6 +396,21 @@ export const projectRouter = router({
 				slug = `${slug}-${Math.floor(Math.random() * 1000)}`;
 			}
 
+			const imagesToGetUrl = [
+				input.image1,
+				input.image2,
+				input.image3,
+				input.image4,
+				input.image5,
+			];
+			const imagesWithUrls: string[] = [];
+			for (const image of imagesToGetUrl) {
+				// getPublicUrl for all imagesToGetUrl
+				if (image) {
+					imagesWithUrls.push(await getPublicUrl(image));
+				}
+			}
+
 			try {
 				const newProject = await retryConnect(() =>
 					prisma.project.create({
@@ -402,11 +420,11 @@ export const projectRouter = router({
 							slug: slug,
 							is_archived: input.is_archived,
 							content: input.content,
-							image1: input.image1,
-							image2: input.image2,
-							image3: input.image3,
-							image4: input.image4,
-							image5: input.image5,
+							image1: imagesWithUrls[0],
+							image2: imagesWithUrls[1] || null,
+							image3: imagesWithUrls[2] || null,
+							image4: imagesWithUrls[3] || null,
+							image5: imagesWithUrls[4] || null,
 							video: input.video,
 							link_figma: input.link_figma,
 							link_github: input.link_github,
@@ -421,9 +439,11 @@ export const projectRouter = router({
 					collabStatus: collabStatusType.ACCEPTED,
 				};
 
+				const collaboratorUsers = input.collaborators || [];
+
 				const dataCollab = [
 					ownerCollab,
-					...input.collaborators.map((collab) => ({
+					...collaboratorUsers.map((collab) => ({
 						id_user: collab.id,
 						id_project: newProject.id,
 						ownership: ownershipType.COLLABORATOR,
@@ -431,32 +451,28 @@ export const projectRouter = router({
 					})),
 				];
 
-				const [] = await retryConnect(() =>
-					prisma.$transaction([
-						// request collab
+				if (dataCollab.length > 0) {
+					await retryConnect(() =>
 						prisma.projectUser.createMany({
 							data: dataCollab,
-						}),
+						})
+					);
+				}
 
+				await retryConnect(() =>
+					prisma.$transaction([
 						prisma.category.update({
-							where: {
-								id: input.id_category,
-							},
-							data: {
-								count_projects: {
-									increment: 1,
-								},
-							},
+							where: { id: input.id_category },
+							data: { count_projects: { increment: 1 } },
 						}),
-						prisma.count_summary.update({
-							where: {
-								id_user: input.id_user,
-							},
-							data: {
-								count_project: {
-									increment: 1,
-								},
-							},
+						// FIX: Changed 'update' to 'upsert' for robustness.
+						// This will now create the count_summary record if it doesn't exist.
+						prisma.count_summary.upsert({
+							where: { id_user: input.id_user },
+							// This runs if the record IS found
+							update: { count_project: { increment: 1 } },
+							// This runs if the record is NOT found
+							create: { id_user: input.id_user, count_project: 1 },
 						}),
 					])
 				);
@@ -479,8 +495,8 @@ export const projectRouter = router({
 				id_category: z.string().optional(),
 				title: z.string().optional(),
 				content: z.string().optional(),
-				link_figma: z.string().optional(),
-				link_github: z.string().optional(),
+				link_figma: z.string().url().optional().nullable(),
+				link_github: z.string().url().optional().nullable(),
 			})
 		)
 		.mutation(async ({ input }) => {
@@ -520,8 +536,7 @@ export const projectRouter = router({
 						lower: true,
 						strict: true,
 					});
-
-					const existingSlug = await retryConnect(() =>
+					const slugCheck = await retryConnect(() =>
 						prisma.project.findFirst({
 							where: {
 								slug: updatedSlug,
@@ -529,8 +544,7 @@ export const projectRouter = router({
 							},
 						})
 					);
-
-					if (existingSlug) {
+					if (slugCheck) {
 						updatedSlug = `${updatedSlug}-${Math.floor(Math.random() * 1000)}`;
 					}
 				}
@@ -553,17 +567,37 @@ export const projectRouter = router({
 					);
 				}
 
+				const updateData: {
+					id_category?: string;
+					title?: string;
+					slug: string;
+					content?: string;
+					link_figma?: string | null;
+					link_github?: string | null;
+				} = {
+					slug: updatedSlug,
+				};
+
+				if (input.id_category !== undefined) {
+					updateData.id_category = input.id_category;
+				}
+				if (input.title !== undefined) {
+					updateData.title = input.title;
+				}
+				if (input.content !== undefined) {
+					updateData.content = input.content;
+				}
+				if (input.link_figma !== undefined) {
+					updateData.link_figma = input.link_figma;
+				}
+				if (input.link_github !== undefined) {
+					updateData.link_github = input.link_github;
+				}
+
 				const updatedProject = await retryConnect(() =>
 					prisma.project.update({
 						where: { id: input.id },
-						data: {
-							id_category: input.id_category ?? existingProject.id_category,
-							title: input.title ?? existingProject.title,
-							slug: updatedSlug,
-							content: input.content ?? existingProject.content,
-							link_figma: input.link_figma ?? existingProject.link_figma,
-							link_github: input.link_github ?? existingProject.link_github,
-						},
+						data: updateData,
 					})
 				);
 
@@ -573,9 +607,11 @@ export const projectRouter = router({
 					data: updatedProject,
 				};
 			} catch (error) {
-				throw new Error("Error editing project: " + error);
+				console.error("Error editing project:", error);
+				throw new Error("Error editing project: " + (error as Error).message);
 			}
 		}),
+
 	delete: protectedProcedure
 		.input(
 			z.object({
@@ -614,19 +650,16 @@ export const projectRouter = router({
 					throw new Error("Project not found or access denied.");
 				}
 
-				// delete all images in this project from storage
 				const images = [
 					existingProject.image1,
 					existingProject.image2,
 					existingProject.image3,
 					existingProject.image4,
 					existingProject.image5,
-				].filter(Boolean);
+				].filter(Boolean) as string[];
 
 				for (const imagePath of images) {
-					if (imagePath) {
-						await deleteImage(imagePath);
-					}
+					await deleteImage(imagePath);
 				}
 
 				await retryConnect(() =>
@@ -641,7 +674,9 @@ export const projectRouter = router({
 							where: { id: existingProject.id_category },
 							data: { count_projects: { decrement: 1 } },
 						}),
-						prisma.count_summary.update({
+						// FIX: Changed 'update' to 'updateMany' for resilience.
+						// This will no longer throw an error if the count_summary record doesn't exist.
+						prisma.count_summary.updateMany({
 							where: { id_user: input.id_user },
 							data: { count_project: { decrement: 1 } },
 						}),
@@ -706,18 +741,16 @@ export const projectRouter = router({
 						if (parent) {
 							parent.children.push(commentWithChildren);
 						} else {
+							// This case handles children whose parents might not be in the current fetched batch
+							// or creates a placeholder if strictly needed.
+							// For a flat list processed into a tree, ensure all comments are fetched.
 							commentMap[comment.parent_id] = {
 								id: comment.parent_id,
-								content: "",
-								created_at: "",
-								updated_at: "",
-								parent_id: null,
-								user: {
-									id: "",
-									name: "",
-									username: "",
-									photo_profile: null,
-								},
+								content: "", // Placeholder
+								created_at: "", // Placeholder
+								updated_at: "", // Placeholder
+								parent_id: null, // Placeholder
+								user: { id: "", name: "", username: "", photo_profile: null }, // Placeholder
 								children: [commentWithChildren],
 							};
 						}
@@ -752,6 +785,7 @@ export const projectRouter = router({
 						},
 						select: {
 							id: true,
+							id_category: true,
 							project_user: {
 								select: {
 									id_user: true,
@@ -774,11 +808,21 @@ export const projectRouter = router({
 					throw new Error("Project not found or access denied.");
 				}
 
-				const project = await retryConnect(() =>
-					prisma.project.update({
-						where: { id: input.id },
-						data: { is_archived: true },
-					})
+				const [project] = await retryConnect(() =>
+					prisma.$transaction([
+						prisma.project.update({
+							where: { id: input.id },
+							data: { is_archived: true },
+						}),
+						prisma.category.update({
+							where: { id: existingProject.id_category },
+							data: { count_projects: { decrement: 1 } },
+						}),
+						prisma.count_summary.updateMany({
+							where: { id_user: input.id_user },
+							data: { count_project: { decrement: 1 } },
+						}),
+					])
 				);
 
 				return {
@@ -806,6 +850,7 @@ export const projectRouter = router({
 						},
 						select: {
 							id: true,
+							id_category: true,
 							project_user: {
 								select: {
 									id_user: true,
@@ -828,11 +873,21 @@ export const projectRouter = router({
 					throw new Error("Project not found or access denied.");
 				}
 
-				const project = await retryConnect(() =>
-					prisma.project.update({
-						where: { id: input.id },
-						data: { is_archived: false },
-					})
+				const [project] = await retryConnect(() =>
+					prisma.$transaction([
+						prisma.project.update({
+							where: { id: input.id },
+							data: { is_archived: false },
+						}),
+						prisma.category.update({
+							where: { id: existingProject.id_category },
+							data: { count_projects: { increment: 1 } },
+						}),
+						prisma.count_summary.updateMany({
+							where: { id_user: input.id_user },
+							data: { count_project: { increment: 1 } },
+						}),
+					])
 				);
 
 				return {

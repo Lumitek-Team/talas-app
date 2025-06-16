@@ -1,45 +1,72 @@
+// server/trpc/routers/comment.ts (Refactored create procedure)
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { getAllDescendantCommentIds, retryConnect } from "@/lib/utils";
+import { getCommentTreeIds, retryConnect } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
 import { Comment, Project } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { ProjectOneType } from "@/lib/type";
+import { Prisma } from "@prisma/client";
+
 
 export const commentRouter = router({
 	create: protectedProcedure
 		.input(
 			z.object({
 				id_project: z.string(),
-				content: z.string().min(2).max(500),
+				content: z.string().min(1, "Comment cannot be empty.").max(1000, "Comment too long."), // Consistent with frontend
 				parent_id: z.string().nullable(),
 			})
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => { // ctx might be available if you set it up in trpc.ts
 			const { id_project, content, parent_id } = input;
 			const user = await currentUser();
 			if (!user) {
 				throw new Error("User not authenticated");
 			}
 			if (!id_project || !content) {
-				throw new Error("Field is empty");
+				throw new TRPCError({ code: "BAD_REQUEST", message: "Project ID and content are required." });
 			}
 
-			const project: ProjectOneType = await retryConnect(() =>
-				prisma.project.findUnique({
-					where: { id: input.id_project },
-					include: {
-						project_user: true,
-					},
-				})
-			);
-			if (!project) {
-				throw new TRPCError({
-					code: "NOT_FOUND",
-					message: "Project not found",
-				});
+			// MODIFICATION: Backend check for one-level reply limit
+			if (parent_id) {
+				const parentComment = await retryConnect(() =>
+					prisma.comment.findUnique({
+						where: { id: parent_id },
+						select: { parent_id: true }, // We only need to check if the parent itself has a parent
+					})
+				);
+
+				if (!parentComment) {
+					throw new TRPCError({ code: "NOT_FOUND", message: "Parent comment not found." });
+				}
+				// If the parentComment itself has a parent_id, it means it's already a reply (level 1).
+				// So, we cannot reply to it further.
+				if (parentComment.parent_id !== null) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message: "Replies are only allowed on top-level comments (one level deep).",
+					});
+				}
 			}
+			const project: ProjectOneType = await retryConnect(() =>
+    prisma.project.findUnique({
+        where: { id: input.id_project },
+        include: {
+            project_user: {
+                // This correctly includes the nested user object for each project_user record
+                include: {
+                    user: {
+                        select: {
+                            id: true // We only need the ID for the logic that follows
+                        }
+                    }
+                }
+            }
+        },
+    })
+);
 
 			const projectUsers = project?.project_user;
 			if (!projectUsers || projectUsers.length === 0) {
@@ -103,37 +130,40 @@ export const commentRouter = router({
 					count_likes: updatedProject.count_comments,
 				};
 			} catch (error) {
-				throw new Error("Error creating comment: " + error);
+                console.error("Error creating comment in backend:", error);
+				if (error instanceof TRPCError) throw error; // Re-throw TRPC specific errors
+				throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Error creating comment." });
 			}
 		}),
 
 	edit: protectedProcedure
 		.input(
 			z.object({
-				id: z.string(),
-				content: z.string().min(2).max(500),
-				id_user: z.string(),
+				id: z.string(), // Comment ID to edit
+				content: z.string().min(1, "Comment cannot be empty.").max(1000, "Comment too long."),
+				id_user: z.string(), // User ID of the comment author (for verification)
 			})
 		)
 		.mutation(async ({ input }) => {
-			const userId = (await currentUser())?.id;
-			if (!userId) {
-				throw new Error("User not authenticated");
+			const user = await currentUser();
+			if (!user || !user.id) {
+				throw new TRPCError({ code: "UNAUTHORIZED", message: "User not authenticated." });
 			}
-			if (userId !== input.id_user) {
-				throw new Error("You are not the owner of this comment");
+			// Ensure the user trying to edit is the author of the comment
+			if (user.id !== input.id_user) {
+				throw new TRPCError({ code: "FORBIDDEN", message: "You can only edit your own comments." });
 			}
-			if (!input.id || !input.content || !input.id_user) {
-				throw new Error("Field is empty");
-			}
+			
 			try {
 				const comment = await retryConnect(() =>
 					prisma.comment.update({
 						where: {
 							id: input.id,
+							id_user: user.id, // Ensure they can only update their own comment
 						},
 						data: {
 							content: input.content,
+							updated_at: new Date(), // Explicitly set updated_at
 						},
 					})
 				);
@@ -143,36 +173,35 @@ export const commentRouter = router({
 					data: comment,
 				};
 			} catch (error) {
-				throw new Error("Error updating comment: " + error);
+                console.error("Error updating comment in backend:", error);
+				if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+                    throw new TRPCError({ code: 'NOT_FOUND', message: 'Comment not found or you do not have permission to edit it.' });
+                }
+				throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Error updating comment." });
 			}
 		}),
 
 	deleteById: protectedProcedure
 		.input(
 			z.object({
-				id: z.string(),
-				id_user: z.string(),
-				id_project: z.string(),
+				id: z.string(), // Comment ID to delete
+				id_user: z.string(), // User ID of the comment author (for verification)
+				id_project: z.string(), // Project ID to decrement count
 			})
 		)
 		.mutation(async ({ input }) => {
-			const userId = (await currentUser())?.id;
-			if (!userId) {
-				throw new Error("User not authenticated");
+			const user = await currentUser();
+			if (!user || !user.id) {
+				throw new TRPCError({ code: "UNAUTHORIZED", message: "User not authenticated." });
 			}
-			if (!input.id || !input.id_project || !input.id_user) {
-				throw new Error("Field is empty");
-			}
-			if (userId !== input.id_user) {
-				throw new Error("You are not the owner of this comment");
+            // Ensure the user trying to delete is the author of the comment
+			if (user.id !== input.id_user) {
+				throw new TRPCError({ code: "FORBIDDEN", message: "You can only delete your own comments." });
 			}
 
 			try {
 				// Ambil semua id turunan (anak, cucu, dst)
-				const descendantIds = await getAllDescendantCommentIds(
-					prisma,
-					input.id
-				);
+				const descendantIds = await getCommentTreeIds(input.id);
 				// Hapus semua komentar (root + semua turunan)
 				await retryConnect(() =>
 					prisma.$transaction([
@@ -199,7 +228,9 @@ export const commentRouter = router({
 					message: "Successfully delete comment",
 				};
 			} catch (error) {
-				throw new Error("Error deleting comment: " + error);
+                console.error("Error deleting comment in backend:", error);
+                if (error instanceof TRPCError) throw error;
+				throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Error deleting comment." });
 			}
 		}),
 });

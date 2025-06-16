@@ -263,6 +263,133 @@ export const searchRouter = router({
 				});
 			}
 		}),
+
+	getPopularPost: protectedProcedure
+		.input(
+			z.object({
+				id_user: z.string(),
+			})
+		)
+		.query(async ({ input }) => {
+			const { id_user } = input;
+			try {
+				const populars = await prisma.$queryRawUnsafe(
+					`
+  SELECT * FROM (
+    SELECT id, title, id_category, popularity_score,
+           RANK() OVER (PARTITION BY id_category ORDER BY popularity_score DESC) AS rank
+    FROM "Project"
+    WHERE is_archived = false
+  ) AS ranked_projects
+  WHERE rank = 1;
+`,
+					id_user || ""
+				);
+				// Extract all popular project IDs
+				const popularIds = populars.map((p: any) => p.id);
+
+				// Fetch all projects with those IDs, including interactions
+				const projectsFromDb = await retryConnect(() =>
+					prisma.project.findMany({
+						where: {
+							id: { in: popularIds },
+							is_archived: false,
+						},
+						select: {
+							id: true,
+							title: true,
+							slug: true,
+							content: true,
+							image1: true,
+							image2: true,
+							image3: true,
+							image4: true,
+							image5: true,
+							video: true,
+							count_likes: true,
+							count_comments: true,
+							link_figma: true,
+							link_github: true,
+							created_at: true,
+							updated_at: true,
+							category: {
+								select: {
+									id: true,
+									title: true,
+									slug: true,
+								},
+							},
+							project_user: {
+								select: {
+									user: {
+										select: {
+											id: true,
+											name: true,
+											username: true,
+											photo_profile: true,
+										},
+									},
+									ownership: true,
+								},
+								where: {
+									OR: [
+										{
+											ownership: "OWNER",
+										},
+										{
+											ownership: "COLLABORATOR",
+											collabStatus: "ACCEPTED",
+										},
+									],
+								},
+								orderBy: {
+									created_at: "asc",
+								},
+							},
+							bookmarks: id_user
+								? {
+										where: { id_user: id_user },
+										select: { id: true },
+								  }
+								: false,
+							LikeProject: id_user
+								? {
+										where: { id_user: id_user },
+										select: { id: true },
+								  }
+								: false,
+						},
+						orderBy: {
+							created_at: "desc",
+						},
+					})
+				);
+
+				const ProjectWithInteractionsType: ProjectWithInteractionsType[] =
+					projectsFromDb.map((p: any) => ({
+						...p,
+						is_bookmarked: id_user
+							? p.bookmarks && p.bookmarks.length > 0
+							: false,
+						is_liked: id_user
+							? p.LikeProject && p.LikeProject.length > 0
+							: false,
+					}));
+
+				return {
+					success: true,
+					message: "Successfully get popular projects",
+					data: ProjectWithInteractionsType,
+				};
+			} catch (error) {
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: `Failed to get popular projects: ${
+						error instanceof Error ? error.message : "Unknown error"
+					}`,
+				});
+			}
+		}),
 });
 
 export type SearchRouter = typeof searchRouter;

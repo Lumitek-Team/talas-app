@@ -1,63 +1,61 @@
+// components/home/molecules/post-composer.tsx
 "use client";
 
-import { Avatar } from "@/components/ui/avatar-gatau-error";
-import { IconButton } from "@/components/ui/icon-button";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation";
+import { trpc } from "@/app/_trpc/client";
+import { useUser } from "@clerk/nextjs";
+import { getPublicUrl } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface PostComposerProps {
   avatarSrc: string;
   username: string;
-  onSubmit: (content: string) => void;
+  className?: string;
 }
 
-export function PostComposer({ avatarSrc, username, onSubmit }: PostComposerProps) {
-  const [content, setContent] = useState("");
+export function PostComposer({ avatarSrc, username, className = "" }: PostComposerProps) {
+  const router = useRouter();
+  const { user } = useUser();
 
-  const handleSubmit = () => {
-    if (content.trim()) {
-      onSubmit(content);
-      setContent("");
-    }
+  // Fetch the latest user data from your database
+  const { data: userProfile } = trpc.user.getById.useQuery(
+    { id: user?.id ?? "" },
+    { enabled: !!user?.id }
+  );
+
+  const handleRedirect = () => {
+    router.push("/create-project");
   };
 
+  // Use database photo if available, otherwise fallback to Clerk's imageUrl
+  const currentAvatarSrc = userProfile?.data?.photo_profile
+    ? getPublicUrl(userProfile.data.photo_profile)
+    : avatarSrc;
+
+  // Use database name/username if available, otherwise use Clerk's data
+  const currentUsername = userProfile?.data?.name || userProfile?.data?.username || username;
+
   return (
-    <div className="bg-card rounded-lg p-4 mb-6 border border-border">
-      <div className="flex items-center gap-3 mb-4">
-        <Avatar src={avatarSrc} alt={username} />
+    <div className={`p-5 ${className}`}>
+      <div className="flex items-center gap-3">
+        <Avatar>
+          <AvatarImage src={currentAvatarSrc} alt={currentUsername} />
+          <AvatarFallback>{currentUsername?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+        </Avatar>
         <div className="flex-1">
           <input
             type="text"
-            placeholder="What's going on today?"
-            className="w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
+            placeholder="What's your new creation?"
+            className="w-full bg-transparent border-none outline-none text-foreground placeholder:text-muted-foreground cursor-pointer"
+            onClick={handleRedirect}
+            readOnly
           />
         </div>
-      </div>
-
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          <IconButton>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-              <circle cx="9" cy="9" r="2" />
-              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-            </svg>
-          </IconButton>
-        </div>
-
-        <Button onClick={handleSubmit}>
+        <Button
+          onClick={handleRedirect}
+          className="rounded-full px-6 bg-primary text-white hover:bg-primary-foreground ml-3"
+        >
           Post
         </Button>
       </div>
