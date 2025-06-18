@@ -129,6 +129,17 @@
   .font-inter {
     font-family: 'Inter', sans-serif;
   }
+
+  /* Hide default cursor when custom cursor is active */
+  .cursor-none {
+    cursor: none !important;
+  }
+  
+  .cursor-none *,
+  .cursor-none *:hover,
+  .cursor-none *:focus {
+    cursor: none !important;
+  }
 }
 
 

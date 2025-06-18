@@ -3,8 +3,9 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { TeamCard } from "@/components/ui/team-card";
+import { SmoothCursor } from "@/components/ui/smooth-cursor";
 import { motion, useScroll, useTransform, Variants } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 
 // Animation variants
@@ -30,8 +31,8 @@ const staggerContainer: Variants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.2,
-      delayChildren: 0.1
+      staggerChildren: 0.1, // Reduced from 0.2 for faster entrance
+      delayChildren: 0.05 // Reduced from 0.1
     }
   }
 };
@@ -41,11 +42,11 @@ const teamMemberVariants: Variants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: "easeOut" }
+    transition: { duration: 0.4, ease: "easeOut" } // Reduced from 0.6
   }
 };
 
-// Team members data moved outside component
+// Team members data
 const teamMembers = [
   {
     id: 1,
@@ -64,7 +65,7 @@ const teamMembers = [
     name: "M Padli Septiana",
     role: "Backend Developer",
     image: "/team/member2.jpeg",
-    description: "I am the Soulflame Igniter of Servers, commanding the machine's essence from the shadow dimension. Every system bows to my will, for I am the unstoppable primordial force, the puppeteer behind reality's veil..",
+    description: "I am the Soulflame Igniter of Servers, commanding the machine's essence from the shadow dimension. Every system bows to my will, for I am the unstoppable primordial force, the puppeteer behind reality's veil..",
     social: {
       instagram: "https://www.instagram.com/septian_padli",
       linkedin: "https://www.linkedin.com/in/muhammad-padli-septiana",
@@ -111,6 +112,8 @@ const teamMembers = [
 
 export default function AboutPage() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [expandedCardId, setExpandedCardId] = useState<number | null>(null);
+  
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"]
@@ -119,11 +122,22 @@ export default function AboutPage() {
   // Overlay opacity effect
   const overlayOpacity = useTransform(scrollYProgress, [0, 0.5], [0.5, 0.8]);
 
+  const handleExpand = (id: number) => {
+    setExpandedCardId(id);
+  };
+
+  const handleCollapse = () => {
+    setExpandedCardId(null);
+  };
+
   return (
     <main
       ref={containerRef}
-      className="bg-bg-primary min-h-screen font-sans relative overflow-hidden"
+      className="bg-bg-primary min-h-screen font-sans relative overflow-hidden cursor-none"
     >
+      {/* Add Smooth Cursor */}
+      <SmoothCursor />
+
       {/* Same background as landing page */}
       <div
         className="fixed inset-0 z-0"
@@ -223,13 +237,13 @@ export default function AboutPage() {
             </motion.div>
           </motion.div>
 
-          {/* Meet Our Team Section */}
+          {/* Meet Our Team Section - Responsive Container with better margins */}
           <motion.div
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
             viewport={{ once: false, margin: "-100px" }}
-            className="mb-20 px-4"
+            className="mb-20 px-6 lg:px-12"
           >
             <motion.h2
               variants={fadeInUp}
@@ -238,15 +252,70 @@ export default function AboutPage() {
               Meet our team
             </motion.h2>
 
-            <div className="max-w-7xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 justify-items-center">
-                {teamMembers.map((member) => (
-                  <TeamCard
-                    key={member.id}
-                    member={member}
-                    variants={teamMemberVariants}
-                  />
-                ))}
+            {/* Responsive Team Container with better spacing */}
+            <div className="max-w-7xl mx-auto overflow-visible">
+              {/* Mobile: Vertical stack */}
+              <div className="block md:hidden">
+                <div className="flex flex-col gap-6 items-center max-h-none overflow-visible px-4"> {/* Changed from max-h-[600px] overflow-y-auto */}
+                  {teamMembers.map((member) => (
+                    <TeamCard
+                      key={member.id}
+                      member={member}
+                      variants={teamMemberVariants}
+                      isAnyExpanded={expandedCardId !== null}
+                      isExpanded={expandedCardId === member.id}
+                      onExpand={handleExpand}
+                      onCollapse={handleCollapse}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Tablet: 3 cards per row */}
+              <div className="hidden md:block lg:hidden">
+                <div className="grid grid-cols-3 gap-6 justify-items-center px-8 relative overflow-visible">
+                  {teamMembers.slice(0, 3).map((member) => (
+                    <TeamCard
+                      key={member.id}
+                      member={member}
+                      variants={teamMemberVariants}
+                      isAnyExpanded={expandedCardId !== null}
+                      isExpanded={expandedCardId === member.id}
+                      onExpand={handleExpand}
+                      onCollapse={handleCollapse}
+                    />
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-6 justify-items-center mt-8 px-8 relative overflow-visible">
+                  {teamMembers.slice(3).map((member) => (
+                    <TeamCard
+                      key={member.id}
+                      member={member}
+                      variants={teamMemberVariants}
+                      isAnyExpanded={expandedCardId !== null}
+                      isExpanded={expandedCardId === member.id}
+                      onExpand={handleExpand}
+                      onCollapse={handleCollapse}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Desktop: Horizontal line */}
+              <div className="hidden lg:block">
+                <div className="h-[300px] flex gap-8 justify-center items-center px-12 overflow-visible"> {/* Updated height to match team card height */}
+                  {teamMembers.map((member) => (
+                    <TeamCard
+                      key={member.id}
+                      member={member}
+                      variants={teamMemberVariants}
+                      isAnyExpanded={expandedCardId !== null}
+                      isExpanded={expandedCardId === member.id}
+                      onExpand={handleExpand}
+                      onCollapse={handleCollapse}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </motion.div>
