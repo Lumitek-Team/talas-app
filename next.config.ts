@@ -1,4 +1,12 @@
 const nextConfig = {
+	async rewrites() {
+		return [
+			{
+				source: "/storage/:path*",
+				destination: "/public/storage/:path*",
+			},
+		];
+	},
 	images: {
 		remotePatterns: [
 			{

@@ -337,8 +337,6 @@ export const userRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				const photoPublicUrl = await getPublicUrl(input.data.photo_profile);
-
 				await retryConnect(() =>
 					prisma.user.update({
 						where: {
@@ -346,7 +344,6 @@ export const userRouter = router({
 						},
 						data: {
 							...input.data,
-							photo_profile: photoPublicUrl, // Updated line
 						},
 					})
 				);
