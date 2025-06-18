@@ -6,6 +6,7 @@ import { TechIcons } from "@/components/landing/techIcons";
 import { Preview } from "@/components/landing/preview";
 import { CTA } from "@/components/landing/CTA";
 import { Footer } from "@/components/layout/footer";
+import { SmoothCursor } from "@/components/ui/smooth-cursor";
 import { motion, useScroll, useTransform, Variants } from "framer-motion";
 import { useRef } from "react";
 
@@ -85,8 +86,11 @@ export default function LandingPage() {
   return (
     <main 
       ref={containerRef}
-      className="bg-bg-primary min-h-screen font-sans relative overflow-hidden"
+      className="bg-bg-primary min-h-screen font-sans relative overflow-hidden cursor-none"
     >
+      {/* Add Smooth Cursor */}
+      <SmoothCursor />
+
       {/* Static Background (no parallax) */}
       <div 
         className="fixed inset-0 z-0"
