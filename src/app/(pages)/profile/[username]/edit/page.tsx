@@ -13,8 +13,8 @@ import { TextAreaForm } from "@/components/profile/edit/form-textarea";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
-import { uploadFile, getImageUrl } from "@/lib/supabase/storage";
-import { getPublicUrl, uploadImage } from "@/lib/utils";
+// import { uploadFile, getImageUrl } from "@/lib/supabase/storage";
+// import { getPublicUrl, uploadImage } from "@/lib/utils";
 
 type genderType = "MALE" | "FEMALE";
 
@@ -90,6 +90,7 @@ export default function EditProfile() {
   const [linkedIn, setLinkedIn] = useState("");
   const [gitHub, setGitHub] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Cek akses pengguna
   useEffect(() => {
@@ -139,7 +140,7 @@ export default function EditProfile() {
       setEmail(user.primaryEmailAddress.emailAddress);
     }
   }, [userData, user]);
-  console.log(userData?.gender)
+
   useEffect(() => {
     return () => {
       if (previewUrl?.startsWith("blob:")) {
@@ -148,37 +149,16 @@ export default function EditProfile() {
     };
   }, [previewUrl]);
 
-  const handleFileChange = async (file: File) => {
-    if (!file || !user?.id) return;
+  const handleFileChange = (file: File) => {
+    if (!file) return;
 
-    // Buat preview sementara
+    // Create a temporary preview
     const previewObjectUrl = URL.createObjectURL(file);
     setPreviewUrl(previewObjectUrl);
-
-    // Ekstensi file aman
-    // const extension = file.name.split(".").pop() || "jpg";
-    // const filePath = `profile_photos/${user.id}-${Date.now()}.${extension}`;
-
-    try {
-      const result = await uploadImage(file, "profile_photos");
-      console.log("Uploading file:", result);
-      const publicUrl = await getPublicUrl(result);
-      console.log("Public file:", publicUrl);
-
-      if (publicUrl) {
-        if (previewObjectUrl.startsWith("blob:")) {
-          URL.revokeObjectURL(previewObjectUrl);
-        }
-        setPreviewUrl(publicUrl);
-      }
-    } catch (error: any) {
-      console.error("Upload error:", error.message);
-      alert("Upload foto gagal. Silakan coba lagi.");
-    }
+    setSelectedFile(file); // Store the selected file for later upload
   };
 
-
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!userData || !user) {
       alert("Data pengguna tidak lengkap.");
       return;
@@ -187,6 +167,36 @@ export default function EditProfile() {
     if (!name.trim() || !usernameInput.trim()) {
       alert("Nama dan username wajib diisi.");
       return;
+    }
+
+    let uploadedImagePath: string | undefined = undefined;
+
+    if (selectedFile) {
+      try {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        formData.append("folder", "profile_photos");
+        if (userData.photo_profile) {
+          formData.append("oldImagePath", userData.photo_profile);
+        }
+
+        const response = await fetch("/api/profile/editProfile", {
+          method: "POST",
+          body: formData,
+        });
+
+
+        if (!response.ok) {
+          throw new Error("Failed to upload profile image.");
+        }
+
+        const { newImagePath } = await response.json();
+        uploadedImagePath = newImagePath;
+      } catch (error: any) {
+        console.error("Upload error:", error.message);
+        alert("Failed to upload profile image. Please try again.");
+        return;
+      }
     }
 
     updateMutation.mutate({
@@ -200,7 +210,7 @@ export default function EditProfile() {
         instagram: instagram?.trim() || undefined,
         linkedin: linkedIn?.trim() || undefined,
         github: gitHub?.trim() || undefined,
-        photo_profile: previewUrl || undefined,
+        photo_profile: uploadedImagePath || userData.photo_profile || undefined,
       },
     });
   }, [
@@ -214,7 +224,7 @@ export default function EditProfile() {
     instagram,
     linkedIn,
     gitHub,
-    previewUrl,
+    selectedFile,
     updateMutation,
   ]);
 

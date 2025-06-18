@@ -36,7 +36,6 @@ export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: Sideba
   const pathname = usePathname();
   const { user } = useUser();
   const userId = user?.id;
-  console.log(userId);
   const { data, isLoading, error } = trpc.user.getById.useQuery(
     { id: userId || "" }, // default empty string to avoid undefined
     { enabled: !!userId } // hanya fetch kalau userId sudah ada

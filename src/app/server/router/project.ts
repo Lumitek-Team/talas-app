@@ -2,7 +2,7 @@
 
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { retryConnect, deleteImage, getPublicUrl } from "@/lib/utils";
+import { retryConnect, getPublicUrl } from "@/lib/utils";
 import { z } from "zod";
 import slugify from "slugify";
 import {
@@ -13,6 +13,7 @@ import {
 	ProjectWithInteractionsType,
 } from "@/lib/type";
 import { collabStatusType, ownershipType } from "@prisma/client";
+import { deleteImages } from "@/lib/imageUtils";
 
 export const projectRouter = router({
 	getOne: protectedProcedure
@@ -658,9 +659,7 @@ export const projectRouter = router({
 					existingProject.image5,
 				].filter(Boolean) as string[];
 
-				for (const imagePath of images) {
-					await deleteImage(imagePath);
-				}
+				await deleteImages(images);
 
 				await retryConnect(() =>
 					prisma.$transaction([

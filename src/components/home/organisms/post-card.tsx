@@ -9,7 +9,6 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Github, Figma } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { getPublicUrl } from "@/lib/utils";
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from "@/contexts/toast-context";
 
@@ -152,24 +151,24 @@ export function PostCard({
       />
 
       <div className="mb-6">
-      {/* This div acts as a block-level container for the title link */}
-      <div>
-        <Link 
-          href={`/project/${slug || id}`} 
-          onClick={(e) => e.stopPropagation()} 
-          data-prevent-card-click="true"
-        >
-          <h2 className="text-lg font-bold hover:text-primary transition-colors duration-200 inline-block">
-            {displayTitle}
-          </h2>
-        </Link>
-      </div>
-      {category && (
-        // Ensure the category is also a block-level element
-        <p className="text-sm text-muted-foreground mb-3">
-          {category.title}
-        </p>
-      )}
+        {/* This div acts as a block-level container for the title link */}
+        <div>
+          <Link
+            href={`/project/${slug || id}`}
+            onClick={(e) => e.stopPropagation()}
+            data-prevent-card-click="true"
+          >
+            <h2 className="text-lg font-bold hover:text-primary transition-colors duration-200 inline-block">
+              {displayTitle}
+            </h2>
+          </Link>
+        </div>
+        {category && (
+          // Ensure the category is also a block-level element
+          <p className="text-sm text-muted-foreground mb-3">
+            {category.title}
+          </p>
+        )}
         <p className="text-white text-sm whitespace-pre-line">
           {displayContent}
         </p>

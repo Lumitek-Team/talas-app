@@ -8,7 +8,6 @@ interface PhotoProfileUserProps {
 }
 
 export function PhotoProfileUser({ photoUrl }: PhotoProfileUserProps) {
-  console.log("PhotoProfileUser:", photoUrl);
   return (
     <div className="space-y-2">
       <div className="relative w-24 h-24">
