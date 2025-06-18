@@ -13,8 +13,8 @@ import { TextAreaForm } from "@/components/profile/edit/form-textarea";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
-import { uploadFile, getImageUrl } from "@/lib/supabase/storage";
-import { getPublicUrl, uploadImage } from "@/lib/utils";
+// import { uploadFile, getImageUrl } from "@/lib/supabase/storage";
+// import { getPublicUrl, uploadImage } from "@/lib/utils";
 
 type genderType = "MALE" | "FEMALE";
 
@@ -159,22 +159,22 @@ export default function EditProfile() {
     // const extension = file.name.split(".").pop() || "jpg";
     // const filePath = `profile_photos/${user.id}-${Date.now()}.${extension}`;
 
-    try {
-      const result = await uploadImage(file, "profile_photos");
-      console.log("Uploading file:", result);
-      const publicUrl = await getPublicUrl(result);
-      console.log("Public file:", publicUrl);
+    // try {
+    //   const result = await uploadImage(file, "profile_photos");
+    //   console.log("Uploading file:", result);
+    //   const publicUrl = await getPublicUrl(result);
+    //   console.log("Public file:", publicUrl);
 
-      if (publicUrl) {
-        if (previewObjectUrl.startsWith("blob:")) {
-          URL.revokeObjectURL(previewObjectUrl);
-        }
-        setPreviewUrl(publicUrl);
-      }
-    } catch (error: any) {
-      console.error("Upload error:", error.message);
-      alert("Upload foto gagal. Silakan coba lagi.");
-    }
+    //   if (publicUrl) {
+    //     if (previewObjectUrl.startsWith("blob:")) {
+    //       URL.revokeObjectURL(previewObjectUrl);
+    //     }
+    //     setPreviewUrl(publicUrl);
+    //   }
+    // } catch (error: any) {
+    //   console.error("Upload error:", error.message);
+    //   alert("Upload foto gagal. Silakan coba lagi.");
+    // }
   };
 
 
