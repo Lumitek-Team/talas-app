@@ -35,7 +35,7 @@ const projectFormSchema = z.object({
       username: z.string(),
       photo_profile: z.string().optional(),
     })
-  ),
+  ).nullish(),
 });
 
 export type ProjectFormValues = z.infer<typeof projectFormSchema>;
@@ -181,6 +181,8 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
         if (imageFiles.length > 0) {
           uploadedImagePaths = await uploadImagesToApi(imageFiles, "project");
         }
+        console.log("Uploaded files:", uploadedImagePaths);
+
 
         const finalImagePaths = new Array(5).fill(undefined);
         uploadedImagePaths.forEach((path, index) => {
@@ -196,7 +198,7 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
           image4: finalImagePaths[3],
           image5: finalImagePaths[4],
           is_archived: false,
-          collaborators: data.collaborators.map(collab => ({
+          collaborators: (data.collaborators ?? []).map(collab => ({
             id: collab.id,
             name: collab.name,
             username: collab.username,

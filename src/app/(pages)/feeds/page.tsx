@@ -39,7 +39,6 @@ const transformProjectToPost = (
     ? optimisticBookmarks[project.id]
     : project.is_bookmarked;
 
-    userRole: 'Developer',
   const transformed: ProjectOneType = {
     ...project,
     is_bookmarked: isBookmarked,
