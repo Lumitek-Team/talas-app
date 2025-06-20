@@ -21,7 +21,7 @@ export function ImageContainer({ images }: ImageContainerProps) {
     >
       <div
         className={`flex gap-2 ${
-          isCarouselActive ? "w-max" : "w-full justify-center"
+          isCarouselActive ? "w-[690]" : "w-full justify-center"
         }`}
         style={{
           overflowX: isCarouselActive ? "scroll" : "hidden",

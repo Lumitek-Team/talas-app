@@ -36,7 +36,7 @@ export function ImageContainerProjectProfile({ images }: ImageContainerProps) {
   }, [loadedCount, images.length, isCarouselActive]);
 
   return (
-  <ScrollArea className="w-full rounded-md overflow-hidden ">
+  <ScrollArea className="w-full overflow-hidden ">
     <div
       ref={containerRef}
       className={`flex gap-4 transition-all ${

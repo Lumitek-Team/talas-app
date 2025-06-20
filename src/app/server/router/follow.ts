@@ -182,8 +182,8 @@ export const followRouter = router({
 	checkIsFollowing: protectedProcedure
 	.input(
 		z.object({
-		id_follower: z.string(),
-		id_following: z.string(),
+			id_follower: z.string(),
+			id_following: z.string(),
 		})
 	)
 	.query(async ({ input }) => {
@@ -195,7 +195,7 @@ export const followRouter = router({
 		});
 
 		return {
-		isFollowing: !!follow,
+			isFollowing: !!follow,
 		};
 	}),
 });
