@@ -127,7 +127,18 @@ export const notificationRouter = router({
 						},
 					})
 				);
-				const isUnread: boolean = count > 0 ? true : false;
+				// dapatkan collaboration pending request
+				const pendingCollabCount = await retryConnect(() =>
+					prisma.projectUser.count({
+						where: {
+							id_user: input.id_user,
+							collabStatus: "PENDING",
+						},
+					})
+				);
+
+				const isUnread: boolean = count > 0 || pendingCollabCount > 0;
+
 				return {
 					success: true,
 					message: "Unread notifications count retrieved successfully",

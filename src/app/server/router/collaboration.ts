@@ -15,6 +15,18 @@ export const collaborationRouter = router({
 				data: {
 					collabStatus: "ACCEPTED",
 				},
+				include: {
+					project: {
+						select: {
+							id: true,
+							title: true,
+							project_user: {
+								where: { ownership: "OWNER" },
+								select: { id_user: true },
+							},
+						},
+					},
+				},
 			})
 		);
 
@@ -24,6 +36,22 @@ export const collaborationRouter = router({
 				message: "Collaboration not found",
 			});
 		}
+
+		// Notify the owner
+		const ownerId = collab.project.project_user[0]?.id_user;
+		if (ownerId) {
+			await retryConnect(() =>
+				prisma.notification.create({
+					data: {
+						id_user: ownerId,
+						title: `Your collaboration request for project "${collab.project.title}" has been accepted.`,
+						is_read: false,
+						type: "COLLABORATION" as const,
+					},
+				})
+			);
+		}
+
 		const collabData = {
 			id: collab.id,
 			id_project: collab.id_project,
@@ -38,20 +66,48 @@ export const collaborationRouter = router({
 	}),
 
 	reject: protectedProcedure.input(z.string()).mutation(async ({ input }) => {
-		// delete collaboration
 		const collab = await retryConnect(() =>
 			prisma.projectUser.delete({
 				where: {
 					id: input,
 				},
+				include: {
+					project: {
+						select: {
+							id: true,
+							title: true,
+							project_user: {
+								where: { ownership: "OWNER" },
+								select: { id_user: true },
+							},
+						},
+					},
+				},
 			})
 		);
+
 		if (!collab) {
 			throw new TRPCError({
 				code: "NOT_FOUND",
 				message: "Collaboration not found",
 			});
 		}
+
+		// Notify the owner
+		const ownerId = collab.project.project_user[0]?.id_user;
+		if (ownerId) {
+			await retryConnect(() =>
+				prisma.notification.create({
+					data: {
+						id_user: ownerId,
+						title: `Your collaboration request for project "${collab.project.title}" has been rejected.`,
+						is_read: false,
+						type: "COLLABORATION" as const,
+					},
+				})
+			);
+		}
+
 		const collabData = {
 			id: collab.id,
 			id_project: collab.id_project,

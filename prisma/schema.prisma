@@ -198,6 +198,7 @@ enum notifType {
   COMMENT_PROJECT
   COMMENT
   REPLY_COMMENT
+  COLLABORATION
 }
 
 enum ownershipType {

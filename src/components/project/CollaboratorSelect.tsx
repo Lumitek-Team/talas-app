@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { SelectCollabType } from "@/lib/type";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
-import { debounce } from "@/lib/utils";
+import { debounce, getInitials } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface CollaboratorSelectProps {
     value: SelectCollabType[];
@@ -42,6 +43,10 @@ export default function CollaboratorSelect({ value, onChange }: CollaboratorSele
     const options: SelectCollabType[] = data?.data || [];
 
     function handleSelect(user: SelectCollabType) {
+        if (user.id === userId) {
+            alert("You cannot select yourself as a collaborator.");
+            return;
+        }
         if (!value.find(u => u.id === user.id)) {
             onChange([...value, user]);
         }
@@ -77,7 +82,13 @@ export default function CollaboratorSelect({ value, onChange }: CollaboratorSele
                             className="p-2 hover:bg-zinc-800 cursor-pointer"
                             onClick={() => handleSelect(user)}
                         >
-                            {user.name} <span className="text-muted-foreground">@{user.username}</span>
+                            <div className="flex gap-3 items-center">
+                                <Avatar>
+                                    <AvatarImage src={user.photo_profile} />
+                                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                </Avatar>
+                                <p>{user.name}</p><span className="text-muted-foreground">@{user.username}</span>
+                            </div>
                         </div>
                     ))}
                 </div>

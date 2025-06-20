@@ -8,7 +8,7 @@ import {
 	SelectCollabType,
 	UserProjectsCondition,
 } from "@/lib/type";
-import { getPublicUrl, retryConnect } from "@/lib/utils";
+import { retryConnect } from "@/lib/utils";
 import { Notification } from "@prisma/client";
 import { z } from "zod";
 
@@ -547,6 +547,7 @@ export const userRouter = router({
 						},
 						select: {
 							id: true,
+							created_at: true, // Ensure created_at is selected
 							project: {
 								select: {
 									id: true,

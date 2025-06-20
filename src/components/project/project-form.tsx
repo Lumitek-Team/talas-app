@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import ImageCropperModal from "@/components/imageCropper";
 import { TitleSection } from "./form-sections/title-section";
 import { CaptionSection } from "./form-sections/caption-section";
@@ -19,6 +19,7 @@ import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { getPublicUrl } from "@/lib/utils";
 import { ProjectOneType } from "@/lib/type";
+import CollaboratorSelect from "./CollaboratorSelect";
 // import { ProjectCollaborators } from "./ProjectCollaborators";
 
 const projectFormSchema = z.object({
@@ -27,7 +28,14 @@ const projectFormSchema = z.object({
   githubUrl: z.string().url("Please enter a valid URL if provided, or leave empty to clear.").optional().or(z.literal("")),
   figmaUrl: z.string().url("Please enter a valid URL if provided, or leave empty to clear.").optional().or(z.literal("")),
   category: z.string().min(1, "Category is required"),
-  // collaborators: z.array(z.string()).default([]),
+  collaborators: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      username: z.string(),
+      photo_profile: z.string().optional(),
+    })
+  ),
 });
 
 export type ProjectFormValues = z.infer<typeof projectFormSchema>;
@@ -61,7 +69,7 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      title: "", caption: "", githubUrl: "", figmaUrl: "", category: "",
+      title: "", caption: "", githubUrl: "", figmaUrl: "", category: "", collaborators: [],
     },
   });
 
@@ -188,6 +196,12 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
           image4: finalImagePaths[3],
           image5: finalImagePaths[4],
           is_archived: false,
+          collaborators: data.collaborators.map(collab => ({
+            id: collab.id,
+            name: collab.name,
+            username: collab.username,
+            photo_profile: collab.photo_profile || undefined,
+          })),
         });
       } catch (error) {
         setIsSubmittingForm(false);
@@ -243,6 +257,27 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
               availableCategories={availableCategories}
               isLoading={isLoadingCategories}
             />
+
+            {/* enable if mode create */}
+            {mode === "create" && (
+              <FormField
+                control={form.control}
+                name="collaborators"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Collaborators</FormLabel>
+                    <FormControl>
+                      <CollaboratorSelect value={field.value || []} onChange={field.onChange} />
+                    </FormControl>
+                    <FormDescription>
+                      Tambahkan user yang akan berkolaborasi.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+            )}
           </div>
           {form.formState.errors.root && (
             <FormMessage>{form.formState.errors.root.message}</FormMessage>
