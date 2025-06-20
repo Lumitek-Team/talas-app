@@ -10,7 +10,6 @@ import { CommentSection } from "@/components/project/comment-section";
 import { LoadingSpinner } from "@/components/ui/loading"; // Added import
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
-import { getPublicUrl } from "@/lib/utils";
 import { ProjectOneType } from "@/lib/type";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -240,7 +239,9 @@ export default function ProjectDetailPage() {
   }
 
   const primaryProjectUser = project.data.project_user && project.data.project_user[0]?.user;
-  const isOwner = user && primaryProjectUser && user.id === primaryProjectUser.id;
+  const isOwner = project.data.project_user.some(
+    (pu) => pu.ownership === "OWNER" && pu.user.id === currentUserId
+  );
 
   const postCardData = {
     ...project,
