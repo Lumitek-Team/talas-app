@@ -14,6 +14,7 @@ type ActionItem = {
 };
 
 type CardHeaderArchiveProps = {
+  isOwner?: boolean;
   title: string;
   createAt: string;
   onArchive?: () => void;
@@ -30,6 +31,7 @@ type CardHeaderArchiveProps = {
 };
 
 export function CardHeaderProjectProfile({
+  isOwner,
   title,
   createAt,
   onArchive,
@@ -66,17 +68,17 @@ export function CardHeaderProjectProfile({
       icon: <Pin className="w-4 h-4" />,
       onClick: onPin,
     },
-    onEdit && {
+    isOwner && onEdit && {
       label: "Edit",
       icon: <PenBoxIcon className="w-4 h-4" />,
       onClick: onEdit,
     },
-    onArchive && {
+    isOwner && onArchive && {
       label: "Archive",
       icon: <Archive className="w-4 h-4" />,
       onClick: onArchive,
     },
-    onDelete && {
+    isOwner && onDelete && {
       label: "Delete",
       icon: <Trash2 className="w-4 h-4" />,
       onClick: onDelete,

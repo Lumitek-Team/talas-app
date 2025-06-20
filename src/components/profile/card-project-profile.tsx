@@ -8,6 +8,7 @@ import { ImageContainerProjectProfile } from "./image-container-project-profile"
 import { getPublicUrl } from "@/lib/utils";
 import { trpc } from "@/app/_trpc/client";
 import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog";
+import { ProjectOneType } from "@/lib/type";
 
 export interface ProjectType {
   id: string;
@@ -22,7 +23,7 @@ export interface ProjectType {
 }
 
 type CardProjectProfileProps = {
-  project: ProjectType;
+  project: ProjectOneType;
   userId: string;
   isPinned?: boolean;
   isDeleted?: boolean;
@@ -128,9 +129,14 @@ export function CardProjectProfile({
     router.push(`/project/${slug}`);
   };
 
+  const isOwner = project.project_user.some(
+    (pu) => pu.ownership === "OWNER" && pu.user.id === userId
+  );
+
   return (
     <div className="border-t border-white/10 p-5">
       <CardHeaderProjectProfile
+        isOwner={isOwner}
         title={project.title}
         createAt={project.created_at}
         onEdit={handleEdit}

@@ -9,6 +9,7 @@ import { CardProjectProfile } from "./card-project-profile";
 import { trpc } from "@/app/_trpc/client";
 import { ProfileFollow } from "./follow-button";
 import { useState, useEffect } from "react"
+import { ProjectOneType } from "@/lib/type";
 
 interface UserCountSummary {
   count_project: number;
@@ -30,24 +31,11 @@ interface User {
   count_summary: UserCountSummary | null;
 }
 
-interface Project {
-  id: string;
-  title: string;
-  slug: string;
-  content: string;
-  image1?: string;
-  image2?: string;
-  image3?: string;
-  image4?: string;
-  image5?: string;
-  created_at: string;
-}
-
 interface ProfileCardProps {
   user: User;
   currentUserId: string;
   isMobile?: boolean;
-  projects: Project[];
+  projects: ProjectOneType[];
   isMyProfile: boolean;
 }
 
@@ -69,12 +57,12 @@ export function ProfileCard({
   );
 
   const { data: followingData, isLoading: isFollowingLoading } =
-  trpc.user.getAllFollowing.useQuery(
-    { id_follower: currentUserId }, 
-    {
-      enabled: !isMyProfile && !!currentUserId, 
-    }
-  );
+    trpc.user.getAllFollowing.useQuery(
+      { id_follower: currentUserId },
+      {
+        enabled: !isMyProfile && !!currentUserId,
+      }
+    );
   const pinnedProjects: { id: string }[] = pinnedData?.data ?? [];
   const pinnedIds = new Set(pinnedProjects.map((p) => p.id));
 
@@ -92,9 +80,8 @@ export function ProfileCard({
 
   return (
     <div
-      className={`w-full rounded-2xl space-y-4 text-white ${
-        isMobile ? "bg-background" : "bg-card border border-white/10"
-      }`}
+      className={`w-full rounded-2xl space-y-4 text-white ${isMobile ? "bg-background" : "bg-card border border-white/10"
+        }`}
     >
       <div className="p-7 border-white/20">
         <FlexHeader>
