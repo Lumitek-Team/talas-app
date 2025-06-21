@@ -175,6 +175,8 @@ export type CommentsInProjectType = {
 	created_at: string;
 	updated_at: string;
 	parent_id: string | null;
+	count_like: number;
+	is_liked?: boolean; // Add is_liked property
 	user: {
 		id: string;
 		name: string;
@@ -182,6 +184,7 @@ export type CommentsInProjectType = {
 		photo_profile: string | null;
 	};
 	children: CommentsInProjectType[];
+	reply_count?: number; // Add reply_count property
 };
 
 export type BookmarkType = {

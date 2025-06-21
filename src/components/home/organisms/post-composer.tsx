@@ -8,7 +8,6 @@ import { useUser } from "@clerk/nextjs";
 import { getPublicUrl } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-
 interface PostComposerProps {
   avatarSrc: string;
   username: string;

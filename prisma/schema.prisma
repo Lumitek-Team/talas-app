@@ -3,24 +3,23 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String         @id @default(ulid())
-  name          String
-  email         String         @unique
-  auth_type     String
-  bio           String?
-  created_at    DateTime       @default(now())
-  email_contact String?
-  github        String?
-  instagram     String?
-  linkedin      String?
-  photo_profile String?
-  username      String
+  id            String         @id @default(ulid()) @db.Char(36)
+  name          String         @db.VarChar(255)
+  email         String         @unique @db.VarChar(255)
+  auth_type     String         @db.VarChar(50)
+  bio           String?        @db.Text
+  created_at    DateTime       @default(now()) @db.Timestamp(6)
+  email_contact String?        @db.VarChar(255)
+  github        String?        @db.VarChar(255)
+  instagram     String?        @db.VarChar(255)
+  linkedin      String?        @db.VarChar(255)
+  photo_profile String?        @db.VarChar(255)
+  username      String         @db.VarChar(255)
   gender        genderType?
   Bookmark      Bookmark[]
   Comment       Comment[]
@@ -37,25 +36,25 @@ model User {
 }
 
 model Project {
-  id               String        @id @default(ulid())
-  id_category      String
-  slug             String        @unique
-  title            String
-  content          String
+  id               String        @id @default(ulid()) @db.Char(26)
+  id_category      String        @db.Char(26)
+  slug             String        @unique @db.VarChar(255)
+  title            String        @db.VarChar(255)
+  content          String        @db.Text
   is_archived      Boolean       @default(false)
-  image1           String?
-  image2           String?
-  image3           String?
-  image4           String?
-  image5           String?
-  video            String?
-  link_github      String?
-  link_figma       String?
+  image1           String?       @db.VarChar(255)
+  image2           String?       @db.VarChar(255)
+  image3           String?       @db.VarChar(255)
+  image4           String?       @db.VarChar(255)
+  image5           String?       @db.VarChar(255)
+  video            String?       @db.VarChar(255)
+  link_github      String?       @db.VarChar(255)
+  link_figma       String?       @db.VarChar(255)
   count_likes      Int           @default(0)
   count_comments   Int           @default(0)
   popularity_score Float?        @default(0)
-  created_at       DateTime      @default(now())
-  updated_at       DateTime      @updatedAt
+  created_at       DateTime      @default(now()) @db.Timestamp(6)
+  updated_at       DateTime      @updatedAt @db.Timestamp(6)
   bookmarks        Bookmark[]
   Comment          Comment[]
   LikeProject      LikeProject[]
@@ -68,14 +67,14 @@ model Project {
 }
 
 model Comment {
-  id          String        @id @default(ulid())
-  id_user     String
-  id_project  String
-  content     String
+  id          String        @id @default(ulid()) @db.Char(26)
+  id_user     String        @db.Char(36)
+  id_project  String        @db.Char(26)
+  content     String        @db.Text
   count_like  Int           @default(0)
-  created_at  DateTime      @default(now())
-  updated_at  DateTime      @updatedAt
-  parent_id   String?
+  created_at  DateTime      @default(now()) @db.Timestamp(6)
+  updated_at  DateTime      @updatedAt @db.Timestamp(6)
+  parent_id   String?       @db.Char(26)
   project     Project       @relation(fields: [id_project], references: [id], onDelete: Cascade)
   user        User          @relation(fields: [id_user], references: [id])
   parent      Comment?      @relation("CommentReplies", fields: [parent_id], references: [id])
@@ -86,10 +85,10 @@ model Comment {
 }
 
 model Notification {
-  id         String    @id @default(ulid())
-  id_user    String
-  title      String
-  created_at DateTime  @default(now())
+  id         String    @id @default(ulid()) @db.Char(26)
+  id_user    String    @db.Char(36)
+  title      String    @db.VarChar(255)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
   is_read    Boolean   @default(false)
   type       notifType
   user       User      @relation(fields: [id_user], references: [id])
@@ -98,21 +97,21 @@ model Notification {
 }
 
 model Category {
-  id             String    @id @default(ulid())
-  slug           String    @unique
-  title          String
+  id             String    @id @default(ulid()) @db.Char(26)
+  slug           String    @unique @db.VarChar(255)
+  title          String    @db.VarChar(255)
   count_projects Int       @default(0)
-  created_at     DateTime  @default(now())
+  created_at     DateTime  @default(now()) @db.Timestamp(6)
   projects       Project[]
 }
 
 model count_summary {
-  id              String   @id @default(ulid())
-  id_user         String   @unique
+  id              String   @id @default(ulid()) @db.Char(26)
+  id_user         String   @unique @db.Char(36)
   count_project   Int      @default(0)
   count_following Int      @default(0)
   count_follower  Int      @default(0)
-  created_at      DateTime @default(now())
+  created_at      DateTime @default(now()) @db.Timestamp(6)
   all_notif_read  Boolean  @default(true)
   user            User     @relation(fields: [id_user], references: [id])
 
@@ -120,10 +119,10 @@ model count_summary {
 }
 
 model Follow {
-  id           String   @id @default(ulid())
-  id_follower  String
-  id_following String
-  created_at   DateTime @default(now())
+  id           String   @id @default(ulid()) @db.Char(26)
+  id_follower  String   @db.Char(36)
+  id_following String   @db.Char(36)
+  created_at   DateTime @default(now()) @db.Timestamp(6)
   follower     User     @relation("Follower", fields: [id_follower], references: [id])
   following    User     @relation("Following", fields: [id_following], references: [id])
 
@@ -131,12 +130,12 @@ model Follow {
 }
 
 model ProjectUser {
-  id           String            @id @default(ulid())
-  id_user      String
-  id_project   String
+  id           String            @id @default(ulid()) @db.Char(26)
+  id_user      String            @db.Char(36)
+  id_project   String            @db.Char(26)
   ownership    ownershipType     @default(OWNER)
   collabStatus collabStatusType?
-  created_at   DateTime          @default(now())
+  created_at   DateTime          @default(now()) @db.Timestamp(6)
   project      Project           @relation(fields: [id_project], references: [id], onDelete: Cascade)
   user         User              @relation(fields: [id_user], references: [id])
 
@@ -144,10 +143,10 @@ model ProjectUser {
 }
 
 model Bookmark {
-  id         String   @id @default(ulid())
-  id_user    String
-  id_project String
-  created_at DateTime @default(now())
+  id         String   @id @default(ulid()) @db.Char(26)
+  id_user    String   @db.Char(36)
+  id_project String   @db.Char(26)
+  created_at DateTime @default(now()) @db.Timestamp(6)
   project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [id_user], references: [id])
 
@@ -155,10 +154,10 @@ model Bookmark {
 }
 
 model LikeProject {
-  id         String   @id @default(ulid())
-  id_user    String
-  id_project String
-  created_at DateTime @default(now())
+  id         String   @id @default(ulid()) @db.Char(26)
+  id_user    String   @db.Char(36)
+  id_project String   @db.Char(26)
+  created_at DateTime @default(now()) @db.Timestamp(6)
   project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [id_user], references: [id])
 
@@ -166,10 +165,10 @@ model LikeProject {
 }
 
 model LikeComment {
-  id         String   @id @default(ulid())
-  id_user    String
-  id_comment String
-  created_at DateTime @default(now())
+  id         String   @id @default(ulid()) @db.Char(26)
+  id_user    String   @db.Char(36)
+  id_comment String   @db.Char(26)
+  created_at DateTime @default(now()) @db.Timestamp(6)
   comment    Comment  @relation(fields: [id_comment], references: [id])
   user       User     @relation(fields: [id_user], references: [id])
 
@@ -177,10 +176,10 @@ model LikeComment {
 }
 
 model pinProject {
-  id         String   @id @default(ulid())
-  id_user    String
-  id_project String
-  created_at DateTime @default(now())
+  id         String   @id @default(ulid()) @db.Char(26)
+  id_user    String   @db.Char(36)
+  id_project String   @db.Char(26)
+  created_at DateTime @default(now()) @db.Timestamp(6)
   project    Project  @relation(fields: [id_project], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [id_user], references: [id])
 
@@ -199,6 +198,7 @@ enum notifType {
   COMMENT_PROJECT
   COMMENT
   REPLY_COMMENT
+  COLLABORATION
 }
 
 enum ownershipType {

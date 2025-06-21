@@ -82,6 +82,7 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
       fetchNextPage();
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   useEffect(() => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -101,19 +102,23 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
         </h3>
         <div className="h-8 w-8" />
       </div>
+
       {isLoading && (
         <LoadingSpinner />
       )}
+
       {isError && (
         <div className="text-center py-8">
           <p className="text-red-400">Error: {error.message}</p>
         </div>
       )}
+
       {!isLoading && !isError && projects.length === 0 && (
         <div className="text-center py-8">
           <p className="text-muted-foreground">No projects found in this category.</p>
         </div>
       )}
+
       
       <div>
         {projects.map((project: ProjectOneType) => {
@@ -126,6 +131,7 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
         })}
       </div>
       
+
       <div>
         {projects.map((project: ProjectOneType) => {
           const post = transformProjectToPost(project, optimisticLikes, optimisticBookmarks);
@@ -301,16 +307,19 @@ export default function SearchPage() {
   if (!isLoaded) { /* ... */ }
   if (!user) { /* ... */ }
   const showInitialPrompt = !committedValues.query || (committedValues.query.trim().length === 0);
+
   // Always render the layout structure
   return (
     <>
       <Sidebar activeItem="Search" />
       <PageContainer title="Search">
         <div className={`overflow-hidden ${isMobile ? "bg-background" : "bg-card rounded-3xl border border-neutral-700/50"}`}>
+
           {/* Show loading when user is not loaded */}
           {!isLoaded && (
             <LoadingSpinner />
           )}
+
           {/* Show sign-in message when user is loaded but not authenticated */}
           {isLoaded && !user && (
             <div className="flex items-center justify-center h-64">
@@ -320,6 +329,7 @@ export default function SearchPage() {
               </div>
             </div>
           )}
+
           {/* Show main content when user is loaded and authenticated */}
           {isLoaded && user && (
             <>

@@ -2,7 +2,7 @@
 
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { retryConnect, deleteImage, getPublicUrl } from "@/lib/utils";
+import { retryConnect, getPublicUrl } from "@/lib/utils";
 import { z } from "zod";
 import slugify from "slugify";
 import {
@@ -13,6 +13,7 @@ import {
 	ProjectWithInteractionsType,
 } from "@/lib/type";
 import { collabStatusType, ownershipType } from "@prisma/client";
+import { deleteImages } from "@/lib/imageUtils";
 
 export const projectRouter = router({
 	getOne: protectedProcedure
@@ -658,9 +659,7 @@ export const projectRouter = router({
 					existingProject.image5,
 				].filter(Boolean) as string[];
 
-				for (const imagePath of images) {
-					await deleteImage(imagePath);
-				}
+				await deleteImages(images);
 
 				await retryConnect(() =>
 					prisma.$transaction([
@@ -696,6 +695,7 @@ export const projectRouter = router({
 		.input(
 			z.object({
 				id: z.string(),
+				id_user: z.string().optional(), // Include id_user for is_liked
 			})
 		)
 		.query(async ({ input }) => {
@@ -711,6 +711,7 @@ export const projectRouter = router({
 							created_at: true,
 							updated_at: true,
 							parent_id: true,
+							count_like: true,
 							user: {
 								select: {
 									id: true,
@@ -719,6 +720,12 @@ export const projectRouter = router({
 									photo_profile: true,
 								},
 							},
+							LikeComment: input.id_user
+								? {
+										where: { id_user: input.id_user },
+										select: { id: true },
+								  }
+								: false,
 						},
 						orderBy: {
 							created_at: "desc",
@@ -732,6 +739,9 @@ export const projectRouter = router({
 				for (const comment of comments) {
 					const commentWithChildren: CommentsInProjectType = {
 						...comment,
+						is_liked: input.id_user
+							? comment.LikeComment && comment.LikeComment.length > 0
+							: false,
 						children: commentMap[comment.id]?.children || [],
 					};
 					commentMap[comment.id] = commentWithChildren;
@@ -740,21 +750,24 @@ export const projectRouter = router({
 						const parent = commentMap[comment.parent_id];
 						if (parent) {
 							parent.children.push(commentWithChildren);
+							parent.reply_count = (parent.reply_count || 0) + 1;
 						} else {
-							// This case handles children whose parents might not be in the current fetched batch
-							// or creates a placeholder if strictly needed.
-							// For a flat list processed into a tree, ensure all comments are fetched.
 							commentMap[comment.parent_id] = {
 								id: comment.parent_id,
-								content: "", // Placeholder
-								created_at: "", // Placeholder
-								updated_at: "", // Placeholder
-								parent_id: null, // Placeholder
-								user: { id: "", name: "", username: "", photo_profile: null }, // Placeholder
+								content: "",
+								created_at: "",
+								updated_at: "",
+								parent_id: null,
+								count_like: 0,
+								is_liked: false,
+								user: { id: "", name: "", username: "", photo_profile: null },
 								children: [commentWithChildren],
+								reply_count: 1,
 							};
 						}
 					} else {
+						commentWithChildren.reply_count =
+							commentWithChildren.children.length;
 						roots.push(commentWithChildren);
 					}
 				}

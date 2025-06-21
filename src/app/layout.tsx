@@ -68,7 +68,5 @@ export default async function RootLayout({
         </ToastProvider>
       </TRPCProvider>
     </ClerkProvider>
-
   );
-
 }

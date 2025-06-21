@@ -8,7 +8,7 @@ import {
 	SelectCollabType,
 	UserProjectsCondition,
 } from "@/lib/type";
-import { getPublicUrl, retryConnect } from "@/lib/utils";
+import { retryConnect } from "@/lib/utils";
 import { Notification } from "@prisma/client";
 import { z } from "zod";
 
@@ -337,8 +337,6 @@ export const userRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				const photoPublicUrl = await getPublicUrl(input.data.photo_profile);
-
 				await retryConnect(() =>
 					prisma.user.update({
 						where: {
@@ -346,7 +344,6 @@ export const userRouter = router({
 						},
 						data: {
 							...input.data,
-							photo_profile: photoPublicUrl, // Updated line
 						},
 					})
 				);
@@ -550,6 +547,7 @@ export const userRouter = router({
 						},
 						select: {
 							id: true,
+							created_at: true, // Ensure created_at is selected
 							project: {
 								select: {
 									id: true,
