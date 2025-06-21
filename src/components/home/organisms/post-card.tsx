@@ -9,76 +9,33 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Github, Figma } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { getPublicUrl } from "@/lib/utils";
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from "@/contexts/toast-context";
+import { ProjectOneType } from "@/lib/type";
 
 interface PostCardProps {
-  id: string;
-  slug?: string;
-  title?: string;
-  username: string;
-  userRole: string;
-  avatarSrc: string;
-  timestamp: string;
-  content: string;
-  images?: string[];
-  image1?: string;
-  image2?: string;
-  image3?: string;
-  image4?: string;
-  image5?: string;
-  likes: number;
-  comments: number;
-  link_figma?: string;
-  link_github?: string;
-  isLiked: boolean;
-  isBookmarked: boolean;
+  data: ProjectOneType;
   onToggleLike: () => void;
   onToggleBookmark: () => void;
-  category?: {
-    slug: string;
-    title: string;
-  };
   displayContext?: 'saved-page' | string; // New prop
 }
 
 export function PostCard({
-  id,
-  slug,
-  title,
-  username,
-  userRole,
-  avatarSrc,
-  timestamp,
-  content,
-  images = [],
-  image1,
-  image2,
-  image3,
-  image4,
-  image5,
-  likes,
-  comments,
-  link_figma,
-  link_github,
-  isLiked,
-  isBookmarked,
+  data,
   onToggleLike,
   onToggleBookmark,
-  category,
   displayContext, // Use the new prop
 }: PostCardProps) {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
   const { showToast } = useToast(); // This should work now
 
-  const allDisplayImages = [...images];
-  if (image1) allDisplayImages.push(image1);
-  if (image2) allDisplayImages.push(image2);
-  if (image3) allDisplayImages.push(image3);
-  if (image4) allDisplayImages.push(image4);
-  if (image5) allDisplayImages.push(image5);
+  const allDisplayImages = [];
+  if (data?.image1) allDisplayImages.push(data.image1);
+  if (data?.image2) allDisplayImages.push(data.image2);
+  if (data?.image3) allDisplayImages.push(data.image3);
+  if (data?.image4) allDisplayImages.push(data.image4);
+  if (data?.image5) allDisplayImages.push(data.image5);
 
   useEffect(() => {
     const handleResize = () => {
@@ -91,45 +48,43 @@ export function PostCard({
     };
   }, []);
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    // Prevents navigation if a link or button within the card is clicked
-    if (target.closest('a, button, [data-prevent-card-click="true"]')) {
-      return;
-    }
-    if (slug) {
-      router.push(`/project/${slug}`);
-    } else {
-      router.push(`/project/${id}`);
-    }
-  };
+  // const handleCardClick = (e: React.MouseEvent) => {
+  //   const target = e.target as HTMLElement;
+  //   // Prevents navigation if a link or button within the card is clicked
+  //   if (target.closest('a, button, [data-prevent-card-click="true"]')) {
+  //     return;
+  //   }
+  //   if (data.slug) {
+  //     router.push(`/project/${data.slug}`);
+  //   } else {
+  //     router.push(`/project/${data.id}`);
+  //   }
+  // };
 
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
-    if (slug) {
-      router.push(`/project/${slug}#comments`);
+    if (data.slug) {
+      router.push(`/project/${data.slug}#comments`);
     } else {
-      router.push(`/project/${id}#comments`);
+      router.push(`/project/${data.id}#comments`);
     }
   };
 
-  const displayTitle = title || (content ? content.split('\n')[0] : 'Untitled Project');
-  const displayContent = title ? content : (content ? content.split('\n').slice(1).join('\n') : '');
 
   let formattedTimestamp = 'just now';
-  if (timestamp) {
+  if (data.created_at) {
     try {
-      formattedTimestamp = formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+      formattedTimestamp = formatDistanceToNow(new Date(data.created_at), { addSuffix: true });
     } catch (error) {
-      console.error("Failed to format timestamp:", timestamp, error);
-      formattedTimestamp = new Date(timestamp).toLocaleDateString();
+      console.error("Failed to format timestamp:", data.created_at, error);
+      formattedTimestamp = new Date(data.created_at).toLocaleDateString();
     }
   }
 
   const postActionsVariant = displayContext === 'saved-page' ? 'bookmark-only' : 'full';
 
   const handleShare = () => {
-    const projectUrl = `${window.location.origin}/project/${slug || id}`;
+    const projectUrl = `${window.location.origin}/project/${data.slug || data.id}`;
     navigator.clipboard.writeText(projectUrl)
       .then(() => {
         showToast('Project link copied to clipboard!', 'success');
@@ -140,45 +95,50 @@ export function PostCard({
       });
   };
 
+  // find user where ownership is 'OWNER'
+  const ownerObj = data.project_user && data.project_user.find(user => user.ownership === 'OWNER');
+  const owner = ownerObj ? ownerObj.user : undefined;
+
   return (
     <div
       className={`p-4 ${isMobile ? 'bg-background' : ''}`}
     >
       <PostHeader
-        username={username}
-        userRole={userRole}
-        avatarSrc={avatarSrc}
+        username={owner ? owner.name : 'Unknown User'}
+        countCollaborators={data.project_user && data.project_user.length - 1}
+        userRole={owner ? owner.username : 'UnknownUser'}
+        avatarSrc={owner && owner.photo_profile ? owner.photo_profile : '/img/dummy/avatar-dummy.jpg'}
         timestamp={formattedTimestamp}
       />
 
       <div className="mb-6">
-      {/* This div acts as a block-level container for the title link */}
-      <div>
-        <Link 
-          href={`/project/${slug || id}`} 
-          onClick={(e) => e.stopPropagation()} 
-          data-prevent-card-click="true"
-        >
-          <h2 className="text-lg font-bold hover:text-primary transition-colors duration-200 inline-block">
-            {displayTitle}
-          </h2>
-        </Link>
-      </div>
-      {category && (
-        // Ensure the category is also a block-level element
-        <p className="text-sm text-muted-foreground mb-3">
-          {category.title}
-        </p>
-      )}
+        {/* This div acts as a block-level container for the title link */}
+        <div>
+          <Link
+            href={`/project/${data.slug || data.id}`}
+            onClick={(e) => e.stopPropagation()}
+            data-prevent-card-click="true"
+          >
+            <h2 className="text-lg font-bold hover:text-primary transition-colors duration-200 inline-block">
+              {data.title}
+            </h2>
+          </Link>
+        </div>
+        {data.category && (
+          // Ensure the category is also a block-level element
+          <p className="text-sm text-muted-foreground mb-3">
+            {data.category.title}
+          </p>
+        )}
         <p className="text-white text-sm whitespace-pre-line">
-          {displayContent}
+          {data.content}
         </p>
 
-        {(link_figma || link_github) && (
+        {(data.link_figma || data.link_github) && (
           <div className="flex gap-3 mt-3" onClick={e => e.stopPropagation()} data-prevent-card-click="true">
-            {link_figma && (
+            {data.link_figma && (
               <Link
-                href={link_figma}
+                href={data.link_figma}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 text-white transition-all duration-200 transform active:scale-90"
@@ -187,9 +147,9 @@ export function PostCard({
                 <span>Figma</span>
               </Link>
             )}
-            {link_github && (
+            {data.link_github && (
               <Link
-                href={link_github}
+                href={data.link_github}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-white/10 hover:bg-white/20 text-white transition-all duration-200 transform active:scale-90"
@@ -225,7 +185,7 @@ export function PostCard({
               >
                 <Image
                   src={imagePath}
-                  alt={`${title || 'Project'} image ${index + 1}`}
+                  alt={`${data.title || 'Project'} image ${index + 1}`}
                   fill
                   className="object-cover"
                   sizes="(max-width: 690px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -242,13 +202,13 @@ export function PostCard({
 
       <div className="pt-2" onClick={e => e.stopPropagation()} data-prevent-card-click="true">
         <PostActions
-          likes={likes}
-          comments={comments}
+          likes={data.count_likes}
+          comments={data.count_comments}
           onLikeToggle={onToggleLike}
           onComment={handleCommentClick}
           onShare={handleShare} // Use the new handleShare function
-          isLiked={isLiked}
-          isBookmarked={isBookmarked}
+          isLiked={data.is_liked ?? false}
+          isBookmarked={displayContext === 'saved-page' ? true : data.is_bookmarked ?? false}
           onBookmarkToggle={onToggleBookmark}
           variant={postActionsVariant}
         />

@@ -169,7 +169,7 @@ model LikeComment {
   id_user    String   @db.Char(36)
   id_comment String   @db.Char(26)
   created_at DateTime @default(now()) @db.Timestamp(6)
-  comment    Comment  @relation(fields: [id_comment], references: [id])
+  comment    Comment  @relation(fields: [id_comment], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [id_user], references: [id])
 
   @@index([id_user, id_comment], map: "idx_user_comment_like")

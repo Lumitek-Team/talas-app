@@ -54,13 +54,14 @@ const transformSavedItemToPostCardProps = (
     link_github: undefined,
     category: undefined,
     isLiked: false,
+    created_at: project.created_at,
 
     image1: project.image1 ? getPublicUrl(project.image1) : undefined,
     image2: project.image2 ? getPublicUrl(project.image2) : undefined,
     image3: project.image3 ? getPublicUrl(project.image3) : undefined,
     image4: project.image4 ? getPublicUrl(project.image4) : undefined,
     image5: project.image5 ? getPublicUrl(project.image5) : undefined,
-    
+
     isBookmarked: isBookmarked,
   };
 };
@@ -92,7 +93,7 @@ export default function SavedProjectsPage() {
     isError,
     error,
   } = trpc.user.getBookmarked.useInfiniteQuery(
-    { id: currentUserIdSaved, limit: 10 },
+    { id: currentUserIdSaved, id_user: user?.id, limit: 10 },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       enabled: !!user && isUserLoaded,
@@ -128,7 +129,7 @@ export default function SavedProjectsPage() {
         // Invalidate project.getOne if the user navigates to a project detail page
         // that was just unbookmarked, to reflect the change.
         if (variables?.id_project) {
-            utils.project.getOne.invalidate({ id: variables.id_project, id_user: user.id });
+          utils.project.getOne.invalidate({ id: variables.id_project, id_user: user.id });
         }
         // Also invalidate feeds page if it shows bookmark status directly
         utils.project.getAll.invalidate({ limit: 15, id_user: user.id });
@@ -194,7 +195,7 @@ export default function SavedProjectsPage() {
   };
 
   // Add this line to define trulySavedPosts
-  const trulySavedPosts = allPosts.filter(post => 
+  const trulySavedPosts = allPosts.filter(post =>
     optimisticBookmarks[post.id] !== undefined ? optimisticBookmarks[post.id] : post.isBookmarked
   );
 
@@ -204,19 +205,19 @@ export default function SavedProjectsPage() {
       <Sidebar activeItem="Saved projects" />
       <PageContainer title="Saved Projects">
         <div className={`overflow-hidden ${isMobile ? 'bg-background' : ''}`}>
-          
+
           {/* Show loading when user is not loaded or when initially loading data */}
           {(!isUserLoaded || (isLoading && trulySavedPosts.length === 0)) && (
             <LoadingSpinner />
           )}
-          
+
           {/* Show sign-in message when user is loaded but not authenticated */}
           {isUserLoaded && !user && (
             <div className="flex items-center justify-center h-64">
               <p className="text-muted-foreground">Please sign in to view your saved projects.</p>
             </div>
           )}
-          
+
           {/* Show error state */}
           {isUserLoaded && user && isError && (
             <div className="flex items-center justify-center h-64">
@@ -228,31 +229,31 @@ export default function SavedProjectsPage() {
               </div>
             </div>
           )}
-          
+
           {/* Show posts when user is loaded, authenticated, and data is available */}
           {isUserLoaded && user && !isError && trulySavedPosts.length > 0 && trulySavedPosts.map((post) => (
             <div key={post.id} className={`${isMobile ? 'border-b border-white/10 p-1' : 'bg-card rounded-3xl border border-white/10 mb-4'}`}>
               <PostCard
-                {...post}
+                data={post}
                 displayContext="saved-page"
                 onToggleBookmark={() => promptUnsave(post.id)}
                 onToggleLike={handleToggleLikeDisabled}
               />
             </div>
           ))}
-          
+
           {/* Show pagination loading */}
           {isFetchingNextPage && (
             <LoadingSpinner className="h-32" />
           )}
-          
+
           {/* Show end of results message */}
           {isUserLoaded && user && !isError && !hasNextPage && !isLoading && trulySavedPosts.length > 0 && !isFetchingNextPage && (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No more saved projects</p>
             </div>
           )}
-          
+
           {/* Show empty state */}
           {isUserLoaded && user && !isError && !isLoading && !isFetchingNextPage && trulySavedPosts.length === 0 && (
             <div className="text-center py-16">

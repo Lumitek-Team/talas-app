@@ -397,21 +397,6 @@ export const projectRouter = router({
 				slug = `${slug}-${Math.floor(Math.random() * 1000)}`;
 			}
 
-			const imagesToGetUrl = [
-				input.image1,
-				input.image2,
-				input.image3,
-				input.image4,
-				input.image5,
-			];
-			const imagesWithUrls: string[] = [];
-			for (const image of imagesToGetUrl) {
-				// getPublicUrl for all imagesToGetUrl
-				if (image) {
-					imagesWithUrls.push(await getPublicUrl(image));
-				}
-			}
-
 			try {
 				const newProject = await retryConnect(() =>
 					prisma.project.create({
@@ -421,11 +406,11 @@ export const projectRouter = router({
 							slug: slug,
 							is_archived: input.is_archived,
 							content: input.content,
-							image1: imagesWithUrls[0],
-							image2: imagesWithUrls[1] || null,
-							image3: imagesWithUrls[2] || null,
-							image4: imagesWithUrls[3] || null,
-							image5: imagesWithUrls[4] || null,
+							image1: input.image1,
+							image2: input.image2 || null,
+							image3: input.image3 || null,
+							image4: input.image4 || null,
+							image5: input.image5 || null,
 							video: input.video,
 							link_figma: input.link_figma,
 							link_github: input.link_github,
@@ -663,18 +648,16 @@ export const projectRouter = router({
 
 				await retryConnect(() =>
 					prisma.$transaction([
-						prisma.project.delete({
-							where: { id: input.id },
-						}),
 						prisma.comment.deleteMany({
 							where: { id_project: input.id },
+						}),
+						prisma.project.delete({
+							where: { id: input.id },
 						}),
 						prisma.category.update({
 							where: { id: existingProject.id_category },
 							data: { count_projects: { decrement: 1 } },
 						}),
-						// FIX: Changed 'update' to 'updateMany' for resilience.
-						// This will no longer throw an error if the count_summary record doesn't exist.
 						prisma.count_summary.updateMany({
 							where: { id_user: input.id_user },
 							data: { count_project: { decrement: 1 } },

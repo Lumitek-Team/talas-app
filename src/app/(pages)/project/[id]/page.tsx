@@ -10,8 +10,6 @@ import { CommentSection } from "@/components/project/comment-section";
 import { LoadingSpinner } from "@/components/ui/loading"; // Added import
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
-import { PostSkeleton } from '@/components/project/skeleton';
-import { getPublicUrl } from "@/lib/utils";
 import { ProjectOneType } from "@/lib/type";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -59,67 +57,67 @@ export default function ProjectDetailPage() {
 
   // Project mutations (like, bookmark - from previous refactor)
   const bookmarkMutation = trpc.bookmark.create.useMutation({
-    onMutate: async () => { /* ... */ await utils.project.getOne.cancel(queryClientKeyProjectGetOne); const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne); utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) => oldData ? { ...oldData, is_bookmarked: true } : undefined ); return { previousProjectData }; },
+    onMutate: async () => { /* ... */ await utils.project.getOne.cancel(queryClientKeyProjectGetOne); const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne); utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) => oldData ? { ...oldData, is_bookmarked: true } : undefined); return { previousProjectData }; },
     onError: (err, variables, context) => { setOptimisticBookmark(false); if (context?.previousProjectData) utils.project.getOne.setData(queryClientKeyProjectGetOne, context.previousProjectData); },
-    onSettled: () => { utils.project.getOne.invalidate(queryClientKeyProjectGetOne); if(user?.id) utils.user.getBookmarked.invalidate({ id: user.id }); },
+    onSettled: () => { utils.project.getOne.invalidate(queryClientKeyProjectGetOne); if (user?.id) utils.user.getBookmarked.invalidate({ id: user.id }); },
   });
   const unbookmarkMutation = trpc.bookmark.delete.useMutation({
-    onMutate: async () => { /* ... */ await utils.project.getOne.cancel(queryClientKeyProjectGetOne); const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne); utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) => oldData ? { ...oldData, is_bookmarked: false } : undefined ); return { previousProjectData }; },
+    onMutate: async () => { /* ... */ await utils.project.getOne.cancel(queryClientKeyProjectGetOne); const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne); utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) => oldData ? { ...oldData, is_bookmarked: false } : undefined); return { previousProjectData }; },
     onError: (err, variables, context) => { setOptimisticBookmark(true); if (context?.previousProjectData) utils.project.getOne.setData(queryClientKeyProjectGetOne, context.previousProjectData); },
-    onSettled: () => { utils.project.getOne.invalidate(queryClientKeyProjectGetOne); if(user?.id) utils.user.getBookmarked.invalidate({ id: user.id }); },
+    onSettled: () => { utils.project.getOne.invalidate(queryClientKeyProjectGetOne); if (user?.id) utils.user.getBookmarked.invalidate({ id: user.id }); },
   });
   const likeMutation = trpc.likeProject.like.useMutation({
-    onMutate: async () => { 
-        await utils.project.getOne.cancel(queryClientKeyProjectGetOne); 
-        const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne); 
-        utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) => 
-            oldData ? { ...oldData, is_liked: true, count_likes: (oldData.data.count_likes || 0) + 1 } : undefined 
-        ); 
-        setOptimisticLike(true); // Explicitly set optimistic state here too
-        return { previousProjectData }; 
+    onMutate: async () => {
+      await utils.project.getOne.cancel(queryClientKeyProjectGetOne);
+      const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne);
+      utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) =>
+        oldData ? { ...oldData, is_liked: true, count_likes: (oldData.data.count_likes || 0) + 1 } : undefined
+      );
+      setOptimisticLike(true); // Explicitly set optimistic state here too
+      return { previousProjectData };
     },
-    onError: (err: any, variables, context) => { 
-        // Revert optimistic update
-        setOptimisticLike(false); 
-        if (context?.previousProjectData) { 
-            utils.project.getOne.setData(queryClientKeyProjectGetOne, context.previousProjectData); 
-        }
-        // Handle specific error for already liked (Conflict)
-        if (err.data?.code === 'CONFLICT') {
-            // Ensure UI reflects server state: it IS liked
-            utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) => 
-                oldData ? { ...oldData, is_liked: true } : undefined 
-            );
-            setOptimisticLike(true);
-        }
+    onError: (err: any, variables, context) => {
+      // Revert optimistic update
+      setOptimisticLike(false);
+      if (context?.previousProjectData) {
+        utils.project.getOne.setData(queryClientKeyProjectGetOne, context.previousProjectData);
+      }
+      // Handle specific error for already liked (Conflict)
+      if (err.data?.code === 'CONFLICT') {
+        // Ensure UI reflects server state: it IS liked
+        utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) =>
+          oldData ? { ...oldData, is_liked: true } : undefined
+        );
+        setOptimisticLike(true);
+      }
     },
     onSettled: () => utils.project.getOne.invalidate(queryClientKeyProjectGetOne),
   });
 
   const unlikeMutation = trpc.likeProject.unlike.useMutation({
-    onMutate: async () => { 
-        await utils.project.getOne.cancel(queryClientKeyProjectGetOne); 
-        const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne); 
-        utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) => 
-            oldData ? { ...oldData, is_liked: false, count_likes: Math.max(0, (oldData.data.count_likes || 0) - 1) } : undefined 
-        ); 
-        setOptimisticLike(false); // Explicitly set optimistic state here too
-        return { previousProjectData }; 
+    onMutate: async () => {
+      await utils.project.getOne.cancel(queryClientKeyProjectGetOne);
+      const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne);
+      utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) =>
+        oldData ? { ...oldData, is_liked: false, count_likes: Math.max(0, (oldData.data.count_likes || 0) - 1) } : undefined
+      );
+      setOptimisticLike(false); // Explicitly set optimistic state here too
+      return { previousProjectData };
     },
-    onError: (err: any, variables, context) => { 
-        // Revert optimistic update
-        setOptimisticLike(true); 
-        if (context?.previousProjectData) { 
-            utils.project.getOne.setData(queryClientKeyProjectGetOne, context.previousProjectData); 
-        }
-        // Handle specific error for not liked (Not Found)
-        if (err.data?.code === 'NOT_FOUND') {
-             // Ensure UI reflects server state: it is NOT liked
-            utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) => 
-                oldData ? { ...oldData, is_liked: false } : undefined 
-            );
-            setOptimisticLike(false);
-        }
+    onError: (err: any, variables, context) => {
+      // Revert optimistic update
+      setOptimisticLike(true);
+      if (context?.previousProjectData) {
+        utils.project.getOne.setData(queryClientKeyProjectGetOne, context.previousProjectData);
+      }
+      // Handle specific error for not liked (Not Found)
+      if (err.data?.code === 'NOT_FOUND') {
+        // Ensure UI reflects server state: it is NOT liked
+        utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) =>
+          oldData ? { ...oldData, is_liked: false } : undefined
+        );
+        setOptimisticLike(false);
+      }
     },
     onSettled: () => utils.project.getOne.invalidate(queryClientKeyProjectGetOne),
   });
@@ -167,7 +165,7 @@ export default function ProjectDetailPage() {
   }, []);
 
   const handleToggleBookmark = () => { /* ... as before ... */ if (!user || !project) return; const currentIsBookmarked = optimisticBookmark !== undefined ? optimisticBookmark : project.data.is_bookmarked; setOptimisticBookmark(!currentIsBookmarked); if (currentIsBookmarked) { unbookmarkMutation.mutate({ id_user: user.id, id_project: project.data.id }); } else { bookmarkMutation.mutate({ id_user: user.id, id_project: project.data.id }); } };
-  const handleToggleLike = () => { 
+  const handleToggleLike = () => {
     if (!user || !project) return;
     // Optimistic update is now more robustly handled in onMutate and onError
     const currentIsLiked = optimisticLike !== undefined ? optimisticLike : project.data.is_liked;
@@ -178,7 +176,7 @@ export default function ProjectDetailPage() {
       likeMutation.mutate({ id_user: user.id, id_project: project.data.id });
     }
   };
-  
+
   // Handlers for owner actions
   const handleConfirmDeleteProject = () => {
     if (!project || !user) return;
@@ -228,8 +226,8 @@ export default function ProjectDetailPage() {
             <p>
               {error ? error.message : "The project you're looking for doesn't exist or has been removed."}
             </p>
-            <button 
-              onClick={() => router.push('/')} 
+            <button
+              onClick={() => router.push('/')}
               className="mt-6 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-foreground transition-colors"
             >
               Go to Home
@@ -241,27 +239,12 @@ export default function ProjectDetailPage() {
   }
 
   const primaryProjectUser = project.data.project_user && project.data.project_user[0]?.user;
-  const isOwner = user && primaryProjectUser && user.id === primaryProjectUser.id;
+  const isOwner = project.data.project_user.some(
+    (pu) => pu.ownership === "OWNER" && pu.user.id === currentUserId
+  );
 
   const postCardData = {
-    id: project.data.id, 
-    slug: project.data.slug, 
-    title: project.data.title,
-    username: primaryProjectUser?.username || 'Unknown User', 
-    userRole: 'Developer',
-    avatarSrc: getPublicUrl(primaryProjectUser?.photo_profile) || '/img/dummy/profile-photo-dummy.jpg',
-    timestamp: project.data.created_at,
-    content: project.data.content,
-    image1: project.data.image1 ? getPublicUrl(project.data.image1) : undefined,
-    image2: project.data.image2 ? getPublicUrl(project.data.image2) : undefined,
-    image3: project.data.image3 ? getPublicUrl(project.data.image3) : undefined,
-    image4: project.data.image4 ? getPublicUrl(project.data.image4) : undefined,
-    image5: project.data.image5 ? getPublicUrl(project.data.image5) : undefined,
-    likes: project.data.count_likes, 
-    comments: project.data.count_comments,
-    link_figma: project.data.link_figma, 
-    link_github: project.data.link_github,
-    category: project.data.category,
+    ...project,
     isBookmarked: optimisticBookmark !== undefined ? optimisticBookmark : !!project.data.is_bookmarked,
     isLiked: optimisticLike !== undefined ? optimisticLike : !!project?.data.is_liked,
     onToggleBookmark: handleToggleBookmark,
@@ -315,7 +298,7 @@ export default function ProjectDetailPage() {
             <PostCard {...postCardData} />
             <div className="my-1 border-t border-white/10 mx-4"></div>
             <div>
-                <CommentSection projectId={project.data.id} currentUser={user} />
+              <CommentSection projectId={project.data.id} currentUser={user} />
             </div>
           </div>
         </div>

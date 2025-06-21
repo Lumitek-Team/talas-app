@@ -81,15 +81,15 @@ export default function EditProjectPage() {
 
   // Handling user not signed in (Clerk usually handles this with middleware for protected routes)
   if (isUserLoaded && !user) {
-     // This should ideally be caught by route protection, but as a fallback:
+    // This should ideally be caught by route protection, but as a fallback:
     useEffect(() => { router.push("/sign-in"); }, [router]);
     return (
-        <>
-            <Sidebar />
-            <PageContainer title="Authentication Required" showBackButton={false}>
-                <div className="p-6"><p>Redirecting to sign-in...</p></div>
-            </PageContainer>
-        </>
+      <>
+        <Sidebar />
+        <PageContainer title="Authentication Required" showBackButton={false}>
+          <div className="p-6"><p>Redirecting to sign-in...</p></div>
+        </PageContainer>
+      </>
     );
   }
 
@@ -109,7 +109,9 @@ export default function EditProjectPage() {
 
   // Authorization: Check if the current user is the owner of the project
   // Assumes project_user[0] is the primary owner.
-  const isOwner = user && project.data.project_user && project.data.project_user[0]?.user?.id === user.id;
+  const isOwner = project.data.project_user.some(
+    (pu) => pu.ownership === "OWNER" && pu.user.id === user.id
+  );
 
   if (!isOwner) {
     // Redirect if not the owner. useEffect ensures this runs client-side after initial render.
@@ -166,7 +168,7 @@ export default function EditProjectPage() {
             <ProjectForm
               mode="edit"
               project={project.data} // Pass the fetched project data directly
-              // initialData, existingImageUrls, projectId props are removed from ProjectForm
+            // initialData, existingImageUrls, projectId props are removed from ProjectForm
             />
           </div>
         </div>

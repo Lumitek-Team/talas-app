@@ -11,7 +11,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { ProjectOneType } from "@/lib/type";
 import { useUser } from "@clerk/nextjs";
-import { getPublicUrl } from "@/lib/utils";
 
 // Transform backend data to PostCard props
 const transformProjectToPost = (
@@ -19,18 +18,18 @@ const transformProjectToPost = (
   optimisticLikes: Record<string, boolean>,
   optimisticBookmarks: Record<string, boolean>
 ) => {
-  const primaryUser = project.project_user && project.project_user[0]?.user;
+  // const primaryUser = project.project_user && project.project_user[0]?.user;
 
-  let resolvedAvatarSrc: string;
-  if (primaryUser?.photo_profile) {
-    if (primaryUser.photo_profile.startsWith('http')) {
-      resolvedAvatarSrc = primaryUser.photo_profile;
-    } else {
-      resolvedAvatarSrc = getPublicUrl(primaryUser.photo_profile);
-    }
-  } else {
-    resolvedAvatarSrc = '/img/dummy/profile-photo-dummy.jpg';
-  }
+  // let resolvedAvatarSrc: string;
+  // if (primaryUser?.photo_profile) {
+  //   if (primaryUser.photo_profile.startsWith('http')) {
+  //     resolvedAvatarSrc = primaryUser.photo_profile;
+  //   } else {
+  //     resolvedAvatarSrc = getPublicUrl(primaryUser.photo_profile);
+  //   }
+  // } else {
+  //   resolvedAvatarSrc = '/img/dummy/profile-photo-dummy.jpg';
+  // }
 
   const isLiked = optimisticLikes[project.id] !== undefined
     ? optimisticLikes[project.id]
@@ -40,28 +39,13 @@ const transformProjectToPost = (
     ? optimisticBookmarks[project.id]
     : project.is_bookmarked;
 
-  return {
-    id: project.id,
-    slug: project.slug,
-    title: project.title,
-    username: primaryUser?.username || 'Unknown User',
-    userRole: 'Developer',
-    avatarSrc: resolvedAvatarSrc,
-    timestamp: project.created_at, // MODIFIED: Pass the raw date string
-    content: project.content,
-    image1: project.image1 ? getPublicUrl(project.image1) : undefined,
-    image2: project.image2 ? getPublicUrl(project.image2) : undefined,
-    image3: project.image3 ? getPublicUrl(project.image3) : undefined,
-    image4: project.image4 ? getPublicUrl(project.image4) : undefined,
-    image5: project.image5 ? getPublicUrl(project.image5) : undefined,
-    likes: project.count_likes,
-    comments: project.count_comments,
-    link_figma: project.link_figma,
-    link_github: project.link_github,
-    category: project.category,
-    isLiked: !!isLiked,
-    isBookmarked: !!isBookmarked,
-  };
+  const transformed: ProjectOneType = {
+    ...project,
+    is_bookmarked: isBookmarked,
+    is_liked: isLiked,
+  }
+
+  return transformed
 };
 
 export default function HomePage() {
@@ -293,10 +277,6 @@ export default function HomePage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleNewPost = (content: string) => {
-    alert("New post created (mock): " + content);
-  };
-
   const handleToggleBookmark = (projectId: string, currentIsBookmarked: boolean) => {
     if (!user) return;
     setOptimisticBookmarks((prev) => ({ ...prev, [projectId]: !currentIsBookmarked }));
@@ -360,9 +340,9 @@ export default function HomePage() {
           {allPosts.map((post) => (
             <div key={post.id} className="border-b border-white/10 p-1">
               <PostCard
-                {...post}
-                onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)}
-                onToggleLike={() => handleToggleLike(post.id, post.isLiked)}
+                data={post}
+                onToggleBookmark={() => handleToggleBookmark(post.id, post.is_bookmarked ?? false)}
+                onToggleLike={() => handleToggleLike(post.id, post.is_liked ?? false)}
               />
             </div>
           ))}
