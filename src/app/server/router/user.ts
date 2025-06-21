@@ -390,6 +390,7 @@ export const userRouter = router({
 		.input(
 			z.object({
 				id: z.string(),
+				id_user: z.string().optional(),
 				limit: z.number().min(1).max(100).nullish(),
 				cursor: z.string().nullish(),
 			})
@@ -416,29 +417,68 @@ export const userRouter = router({
 									id: true,
 									title: true,
 									slug: true,
+									content: true,
 									image1: true,
 									image2: true,
 									image3: true,
 									image4: true,
 									image5: true,
+									video: true,
+									count_likes: true,
+									count_comments: true,
+									link_figma: true,
+									link_github: true,
 									created_at: true,
 									updated_at: true,
+									category: {
+										select: {
+											id: true,
+											title: true,
+											slug: true,
+										},
+									},
 									project_user: {
-										orderBy: { created_at: "asc" },
-										take: 1,
 										select: {
 											user: {
 												select: {
 													id: true,
-													username: true,
 													name: true,
+													username: true,
 													photo_profile: true,
 												},
 											},
+											ownership: true,
+										},
+										where: {
+											OR: [
+												{
+													ownership: "OWNER",
+												},
+												{
+													ownership: "COLLABORATOR",
+													collabStatus: "ACCEPTED",
+												},
+											],
+										},
+										orderBy: {
+											created_at: "asc",
 										},
 									},
+									bookmarks: input.id_user
+										? {
+												where: { id_user: input.id_user },
+												select: { id: true },
+										  }
+										: false,
+									LikeProject: input.id_user
+										? {
+												where: { id_user: input.id_user },
+												select: { id: true },
+										  }
+										: false,
 								},
 							},
+							created_at: true,
 						},
 					})
 				);

@@ -31,11 +31,11 @@ export function PostCard({
   const { showToast } = useToast(); // This should work now
 
   const allDisplayImages = [];
-  if (data.image1) allDisplayImages.push(data.image1);
-  if (data.image2) allDisplayImages.push(data.image2);
-  if (data.image3) allDisplayImages.push(data.image3);
-  if (data.image4) allDisplayImages.push(data.image4);
-  if (data.image5) allDisplayImages.push(data.image5);
+  if (data?.image1) allDisplayImages.push(data.image1);
+  if (data?.image2) allDisplayImages.push(data.image2);
+  if (data?.image3) allDisplayImages.push(data.image3);
+  if (data?.image4) allDisplayImages.push(data.image4);
+  if (data?.image5) allDisplayImages.push(data.image5);
 
   useEffect(() => {
     const handleResize = () => {
@@ -96,7 +96,7 @@ export function PostCard({
   };
 
   // find user where ownership is 'OWNER'
-  const ownerObj = data.project_user.find(user => user.ownership === 'OWNER');
+  const ownerObj = data.project_user && data.project_user.find(user => user.ownership === 'OWNER');
   const owner = ownerObj ? ownerObj.user : undefined;
 
   return (
@@ -105,7 +105,7 @@ export function PostCard({
     >
       <PostHeader
         username={owner ? owner.name : 'Unknown User'}
-        countCollaborators={data.project_user.length - 1}
+        countCollaborators={data.project_user && data.project_user.length - 1}
         userRole={owner ? owner.username : 'UnknownUser'}
         avatarSrc={owner && owner.photo_profile ? owner.photo_profile : '/img/dummy/avatar-dummy.jpg'}
         timestamp={formattedTimestamp}
@@ -208,7 +208,7 @@ export function PostCard({
           onComment={handleCommentClick}
           onShare={handleShare} // Use the new handleShare function
           isLiked={data.is_liked ?? false}
-          isBookmarked={data.is_bookmarked ?? false}
+          isBookmarked={displayContext === 'saved-page' ? true : data.is_bookmarked ?? false}
           onBookmarkToggle={onToggleBookmark}
           variant={postActionsVariant}
         />
