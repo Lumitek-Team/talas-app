@@ -5,6 +5,7 @@ import { TRPCError } from "@trpc/server";
 import { retryConnect } from "@/lib/utils";
 import { ProjectWithInteractionsType, UserSearchType } from "@/lib/type";
 import { Prisma } from "@prisma/client";
+// import { PrismaClient } from "@prisma/client";
 
 export const searchRouter = router({
 	search: protectedProcedure
@@ -42,8 +43,7 @@ export const searchRouter = router({
 						// Handle search and category logic
 						if (input.search && input.search !== "__all__") {
 							projectWhere.title = {
-								contains: input.search,
-								mode: "insensitive",
+								contains: input.search
 							};
 						}
 						if (category?.id) {
@@ -87,6 +87,8 @@ export const searchRouter = router({
 													photo_profile: true,
 												},
 											},
+											ownership: true,
+											collabStatus: true,
 										},
 										orderBy: {
 											created_at: "asc",
@@ -154,14 +156,12 @@ export const searchRouter = router({
 									OR: [
 										{
 											name: {
-												contains: input.search,
-												mode: "insensitive",
+												contains: input.search
 											},
 										},
 										{
 											username: {
-												contains: input.search,
-												mode: "insensitive",
+												contains: input.search
 											},
 										},
 									],
@@ -219,8 +219,7 @@ export const searchRouter = router({
 							prisma.category.findMany({
 								where: {
 									title: {
-										contains: input.search,
-										mode: "insensitive",
+										contains: input.search
 									},
 								},
 								select: {
@@ -270,21 +269,26 @@ export const searchRouter = router({
 				id_user: z.string(),
 			})
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input }: { input: { id_user: string } }) => {
 			const { id_user } = input;
 			try {
-				const populars = await prisma.$queryRawUnsafe(
-					`
-  SELECT * FROM (
-    SELECT id, title, id_category, popularity_score,
-           RANK() OVER (PARTITION BY id_category ORDER BY popularity_score DESC) AS rank
-    FROM "Project"
-    WHERE is_archived = false
-  ) AS ranked_projects
-  WHERE rank = 1;
-`,
-					id_user || ""
-				);
+				const populars = await prisma.$queryRawUnsafe<
+				{
+					id: string;
+					title: string;
+					id_category: string;
+					popularity_score: number;
+					rank: number;
+				}[]
+				>(`
+				SELECT * FROM (
+					SELECT id, title, id_category, popularity_score,
+						RANK() OVER (PARTITION BY id_category ORDER BY popularity_score DESC) AS rank
+					FROM project
+					WHERE is_archived = false
+				) AS ranked_projects
+				WHERE rank = 1;
+				`);
 				// Extract all popular project IDs
 				const popularIds = populars.map((p: any) => p.id);
 
@@ -330,6 +334,7 @@ export const searchRouter = router({
 										},
 									},
 									ownership: true,
+									collabStatus: true, 
 								},
 								where: {
 									OR: [

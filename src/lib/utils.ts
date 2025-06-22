@@ -202,3 +202,4 @@ export async function getCommentTreeIds(parentId: string): Promise<string[]> {
 	// Extracts just the ID strings from the result
 	return result.map((row) => row.id);
 }
+

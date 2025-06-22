@@ -36,15 +36,30 @@ const transformProjectToPost = (
   optimisticLikes: Record<string, boolean>,
   optimisticBookmarks: Record<string, boolean>
 ) => {
-  const primaryUser = project.project_user && project.project_user[0]?.user;
-  let resolvedAvatarSrc = primaryUser?.photo_profile ? getPublicUrl(primaryUser.photo_profile) : '/img/dummy/profile-photo-dummy.jpg';
-  const isLiked = optimisticLikes[project.id] !== undefined ? optimisticLikes[project.id] : project.is_liked;
-  const isBookmarked = optimisticBookmarks[project.id] !== undefined ? optimisticBookmarks[project.id] : project.is_bookmarked;
-  return {
-    id: project.id, slug: project.slug, title: project.title, username: primaryUser?.username || 'Unknown User', userRole: 'Developer', avatarSrc: resolvedAvatarSrc, timestamp: project.created_at, content: project.content,
-    image1: project.image1 ? getPublicUrl(project.image1) : undefined, image2: project.image2 ? getPublicUrl(project.image2) : undefined, image3: project.image3 ? getPublicUrl(project.image3) : undefined, image4: project.image4 ? getPublicUrl(project.image4) : undefined, image5: project.image5 ? getPublicUrl(project.image5) : undefined,
-    likes: project.count_likes, comments: project.count_comments, link_figma: project.link_figma, link_github: project.link_github, category: project.category, isLiked: !!isLiked, isBookmarked: !!isBookmarked,
-  };
+  // const primaryUser = project.project_user && project.project_user[0]?.user;
+  // let resolvedAvatarSrc = primaryUser?.photo_profile ? getPublicUrl(primaryUser.photo_profile) : '/img/dummy/profile-photo-dummy.jpg';
+  // const isLiked = optimisticLikes[project.id] !== undefined ? optimisticLikes[project.id] : project.is_liked;
+  // const isBookmarked = optimisticBookmarks[project.id] !== undefined ? optimisticBookmarks[project.id] : project.is_bookmarked;
+  // return {
+  //   id: project.id, slug: project.slug, title: project.title, username: primaryUser?.username || 'Unknown User', userRole: 'Developer', avatarSrc: resolvedAvatarSrc, timestamp: project.created_at, content: project.content,
+  //   image1: project.image1 ? getPublicUrl(project.image1) : undefined, image2: project.image2 ? getPublicUrl(project.image2) : undefined, image3: project.image3 ? getPublicUrl(project.image3) : undefined, image4: project.image4 ? getPublicUrl(project.image4) : undefined, image5: project.image5 ? getPublicUrl(project.image5) : undefined,
+  //   likes: project.count_likes, comments: project.count_comments, link_figma: project.link_figma, link_github: project.link_github, category: project.category, isLiked: !!isLiked, isBookmarked: !!isBookmarked,
+  // };
+  const isLiked = optimisticLikes[project.id] !== undefined
+    ? optimisticLikes[project.id]
+    : project.is_liked;
+
+  const isBookmarked = optimisticBookmarks[project.id] !== undefined
+    ? optimisticBookmarks[project.id]
+    : project.is_bookmarked;
+
+  const transformed: ProjectOneType = {
+    ...project,
+    is_bookmarked: isBookmarked,
+    is_liked: isLiked,
+  }
+
+  return transformed
 };
 
 const ProfileAvatar = ({ src, alt, fallback }: { src?: string; alt?: string; fallback: string }) => {
@@ -125,7 +140,7 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
             const post = transformProjectToPost(project, optimisticLikes, optimisticBookmarks);
             return (
                 <div key={post.id} className="border-b border-white/10 last:border-b-0 p-1">
-                    <PostCard {...post} onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)} onToggleLike={() => handleToggleLike(post.id, post.isLiked)} />
+                    <PostCard data={post} onToggleBookmark={() => handleToggleBookmark(post.id, post.is_bookmarked)} onToggleLike={() => handleToggleLike(post.id, post.is_liked)} />
                   </div>
             )
         })}
@@ -137,7 +152,7 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
           const post = transformProjectToPost(project, optimisticLikes, optimisticBookmarks);
           return (
             <div key={post.id} className="border-b border-white/10 last:border-b-0 p-1">
-              <PostCard {...post} onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)} onToggleLike={() => handleToggleLike(post.id, post.isLiked)} />
+              <PostCard data={post} onToggleBookmark={() => handleToggleBookmark(post.id, post.is_bookmarked)} onToggleLike={() => handleToggleLike(post.id, post.is_liked)} />
             </div>
           )
         })}
@@ -180,6 +195,7 @@ export default function SearchPage() {
   const { data: popularProjectsRaw, isLoading: loadingPopularProjectsRaw } = trpc.search.getPopularPost.useQuery({
     id_user: user?.id || "",
   })
+  console.log(popularProjectsRaw)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 690);
@@ -281,6 +297,10 @@ export default function SearchPage() {
       setAllpopularProjects(transformedPosts);
     }
   }, [popularProjectsRaw?.data, optimisticLikes, optimisticBookmarks]);
+  console.log(popularProjectsRaw?.data); // ← Pastikan ini array of projects
+  console.log("RAW popularProjectsRaw:", popularProjectsRaw);
+
+
 
   // FUNCTIONALITY FIX: Implement the logic for the handlers
   const handleToggleBookmark = (projectId: string, currentIsBookmarked: boolean) => {
@@ -372,9 +392,9 @@ export default function SearchPage() {
                           {allpopularProjects && allpopularProjects.map((post) => (
                             <div key={post.id} className="border-b border-white/10 p-1">
                               <PostCard
-                                {...post}
-                                onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)}
-                                onToggleLike={() => handleToggleLike(post.id, post.isLiked)}
+                                data={post}
+                                onToggleBookmark={() => handleToggleBookmark(post.id, post.is_bookmarked ?? false)}
+                                onToggleLike={() => handleToggleLike(post.id, post.is_liked ?? false)}
                               />
                             </div>
                           ))}
@@ -395,7 +415,7 @@ export default function SearchPage() {
 
                         {activeFilter === 'Project' && committedValues.type === 'PROJECT' && displayablePosts.filter(Boolean).map(post => (
                           <div key={`project-${post.id}`} className="border-b border-white/10 last:border-b-0 p-1">
-                            <PostCard {...post} onToggleBookmark={() => handleToggleBookmark(post.id, post.isBookmarked)} onToggleLike={() => handleToggleLike(post.id, post.isLiked)} />
+                            <PostCard data={post} onToggleBookmark={() => handleToggleBookmark(post.id, post.is_bookmarked ?? false)} onToggleLike={() => handleToggleLike(post.id, post.is_liked ?? false)} />
                           </div>
                         ))}
 

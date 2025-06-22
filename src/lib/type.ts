@@ -1,4 +1,5 @@
 import { collabStatusType, ownershipType } from "@prisma/client";
+import { getPublicUrl } from "./utils";
 
 export interface ProjectWithInteractionsType {
 	id: string;
@@ -271,20 +272,72 @@ export interface UserSearchType {
 	};
 }
 
-export interface UserProjectsCondition {
-	is_archived: boolean;
-	project_user: {
-		some: {
-			id_user: string | undefined;
-			OR: Array<
-				| { ownership: "OWNER" }
-				| {
-						AND: [{ ownership: "COLLABORATOR" }, { collabStatus: "ACCEPTED" }];
-				  }
-			>;
-		};
-	};
-	pinProject?: {
-		none: { id_user: string };
-	};
-}
+export type PostCardDisplayType = {
+  id: string;
+  slug: string;
+  title: string;
+  username: string;
+  userRole: string;
+  avatarSrc: string;
+  timestamp: string;
+  content: string;
+  image1?: string;
+  image2?: string;
+  image3?: string;
+  image4?: string;
+  image5?: string;
+  likes: number;
+  comments: number;
+  link_figma: string;
+  link_github: string;
+  category: {
+    id: string;
+    title: string;
+    slug: string;
+  };
+  isLiked: boolean;
+  isBookmarked: boolean;
+};
+
+export const transformProjectToPost = (
+  project: ProjectOneType,
+  optimisticLikes: Record<string, boolean>,
+  optimisticBookmarks: Record<string, boolean>
+): PostCardDisplayType => {
+  const primaryUser = project.project_user && project.project_user[0]?.user;
+
+  const resolvedAvatarSrc = primaryUser?.photo_profile
+    ? getPublicUrl(primaryUser.photo_profile)
+    : "/img/dummy/profile-photo-dummy.jpg";
+
+  const isLiked = optimisticLikes[project.id] !== undefined
+    ? optimisticLikes[project.id]
+    : project.is_liked || false;
+
+  const isBookmarked = optimisticBookmarks[project.id] !== undefined
+    ? optimisticBookmarks[project.id]
+    : project.is_bookmarked || false;
+
+  return {
+    id: project.id,
+    slug: project.slug,
+    title: project.title,
+    username: primaryUser?.username || "Unknown User",
+    userRole: "Developer",
+    avatarSrc: resolvedAvatarSrc,
+    timestamp: project.created_at,
+    content: project.content,
+    image1: project.image1 ? getPublicUrl(project.image1) : undefined,
+    image2: project.image2 ? getPublicUrl(project.image2) : undefined,
+    image3: project.image3 ? getPublicUrl(project.image3) : undefined,
+    image4: project.image4 ? getPublicUrl(project.image4) : undefined,
+    image5: project.image5 ? getPublicUrl(project.image5) : undefined,
+    likes: project.count_likes,
+    comments: project.count_comments,
+    link_figma: project.link_figma,
+    link_github: project.link_github,
+    category: project.category,
+    isLiked,
+    isBookmarked,
+  };
+};

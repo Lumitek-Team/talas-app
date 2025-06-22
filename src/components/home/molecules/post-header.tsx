@@ -18,7 +18,7 @@ export function PostHeader({ username, userRole, avatarSrc, timestamp, countColl
 
   return (
     <div className="flex items-center gap-3 mb-4">
-      <Link href={`/profile/${username}`} className="flex flex-row gap-3 items-center cursor-pointer">
+      <Link href={`/profile/${userRole}`} className="flex flex-row gap-3 items-center cursor-pointer">
         <Avatar className="">
           <AvatarImage src={avatarSrc} />
           <AvatarFallback>CN</AvatarFallback>

@@ -11,7 +11,8 @@ import { Github, Figma } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from "@/contexts/toast-context";
-import { ProjectOneType } from "@/lib/type";
+import { PostCardDisplayType, ProjectOneType } from "@/lib/type";
+import { parse } from 'date-fns';
 
 interface PostCardProps {
   data: ProjectOneType;
@@ -70,16 +71,20 @@ export function PostCard({
     }
   };
 
+  console.log(data.created_at)
+  let formattedTimestamp: string;
 
-  let formattedTimestamp = 'just now';
-  if (data.created_at) {
-    try {
-      formattedTimestamp = formatDistanceToNow(new Date(data.created_at), { addSuffix: true });
-    } catch (error) {
-      console.error("Failed to format timestamp:", data.created_at, error);
-      formattedTimestamp = new Date(data.created_at).toLocaleDateString();
-    }
+if (data.created_at) {
+  const parsedDate = new Date(data.created_at);
+  if (!isNaN(parsedDate.getTime())) {
+    formattedTimestamp = formatDistanceToNow(parsedDate, { addSuffix: true });
+  } else {
+    formattedTimestamp = 'Invalid date';
   }
+} else {
+  formattedTimestamp = 'Unknown time';
+}
+
 
   const postActionsVariant = displayContext === 'saved-page' ? 'bookmark-only' : 'full';
 
