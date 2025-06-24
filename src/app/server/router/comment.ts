@@ -17,12 +17,11 @@ export const commentRouter = router({
 				content: z
 					.string()
 					.min(1, "Comment cannot be empty.")
-					.max(1000, "Comment too long."), // Consistent with frontend
+					.max(1000, "Comment too long."),
 				parent_id: z.string().nullable(),
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
-			// ctx might be available if you set it up in trpc.ts
 			const { id_project, content, parent_id } = input;
 			const userClerk = await currentUser();
 			const user = await prisma.user.findUnique({
@@ -42,12 +41,12 @@ export const commentRouter = router({
 				});
 			}
 
-			// MODIFICATION: Backend check for one-level reply limit
+			// Cek reply hanya boleh satu level
 			if (parent_id) {
 				const parentComment = await retryConnect(() =>
 					prisma.comment.findUnique({
 						where: { id: parent_id },
-						select: { parent_id: true }, // We only need to check if the parent itself has a parent
+						select: { parent_id: true, id_user: true }, // tambahkan id_user untuk notif
 					})
 				);
 
@@ -57,8 +56,6 @@ export const commentRouter = router({
 						message: "Parent comment not found.",
 					});
 				}
-				// If the parentComment itself has a parent_id, it means it's already a reply (level 1).
-				// So, we cannot reply to it further.
 				if (parentComment.parent_id !== null) {
 					throw new TRPCError({
 						code: "BAD_REQUEST",
@@ -67,16 +64,16 @@ export const commentRouter = router({
 					});
 				}
 			}
+
 			const project: ProjectOneType = await retryConnect(() =>
 				prisma.project.findUnique({
 					where: { id: input.id_project },
 					include: {
 						project_user: {
-							// This correctly includes the nested user object for each project_user record
 							include: {
 								user: {
 									select: {
-										id: true, // We only need the ID for the logic that follows
+										id: true,
 									},
 								},
 							},
@@ -96,7 +93,13 @@ export const commentRouter = router({
 			const ownerUserId = projectUsers.find((pu) => pu.ownership === "OWNER")
 				?.user.id;
 
-			const notifications = projectUsers
+			// Notifikasi untuk semua kolaborator/owner kecuali diri sendiri
+			const notifications: {
+				id_user: string;
+				title: string;
+				is_read: boolean;
+				type: "COMMENT_PROJECT" | "REPLY_COMMENT";
+			}[] = projectUsers
 				.filter((pu) => pu.user.id !== user.id)
 				.map((pu) => {
 					const notificationTitle =
@@ -108,14 +111,37 @@ export const commentRouter = router({
 						id_user: pu.user.id,
 						title: notificationTitle,
 						is_read: false,
-						type: "LIKE_PROJECT" as const,
+						type: "COMMENT_PROJECT",
 					};
 				});
 
+			// Jika reply, tambahkan notifikasi ke author parent comment (jika belum termasuk di atas)
+			let parentCommentUserId: string | undefined = undefined;
+			if (parent_id) {
+				const parentComment = await retryConnect(() =>
+					prisma.comment.findUnique({
+						where: { id: parent_id },
+						select: { id_user: true },
+					})
+				);
+				console.log("Parent comment:", parentComment);
+				console.log("User ID:", user.id);
+				parentCommentUserId = parentComment?.id_user;
+				if (parentCommentUserId && parentCommentUserId !== user.id) {
+					notifications.push({
+						id_user: parentCommentUserId,
+						title: `${user.username} replied to your comment on project ${project.title}`,
+						is_read: false,
+						type: "REPLY_COMMENT",
+					});
+				}
+			}
+
 			try {
-				const [comment, updatedProject]: [Comment, Project] =
-					await retryConnect(() =>
-						prisma.$transaction([
+				console.log("notifications:", notifications);
+				const [comment, updatedProject] = await retryConnect(() =>
+					prisma.$transaction(
+						[
 							prisma.comment.create({
 								data: {
 									id_project,
@@ -134,11 +160,14 @@ export const commentRouter = router({
 									},
 								},
 							}),
-							prisma.notification.createMany({
-								data: notifications,
-							}),
-						])
-					);
+							notifications.length > 0
+								? prisma.notification.createMany({
+										data: notifications,
+								  })
+								: undefined,
+						].filter(Boolean) as any
+					)
+				);
 
 				return {
 					success: true,
@@ -148,7 +177,7 @@ export const commentRouter = router({
 				};
 			} catch (error) {
 				console.error("Error creating comment in backend:", error);
-				if (error instanceof TRPCError) throw error; // Re-throw TRPC specific errors
+				if (error instanceof TRPCError) throw error;
 				throw new TRPCError({
 					code: "INTERNAL_SERVER_ERROR",
 					message: "Error creating comment.",
