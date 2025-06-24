@@ -258,6 +258,7 @@ export const commentRouter = router({
 			})
 		)
 		.mutation(async ({ input }) => {
+			console.log("Deleting comment with input:", input);
 			const user = await currentUser();
 			if (!user || !user.id) {
 				throw new TRPCError({
