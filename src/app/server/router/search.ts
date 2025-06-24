@@ -281,15 +281,9 @@ export const searchRouter = router({
 						popularity_score: number;
 						rank: number;
 					}[]
-				>(`
-				SELECT * FROM (
-					SELECT id, title, id_category, popularity_score,
-						RANK() OVER (PARTITION BY id_category ORDER BY popularity_score DESC) AS rank
-					FROM project
-					WHERE is_archived = false
-				) AS ranked_projects
-				WHERE rank = 1;
-				`);
+				>(
+					"SELECT * FROM ( SELECT id, title, id_category, popularity_score, RANK() OVER (PARTITION BY id_category ORDER BY popularity_score DESC) AS `rank` FROM project WHERE is_archived = false ) AS ranked_projects WHERE `rank` = 1;"
+				);
 				// Extract all popular project IDs
 				const popularIds = populars.map((p: any) => p.id);
 
