@@ -486,7 +486,7 @@ export const userRouter = router({
 
 				const hasNextPage = bookmarks.length > limit;
 				const items = hasNextPage ? bookmarks.slice(0, -1) : bookmarks;
-				
+
 				return {
 					items,
 					nextCursor: hasNextPage ? items[items.length - 1].id : null,
@@ -573,7 +573,7 @@ export const userRouter = router({
 					nextCursor: hasNextPage ? items[items.length - 1].id : null,
 				};
 			} catch (error) {
-				throw new Error("Error fetching bookmarks: " + error);
+				throw new Error("Error fetching notifications: " + error); // Fixed error message
 			}
 		}),
 
@@ -599,7 +599,7 @@ export const userRouter = router({
 									image2: true,
 									image3: true,
 									image4: true,
-									image5: true,									
+									image5: true,
 									project_user: {
 										where: {
 											id_user: { not: input },

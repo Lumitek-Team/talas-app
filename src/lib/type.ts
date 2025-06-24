@@ -1,5 +1,4 @@
 import { collabStatusType, ownershipType } from "@prisma/client";
-import { getPublicUrl } from "./utils";
 import { Prisma } from "@prisma/client";
 
 export interface ProjectWithInteractionsType {
@@ -190,32 +189,31 @@ export type CommentsInProjectType = {
 };
 
 export type BookmarkType = {
-  id: string;
-  id_user: string;
-  project: {
-    id: string;
-    title: string;
-    slug: string;
-    image1?: string;
-    image2?: string;
-    image3?: string;
-    image4?: string;
-    image5?: string;
-    created_at: string;
-    updated_at: string;
-    project_user: {
-      user: {
-        id: string;
-        username: string;
-        name: string;
-        photo_profile?: string;
-      };
-      ownership: "OWNER" | "COLLABORATOR";
-      collabStatus: "PENDING" | "ACCEPTED" | "REJECTED";
-    }[];
-  };
+	id: string;
+	id_user: string;
+	project: {
+		id: string;
+		title: string;
+		slug: string;
+		image1?: string;
+		image2?: string;
+		image3?: string;
+		image4?: string;
+		image5?: string;
+		created_at: string;
+		updated_at: string;
+		project_user: {
+			user: {
+				id: string;
+				username: string;
+				name: string;
+				photo_profile?: string;
+			};
+			ownership: "OWNER" | "COLLABORATOR";
+			collabStatus: "PENDING" | "ACCEPTED" | "REJECTED";
+		}[];
+	};
 };
-
 
 export interface FollowerType {
 	follower: {
@@ -242,7 +240,7 @@ export interface SelectCollabType {
 
 export interface RequestCollabType {
 	id: string;
-	created_at: string
+	created_at: string;
 	project: {
 		id: string;
 		title: string;
@@ -278,31 +276,45 @@ export interface UserSearchType {
 }
 
 export type PostCardDisplayType = {
-  id: string;
-  slug: string;
-  title: string;
-  username: string;
-  userRole: string;
-  avatarSrc: string;
-  timestamp: string;
-  content: string;
-  image1?: string;
-  image2?: string;
-  image3?: string;
-  image4?: string;
-  image5?: string;
-  likes: number;
-  comments: number;
-  link_figma: string;
-  link_github: string;
-  category: {
-    id: string;
-    title: string;
-    slug: string;
-  };
-  isLiked: boolean;
-  isBookmarked: boolean;
+	id: string;
+	slug: string;
+	title: string;
+	username: string;
+	userRole: string;
+	avatarSrc: string;
+	timestamp: string;
+	content: string;
+	image1?: string;
+	image2?: string;
+	image3?: string;
+	image4?: string;
+	image5?: string;
+	likes: number;
+	comments: number;
+	link_figma: string;
+	link_github: string;
+	category: {
+		id: string;
+		title: string;
+		slug: string;
+	};
+	isLiked: boolean;
+	isBookmarked: boolean;
+};
+
+export type NotificationType = {
+	id: string;
+	title: string;
+	created_at: Date | string;
+	type:
+		| "FOLLOW"
+		| "LIKE_PROJECT"
+		| "LIKE_COMMENT"
+		| "COMMENT_PROJECT"
+		| "COMMENT"
+		| "REPLY_COMMENT"
+		| "COLLABORATION";
+	is_read: boolean;
 };
 
 export type UserProjectsCondition = Prisma.ProjectWhereInput;
-

@@ -20,6 +20,7 @@ import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { getPublicUrl } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import Link from "next/link";
 
 const commentFormSchema = z.object({
     content: z.string().min(1, "Comment cannot be empty.").max(1000, "Comment is too long (max 1000 characters)."),
@@ -138,7 +139,7 @@ export function CommentForm({
 
     if (!user) {
         if (mode === 'create' && !parentId && !compact) {
-            return <div className="py-4"><p className="text-sm text-muted-foreground">Please <a href="/sign-in" className="underline hover:text-primary">sign in</a> to post a comment.</p></div>;
+            return <div className="py-4"><p className="text-sm text-muted-foreground">Please <Link href="/sign-in" className="underline hover:text-primary">sign in</Link> to post a comment.</p></div>;
         } else {
             return null;
         }

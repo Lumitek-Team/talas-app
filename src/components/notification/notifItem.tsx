@@ -4,16 +4,10 @@ import {
   ChatBubbleOvalLeftIcon,
   UserPlusIcon,
   BellIcon,
+  PuzzlePieceIcon
 } from "@heroicons/react/24/solid";
 import { formatDistanceToNow } from "date-fns";
-
-type NotificationType = {
-  id: string;
-  title: string;
-  created_at: Date | string;
-  type: "like" | "comment" | "follow" | string;
-  is_read: boolean;
-};
+import { NotificationType } from "@/lib/type";
 
 type NotificationItemProps = {
   notification: NotificationType;
@@ -22,21 +16,26 @@ type NotificationItemProps = {
 
 const getNotificationIcon = (notification: NotificationType) => {
   const { type, title } = notification;
-  
-  switch (type?.toLowerCase()) {
-    case 'like':
-    case 'like_project':
+  console.log("Notification ", title, " type:", type);
+
+  switch (type?.toUpperCase()) {
+    case 'LIKE_PROJECT':
       return HeartIcon;
-    case 'comment':
-    case 'comment_project':
+    case 'LIKE_COMMENT':
+      return HeartIcon;
+    case 'COMMENT_PROJECT':
       return ChatBubbleOvalLeftIcon;
-    case 'follow':
-    case 'follow_user':
+    case 'COMMENT':
+      return ChatBubbleOvalLeftIcon;
+    case 'REPLY_COMMENT':
+      return ChatBubbleOvalLeftIcon;
+    case 'FOLLOW':
       return UserPlusIcon;
+    case 'COLLABORATION':
+      return PuzzlePieceIcon;
     default:
       // If type doesn't match, check the title content for keywords
       const titleLower = title?.toLowerCase() || '';
-      
       if (titleLower.includes('liked') || titleLower.includes('like')) {
         return HeartIcon;
       } else if (titleLower.includes('comment') || titleLower.includes('replied')) {
@@ -44,7 +43,7 @@ const getNotificationIcon = (notification: NotificationType) => {
       } else if (titleLower.includes('follow') || titleLower.includes('started following')) {
         return UserPlusIcon;
       }
-      
+
       // Default fallback
       return BellIcon;
   }
@@ -58,9 +57,8 @@ export function NotificationItems({
 
   return (
     <div
-      className={`px-4 py-3 flex items-start transition-all border-b border-gray-700 last:border-b-0 ${
-        notification.is_read ? "opacity-70" : ""
-      }`}
+      className={`px-4 py-3 flex items-start transition-all border-b border-gray-700 last:border-b-0 ${notification.is_read ? "opacity-70" : ""
+        }`}
     >
       <div className="flex-shrink-0 mt-1 mr-4">
         <IconComponent className="w-5 h-5 text-primary" />

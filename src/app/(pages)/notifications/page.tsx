@@ -30,7 +30,6 @@ export default function NotificationPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    refetch,
   } = trpc.user.getNotification.useInfiniteQuery(
     {
       id_user: user?.id ?? "",
@@ -49,7 +48,7 @@ export default function NotificationPage() {
 
   const requestCollaboration = requestCollaborationRaw.data?.data ?? [];
 
-  const markAllAsRead = trpc.notification.makeReaded.useMutation({ onSuccess: () => { refetch() } });
+  const markAllAsRead = trpc.notification.makeReaded.useMutation();
 
   useEffect(() => {
     if (!isLoaded || !user?.id || !data || hasVisited) return;
@@ -65,7 +64,11 @@ export default function NotificationPage() {
   }, [isLoaded, user, data, hasVisited, markAllAsRead]);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const allNotifications = data?.pages.flatMap((page) => page.items) ?? [];
+  const allNotifications = Array.from(
+    new Map(
+      (data?.pages.flatMap((page) => page.items) ?? []).map((notif) => [notif.id, notif])
+    ).values()
+  ); // Deduplicate notifications by their id
   const recent = allNotifications.filter((n) => !n.is_read);
   const earlier = allNotifications.filter((n) => n.is_read);
 
