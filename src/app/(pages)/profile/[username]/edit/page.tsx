@@ -13,6 +13,7 @@ import { TextAreaForm } from "@/components/profile/edit/form-textarea";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
+import { debounce } from "@/lib/utils";
 // import { uploadFile, getImageUrl } from "@/lib/supabase/storage";
 // import { getPublicUrl, uploadImage } from "@/lib/utils";
 
@@ -91,6 +92,25 @@ export default function EditProfile() {
   const [gitHub, setGitHub] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [debouncedUsername, setDebouncedUsername] = useState(usernameInput);
+  const [isUsernameDirty, setIsUsernameDirty] = useState(false);
+
+  // Debounce username input
+  useEffect(() => {
+    const handler = debounce((val: string) => setDebouncedUsername(val), 400);
+    handler(usernameInput);
+    return () => {
+      handler.cancel?.(); // if using lodash.debounce, otherwise ignore
+    };
+  }, [usernameInput]);
+
+  // Deteksi perubahan username dari nilai awal
+  useEffect(() => {
+    if (userData) {
+      setIsUsernameDirty(usernameInput !== userData.username);
+    }
+  }, [usernameInput, userData]);
 
   // Cek akses pengguna
   useEffect(() => {
@@ -158,6 +178,32 @@ export default function EditProfile() {
     setSelectedFile(file); // Store the selected file for later upload
   };
 
+  // Cek username unik saat input berubah (pakai debouncedUsername)
+  const {
+    data: usernameCheckData,
+    isLoading: isUsernameCheckLoading,
+  } = trpc.user.getByUsername.useQuery(
+    { username: debouncedUsername },
+    {
+      enabled:
+        !!debouncedUsername &&
+        debouncedUsername !== userData?.username, // hanya cek jika berubah
+    }
+  );
+
+  useEffect(() => {
+    if (
+      debouncedUsername &&
+      debouncedUsername !== userData?.username &&
+      usernameCheckData?.data?.id &&
+      usernameCheckData.data.id !== userData?.id
+    ) {
+      setUsernameError("Username sudah digunakan.");
+    } else {
+      setUsernameError(null);
+    }
+  }, [debouncedUsername, userData, usernameCheckData]);
+
   const handleSubmit = useCallback(async () => {
     if (!userData || !user) {
       alert("Data pengguna tidak lengkap.");
@@ -166,6 +212,11 @@ export default function EditProfile() {
 
     if (!name.trim() || !usernameInput.trim()) {
       alert("Nama dan username wajib diisi.");
+      return;
+    }
+
+    if (usernameError) {
+      alert(usernameError);
       return;
     }
 
@@ -226,6 +277,7 @@ export default function EditProfile() {
     gitHub,
     selectedFile,
     updateMutation,
+    usernameError,
   ]);
 
   // Fallback saat redirect
@@ -279,6 +331,9 @@ export default function EditProfile() {
               value={usernameInput}
               onChange={(e) => setUsernameInput(e.target.value)}
             />
+            {usernameError && (
+              <div className="text-red-500 text-xs mt-1">{usernameError}</div>
+            )}
             <InputForm label="Email" value={email} disabled readOnly />
             <TextAreaForm
               label="Bio"
@@ -324,7 +379,11 @@ export default function EditProfile() {
             <button
               onClick={handleSubmit}
               className="bg-primary text-white px-4 py-2 mt-6 rounded disabled:opacity-50 hover:bg-primary-foreground cursor-pointer"
-              disabled={updateMutation.isPending}
+              disabled={
+                updateMutation.isPending ||
+                !!usernameError ||
+                (isUsernameDirty && (isUsernameCheckLoading || !!usernameError))
+              }
               type="button"
             >
               {updateMutation.isPending ? "Saving..." : "Save"}

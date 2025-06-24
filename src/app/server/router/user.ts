@@ -32,7 +32,29 @@ export const userRouter = router({
 				})
 			);
 
-			const username = input.email.split("@")[0];
+			let username = input.email.split("@")[0];
+
+			// Pastikan username unik
+			if (!existingUser) {
+				let unique = false;
+				let candidate = username;
+				while (!unique) {
+					const userWithUsername = await retryConnect(() =>
+						prisma.user.findFirst({
+							where: { username: candidate },
+							select: { id: true },
+						})
+					);
+					if (!userWithUsername) {
+						username = candidate;
+						unique = true;
+					} else {
+						const randomDigits = Math.floor(100 + Math.random() * 900); // 3 digit
+						candidate = `${username}-${randomDigits}`;
+					}
+				}
+			}
+
 			try {
 				if (!existingUser) {
 					// FIX: Use a nested create to make the User and their count_summary at the same time.
@@ -337,6 +359,22 @@ export const userRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
+				// Cek jika username ingin diubah, pastikan unik
+				if (input.data.username) {
+					const existing = await retryConnect(() =>
+						prisma.user.findFirst({
+							where: {
+								username: input.data.username,
+								id: { not: input.id },
+							},
+							select: { id: true },
+						})
+					);
+					if (existing) {
+						throw new Error("Username sudah digunakan oleh pengguna lain.");
+					}
+				}
+
 				await retryConnect(() =>
 					prisma.user.update({
 						where: {
