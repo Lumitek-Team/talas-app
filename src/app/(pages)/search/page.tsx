@@ -417,7 +417,7 @@ export default function SearchPage() {
                         ))}
 
                         {activeFilter === 'Profile' && committedValues.type === 'USER' && allRawResults.filter(Boolean).map((item: any) => (
-                          <div key={`profile-${item.username}`} className="cursor-pointer border border-neutral-700/50 rounded-lg p-4 m-4 hover:bg-neutral-800/30 transition-colors" onClick={() => router.push(`/profile/${item.username}`)}>
+                          <div key={`profile-${item.id}`} className="cursor-pointer border border-neutral-700/50 rounded-lg p-4 m-4 hover:bg-neutral-800/30 transition-colors" onClick={() => router.push(`/profile/${item.username}`)}>
                             <div className="flex items-center gap-4">
                               <ProfileAvatar src={item.photo_profile ? getPublicUrl(item.photo_profile) : undefined} alt={item.name || item.username} fallback={item.name?.[0]?.toUpperCase() || "U"} />
                               <div className="flex-1">

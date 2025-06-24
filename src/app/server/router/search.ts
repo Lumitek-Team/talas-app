@@ -167,6 +167,7 @@ export const searchRouter = router({
 									],
 								},
 								select: {
+									id: true,
 									name: true,
 									username: true,
 									photo_profile: true,
@@ -281,21 +282,13 @@ export const searchRouter = router({
 						rank: number;
 					}[]
 				>(`
-	SELECT p.id, p.title, p.id_category, p.popularity_score, 
-		(
-			SELECT COUNT(*) + 1 
-			FROM project AS sub 
-			WHERE sub.id_category = p.id_category 
-				AND sub.popularity_score > p.popularity_score
-		) AS rank
-	FROM project AS p
-	WHERE p.is_archived = false
-		AND (
-			SELECT COUNT(*) + 1 
-			FROM project AS sub 
-			WHERE sub.id_category = p.id_category 
-				AND sub.popularity_score > p.popularity_score
-		) = 1;
+				SELECT * FROM (
+					SELECT id, title, id_category, popularity_score,
+						RANK() OVER (PARTITION BY id_category ORDER BY popularity_score DESC) AS rank
+					FROM project
+					WHERE is_archived = false
+				) AS ranked_projects
+				WHERE rank = 1;
 				`);
 				// Extract all popular project IDs
 				const popularIds = populars.map((p: any) => p.id);
