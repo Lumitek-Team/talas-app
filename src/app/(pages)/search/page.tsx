@@ -134,18 +134,18 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
         </div>
       )}
 
-      
+
       <div>
         {projects.map((project: ProjectOneType) => {
-            const post = transformProjectToPost(project, optimisticLikes, optimisticBookmarks);
-            return (
-                <div key={post.id} className="border-b border-white/10 last:border-b-0 p-1">
-                    <PostCard data={post} onToggleBookmark={() => handleToggleBookmark(post.id, post.is_bookmarked)} onToggleLike={() => handleToggleLike(post.id, post.is_liked)} />
-                  </div>
-            )
+          const post = transformProjectToPost(project, optimisticLikes, optimisticBookmarks);
+          return (
+            <div key={post.id} className="border-b border-white/10 last:border-b-0 p-1">
+              <PostCard data={post} onToggleBookmark={() => handleToggleBookmark(post.id, post.is_bookmarked)} onToggleLike={() => handleToggleLike(post.id, post.is_liked)} />
+            </div>
+          )
         })}
       </div>
-      
+
 
       <div>
         {projects.map((project: ProjectOneType) => {
@@ -195,7 +195,6 @@ export default function SearchPage() {
   const { data: popularProjectsRaw, isLoading: loadingPopularProjectsRaw } = trpc.search.getPopularPost.useQuery({
     id_user: user?.id || "",
   })
-  console.log(popularProjectsRaw)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 690);
@@ -297,8 +296,6 @@ export default function SearchPage() {
       setAllpopularProjects(transformedPosts);
     }
   }, [popularProjectsRaw?.data, optimisticLikes, optimisticBookmarks]);
-  console.log(popularProjectsRaw?.data); // ← Pastikan ini array of projects
-  console.log("RAW popularProjectsRaw:", popularProjectsRaw);
 
 
 

@@ -16,7 +16,6 @@ type NotificationItemProps = {
 
 const getNotificationIcon = (notification: NotificationType) => {
   const { type, title } = notification;
-  console.log("Notification ", title, " type:", type);
 
   switch (type?.toUpperCase()) {
     case 'LIKE_PROJECT':

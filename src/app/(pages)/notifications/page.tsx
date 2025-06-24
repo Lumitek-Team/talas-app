@@ -13,7 +13,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { getInitials } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 
 
 export default function NotificationPage() {
@@ -51,51 +50,51 @@ export default function NotificationPage() {
 
   const markAllAsRead = trpc.notification.makeReaded.useMutation();
 
-useEffect(() => {
-  if (!isLoaded || !user?.id || !data || hasVisited) return;
+  useEffect(() => {
+    if (!isLoaded || !user?.id || !data || hasVisited) return;
 
-  const allNotifications = data.pages.flatMap((page) => page.items);
-  const hasUnread = allNotifications.some((n) => !n.is_read);
+    const allNotifications = data.pages.flatMap((page) => page.items);
+    const hasUnread = allNotifications.some((n) => !n.is_read);
 
-  const handleMarkAsRead = () => {
-    if (hasUnread) {
-      markAllAsRead.mutate(
-        { id_user: user.id },
-        {
-          onSuccess: () => {
-            // Optimistic update: ubah semua notifikasi jadi read di client
-            data.pages.forEach((page) => {
-              page.items.forEach((item) => {
-                item.is_read = true;
+    const handleMarkAsRead = () => {
+      if (hasUnread) {
+        markAllAsRead.mutate(
+          { id_user: user.id },
+          {
+            onSuccess: () => {
+              // Optimistic update: ubah semua notifikasi jadi read di client
+              data.pages.forEach((page) => {
+                page.items.forEach((item) => {
+                  item.is_read = true;
+                });
               });
-            });
-            setHasVisited(true);
-          },
-        }
-      );
-    }
-  };
+              setHasVisited(true);
+            },
+          }
+        );
+      }
+    };
 
-  const handleVisibilityChange = () => {
-    if (document.visibilityState === "hidden") {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        handleMarkAsRead();
+      }
+    };
+
+    const handleBeforeUnload = () => {
       handleMarkAsRead();
-    }
-  };
+    };
 
-  const handleBeforeUnload = () => {
-    handleMarkAsRead();
-  };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
-  document.addEventListener("visibilitychange", handleVisibilityChange);
-  window.addEventListener("beforeunload", handleBeforeUnload);
-
-  // Jalankan juga saat unmount (pindah halaman)
-  return () => {
-    handleMarkAsRead();
-    document.removeEventListener("visibilitychange", handleVisibilityChange);
-    window.removeEventListener("beforeunload", handleBeforeUnload);
-  };
-}, [isLoaded, user?.id, data, hasVisited, markAllAsRead]);
+    // Jalankan juga saat unmount (pindah halaman)
+    return () => {
+      handleMarkAsRead();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isLoaded, user?.id, data, hasVisited, markAllAsRead]);
 
 
   const [processingId, setProcessingId] = useState<string | null>(null);

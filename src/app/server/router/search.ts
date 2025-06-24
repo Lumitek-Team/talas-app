@@ -43,7 +43,7 @@ export const searchRouter = router({
 						// Handle search and category logic
 						if (input.search && input.search !== "__all__") {
 							projectWhere.title = {
-								contains: input.search
+								contains: input.search,
 							};
 						}
 						if (category?.id) {
@@ -156,12 +156,12 @@ export const searchRouter = router({
 									OR: [
 										{
 											name: {
-												contains: input.search
+												contains: input.search,
 											},
 										},
 										{
 											username: {
-												contains: input.search
+												contains: input.search,
 											},
 										},
 									],
@@ -219,7 +219,7 @@ export const searchRouter = router({
 							prisma.category.findMany({
 								where: {
 									title: {
-										contains: input.search
+										contains: input.search,
 									},
 								},
 								select: {
@@ -273,21 +273,29 @@ export const searchRouter = router({
 			const { id_user } = input;
 			try {
 				const populars = await prisma.$queryRawUnsafe<
-				{
-					id: string;
-					title: string;
-					id_category: string;
-					popularity_score: number;
-					rank: number;
-				}[]
+					{
+						id: string;
+						title: string;
+						id_category: string;
+						popularity_score: number;
+						rank: number;
+					}[]
 				>(`
-				SELECT * FROM (
-					SELECT id, title, id_category, popularity_score,
-						RANK() OVER (PARTITION BY id_category ORDER BY popularity_score DESC) AS rank
-					FROM project
-					WHERE is_archived = false
-				) AS ranked_projects
-				WHERE rank = 1;
+	SELECT p.id, p.title, p.id_category, p.popularity_score, 
+		(
+			SELECT COUNT(*) + 1 
+			FROM project AS sub 
+			WHERE sub.id_category = p.id_category 
+				AND sub.popularity_score > p.popularity_score
+		) AS rank
+	FROM project AS p
+	WHERE p.is_archived = false
+		AND (
+			SELECT COUNT(*) + 1 
+			FROM project AS sub 
+			WHERE sub.id_category = p.id_category 
+				AND sub.popularity_score > p.popularity_score
+		) = 1;
 				`);
 				// Extract all popular project IDs
 				const popularIds = populars.map((p: any) => p.id);
@@ -334,7 +342,7 @@ export const searchRouter = router({
 										},
 									},
 									ownership: true,
-									collabStatus: true, 
+									collabStatus: true,
 								},
 								where: {
 									OR: [
