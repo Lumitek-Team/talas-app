@@ -44,27 +44,27 @@ export function Hero() {
   return (
     <section className="text-center px-4 h-screen flex flex-col items-center justify-center">
       <div className="h-70 flex items-center justify-center ">
-      <h1 className="text-white font-bold text-5xl sm:text-6xl max-w-4xl mx-auto">
-        SHOWCASE AND COLLABORATE ON YOUR NEXT{" "}
-        <motion.span
-          className="text-primary inline-block min-w-[80px] sm:min-w-[10px]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          {displayedText}
+        <h1 className="text-white font-bold text-5xl sm:text-6xl max-w-4xl mx-auto">
+          SHOWCASE AND COLLABORATE ON YOUR NEXT{" "}
           <motion.span
-            className="inline-block w-1 h-12 sm:h-16 bg-primary ml-1"
-            animate={{ opacity: [1, 0, 1] }}
-            transition={{
-              duration: 0.8, // Slightly faster cursor blink
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </motion.span>{" "}
-        PROJECT
-      </h1>
+            className="text-primary inline-block min-w-[80px] sm:min-w-[10px]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {displayedText}
+            <motion.span
+              className="inline-block w-1 h-12 sm:h-16 bg-primary ml-1"
+              animate={{ opacity: [1, 0, 1] }}
+              transition={{
+                duration: 0.8, // Slightly faster cursor blink
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          </motion.span>{" "}
+          PROJECT
+        </h1>
       </div>
       <p className="mt-2 text-lg text-slate-400 tracking-wide max-w-xl mx-auto">
         Talas is a platform to showcase your projects, receive feedback, and

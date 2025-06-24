@@ -14,19 +14,19 @@ import { useToast } from "@/contexts/toast-context";
 import { PostCardDisplayType, ProjectOneType } from "@/lib/type";
 import { parse } from 'date-fns';
 
-interface PostCardProps {
-  data: ProjectOneType;
+interface PostCardProps<T extends Partial<ProjectOneType> = ProjectOneType> {
+  data: T;
   onToggleLike: () => void;
   onToggleBookmark: () => void;
-  displayContext?: 'saved-page' | string; // New prop
+  displayContext?: 'saved-page' | string;
 }
 
-export function PostCard({
+export function PostCard<T extends Partial<ProjectOneType>>({
   data,
   onToggleLike,
   onToggleBookmark,
-  displayContext, // Use the new prop
-}: PostCardProps) {
+  displayContext,
+}: PostCardProps<T>) {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
   const { showToast } = useToast(); // This should work now
@@ -71,19 +71,18 @@ export function PostCard({
     }
   };
 
-  console.log(data.created_at)
   let formattedTimestamp: string;
 
-if (data.created_at) {
-  const parsedDate = new Date(data.created_at);
-  if (!isNaN(parsedDate.getTime())) {
-    formattedTimestamp = formatDistanceToNow(parsedDate, { addSuffix: true });
+  if (data.created_at) {
+    const parsedDate = new Date(data.created_at);
+    if (!isNaN(parsedDate.getTime())) {
+      formattedTimestamp = formatDistanceToNow(parsedDate, { addSuffix: true });
+    } else {
+      formattedTimestamp = 'Invalid date';
+    }
   } else {
-    formattedTimestamp = 'Invalid date';
+    formattedTimestamp = 'Unknown time';
   }
-} else {
-  formattedTimestamp = 'Unknown time';
-}
 
 
   const postActionsVariant = displayContext === 'saved-page' ? 'bookmark-only' : 'full';
@@ -101,9 +100,10 @@ if (data.created_at) {
   };
 
   // find user where ownership is 'OWNER'
-  const ownerObj = data.project_user && data.project_user.find(user => user.ownership === 'OWNER');
-  const owner = ownerObj ? ownerObj.user : undefined;
-
+  const ownerObj =
+    data.project_user?.find(user => user.ownership === 'OWNER') ??
+    data.project_user?.[0];
+  const owner = ownerObj?.user;
   return (
     <div
       className={`p-4 ${isMobile ? 'bg-background' : ''}`}
@@ -207,13 +207,15 @@ if (data.created_at) {
 
       <div className="pt-2" onClick={e => e.stopPropagation()} data-prevent-card-click="true">
         <PostActions
-          likes={data.count_likes}
-          comments={data.count_comments}
+          likes={data.count_likes ?? 0}
+          comments={data.count_comments ?? 0}
           onLikeToggle={onToggleLike}
           onComment={handleCommentClick}
-          onShare={handleShare} // Use the new handleShare function
+          onShare={handleShare}
           isLiked={data.is_liked ?? false}
-          isBookmarked={displayContext === 'saved-page' ? true : data.is_bookmarked ?? false}
+          isBookmarked={
+            displayContext === 'saved-page' ? true : (data.is_bookmarked ?? false)
+          }
           onBookmarkToggle={onToggleBookmark}
           variant={postActionsVariant}
         />

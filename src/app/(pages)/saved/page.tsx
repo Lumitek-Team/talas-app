@@ -22,7 +22,6 @@ const transformSavedItemToPostCardProps = (
 ) => {
   const project = bookmarkItem.project;
   const primaryUser = project.project_user && project.project_user[0]?.user;
-
   const isBookmarked = optimisticBookmarks[project.id] !== undefined
     ? optimisticBookmarks[project.id]
     : true;
@@ -42,11 +41,11 @@ const transformSavedItemToPostCardProps = (
     id: project.id,
     slug: project.slug,
     title: project.title,
-    username: primaryUser?.username || 'Unknown User',
-    userRole: 'Developer',
+    username: primaryUser?.name || 'Unknown User',
+    userRole: primaryUser?.username,
     avatarSrc: resolvedAvatarSrc,
     timestamp: project.created_at, // Pass raw date string
-
+    
     content: "",
     likes: 0,
     comments: 0,
@@ -55,6 +54,7 @@ const transformSavedItemToPostCardProps = (
     category: undefined,
     isLiked: false,
     created_at: project.created_at,
+  
 
     image1: project.image1 ? getPublicUrl(project.image1) : undefined,
     image2: project.image2 ? getPublicUrl(project.image2) : undefined,
@@ -63,7 +63,14 @@ const transformSavedItemToPostCardProps = (
     image5: project.image5 ? getPublicUrl(project.image5) : undefined,
 
     isBookmarked: isBookmarked,
+
+    count_likes: undefined,
+    count_comments: undefined,
+    id_category: undefined,
+    is_archived: undefined,
+    project_user: project.project_user,
   };
+  
 };
 
 export default function SavedProjectsPage() {

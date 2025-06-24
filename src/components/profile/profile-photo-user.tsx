@@ -10,13 +10,13 @@ interface PhotoProfileUserProps {
 export function PhotoProfileUser({ photoUrl }: PhotoProfileUserProps) {
   return (
     <div className="space-y-2">
-      <div className="relative w-24 h-24">
+      <div className="relative w-28 h-28">
         {photoUrl ? (
           <Image
             src={photoUrl}
             alt="User Photo"
-            width={240}
-            height={240}
+            width={280}
+            height={280}
             className="w-full h-full rounded-full object-cover"
             referrerPolicy="no-referrer"
           />

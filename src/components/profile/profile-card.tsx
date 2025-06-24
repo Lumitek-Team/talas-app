@@ -80,7 +80,7 @@ export function ProfileCard({
 
   return (
     <div
-      className={`w-full rounded-2xl space-y-4 text-white ${isMobile ? "bg-background" : "bg-card border border-white/10"
+      className={`w-full rounded-2xl space-y-4 text-white ${isMobile ? "bg-background" : "bg-card border border-white/10 min-h-[calc(100vh-6rem)]"
         }`}
     >
       <div className="p-7 border-white/20">

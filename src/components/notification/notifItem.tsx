@@ -63,7 +63,7 @@ export function NotificationItems({
       }`}
     >
       <div className="flex-shrink-0 mt-1 mr-4">
-        <IconComponent className="w-5 h-5 text-green-500" />
+        <IconComponent className="w-5 h-5 text-primary" />
       </div>
       <div className="flex-1">
         <p className={`text-sm ${!notification.is_read ? "font-bold" : "font-medium"}`}>

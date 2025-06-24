@@ -58,7 +58,6 @@ export function SidebarNav({ isCollapsed, activeItem, isMobile = false }: Sideba
       href: username ? `/profile/${username}` : "/feeds",
     },
   ];
-  console.log(username)
 
   if (isMobile) {
     return (
