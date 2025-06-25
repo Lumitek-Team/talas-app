@@ -89,7 +89,9 @@ export function CardArchive({
         onDelete={() => setOpenDeleteDialog(true)}
       />
       <CardContentArchive content={project.content} />
-      <ImageContainer images={imageUrls} />
+      {imageUrls.length > 0 && (
+        <ImageContainer images={imageUrls} />
+      )}
 
       {/* Dialog konfirmasi Unarchive */}
       <CustomAlertDialog
