@@ -124,8 +124,6 @@ export const commentRouter = router({
 						select: { id_user: true },
 					})
 				);
-				console.log("Parent comment:", parentComment);
-				console.log("User ID:", user.id);
 				parentCommentUserId = parentComment?.id_user;
 				if (parentCommentUserId && parentCommentUserId !== user.id) {
 					notifications.push({
@@ -138,7 +136,6 @@ export const commentRouter = router({
 			}
 
 			try {
-				console.log("notifications:", notifications);
 				const [comment, updatedProject] = await retryConnect(() =>
 					prisma.$transaction(
 						[
