@@ -6,7 +6,7 @@ import { PageContainer } from "@/components/ui/page-container";
 import { NotificationItems } from "@/components/notification/notifItem";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { BellIcon } from "@heroicons/react/24/outline";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -22,7 +22,6 @@ export default function NotificationPage() {
     { enabled: isLoaded && !!userclerk?.id }
   ).data?.data;
 
-  const [hasVisited, setHasVisited] = useState(false);
   const {
     data,
     isLoading,
@@ -50,52 +49,33 @@ export default function NotificationPage() {
 
   const markAllAsRead = trpc.notification.makeReaded.useMutation();
 
+  const hasMarkedAllRead = useRef(false);
+
+  // Fungsi untuk menandai semua notifikasi telah dibaca (hanya sekali)
+  const markAllNotificationsAsReadOnce = () => {
+    if (
+      !hasMarkedAllRead.current && // hanya sekali
+      !isLoading &&
+      !error &&
+      user?.id &&
+      data
+    ) {
+      hasMarkedAllRead.current = true;
+      markAllAsRead.mutate(
+        { id_user: user.id },
+        {
+          onError: (err) => {
+            console.error("Failed to mark all notifications as read:", err);
+          },
+        }
+      )
+    }
+  };
+
   useEffect(() => {
-    if (!isLoaded || !user?.id || !data || hasVisited) return;
-
-    const allNotifications = data.pages.flatMap((page) => page.items);
-    const hasUnread = allNotifications.some((n) => !n.is_read);
-
-    const handleMarkAsRead = () => {
-      if (hasUnread) {
-        markAllAsRead.mutate(
-          { id_user: user.id },
-          {
-            onSuccess: () => {
-              // Optimistic update: ubah semua notifikasi jadi read di client
-              data.pages.forEach((page) => {
-                page.items.forEach((item) => {
-                  item.is_read = true;
-                });
-              });
-              setHasVisited(true);
-            },
-          }
-        );
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        handleMarkAsRead();
-      }
-    };
-
-    const handleBeforeUnload = () => {
-      handleMarkAsRead();
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    // Jalankan juga saat unmount (pindah halaman)
-    return () => {
-      handleMarkAsRead();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [isLoaded, user?.id, data, hasVisited, markAllAsRead]);
-
+    markAllNotificationsAsReadOnce();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, data, isLoading, error]);
 
   const [processingId, setProcessingId] = useState<string | null>(null);
 
