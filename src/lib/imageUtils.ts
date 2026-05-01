@@ -1,65 +1,74 @@
-import path from "path";
-import fs from "fs/promises";
+import { supabase } from "./supabase";
 import { randomUUID } from "crypto";
 
+const BUCKET_NAME = "project-image";
+
 export async function uploadImage(file: File, folder: string): Promise<string> {
-	try {
-		// Convert the file to buffer
-		const buffer = Buffer.from(await file.arrayBuffer());
+  try {
+    // Convert the file to buffer/arrayBuffer for Supabase
+    const arrayBuffer = await file.arrayBuffer();
 
-		// Extract file extension
-		const fileExt = file.name.split(".").pop();
+    // Extract file extension
+    const fileExt = file.name.split(".").pop();
 
-		// Generate unique file name
-		const uniqueId = randomUUID();
-		const fileName = `${Date.now()}-${uniqueId}.${fileExt}`;
+    // Generate unique file name
+    const uniqueId = randomUUID();
+    const fileName = `${Date.now()}-${uniqueId}.${fileExt}`;
+    const filePath = `${folder}/${fileName}`;
 
-		// Create the full path
-		const storageDir = path.join(process.cwd(), "public", "storage", folder);
-		const filePath = path.join(storageDir, fileName);
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(filePath, arrayBuffer, {
+        contentType: file.type,
+        upsert: false,
+      });
 
-		// Ensure the folder exists
-		try {
-			await fs.access(storageDir);
-		} catch {
-			await fs.mkdir(storageDir, { recursive: true });
-		}
+    if (error) {
+      throw error;
+    }
 
-		// Write the file to the local path
-		await fs.writeFile(filePath, buffer);
+    // Get Public URL
+    const { data: publicUrlData } = supabase.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(data.path);
 
-		// Return the public path
-		return `/storage/${folder}/${fileName}`;
-	} catch (error) {
-		console.error("Error uploading image:", error);
-		throw new Error("Failed to upload image");
-	}
+    return publicUrlData.publicUrl;
+  } catch (error) {
+    console.error("Error uploading image to Supabase:", error);
+    throw new Error("Failed to upload image");
+  }
 }
 
-export async function deleteImages(imagePaths: string[]): Promise<void> {
-	for (const imageUrlOrPath of imagePaths) {
-		try {
-			// Jika path adalah URL, ambil hanya pathname-nya
-			let pathname = imageUrlOrPath;
-			if (imageUrlOrPath.startsWith("http")) {
-				pathname = new URL(imageUrlOrPath).pathname;
-			}
+export async function deleteImages(imageUrls: string[]): Promise<void> {
+  for (const url of imageUrls) {
+    try {
+      // Extract relative path from Supabase Public URL
+      // Example URL: https://xyz.supabase.co/storage/v1/object/public/project-image/folder/name.jpg
+      // We need: folder/name.jpg
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split(`/public/${BUCKET_NAME}/`);
 
-			// Hapus leading slash agar join aman
-			const normalizedPath = pathname.replace(/^\/+/, "");
-			const fullPath = path.join(process.cwd(), "public", normalizedPath);
+      if (pathParts.length < 2) {
+        console.warn("Invalid Supabase URL format, skipping delete:", url);
+        continue;
+      }
 
-			console.log("Deleting file at:", fullPath);
+      const filePath = pathParts[1];
 
-			await fs.access(fullPath); // Pastikan file ada
-			await fs.unlink(fullPath); // Hapus file
-		} catch (err: any) {
-			if (err.code === "ENOENT") {
-				console.warn("File not found:", imageUrlOrPath);
-			} else {
-				console.error("Error deleting image:", err);
-				throw new Error(`Failed to delete image: ${imageUrlOrPath}`);
-			}
-		}
-	}
+      const { error } = await supabase.storage
+        .from(BUCKET_NAME)
+        .remove([filePath]);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log("Deleted file from Supabase:", filePath);
+    } catch (err) {
+      console.error("Error deleting image from Supabase:", err);
+      // We don't necessarily want to throw here to allow other deletions to proceed,
+      // but we log it.
+    }
+  }
 }
