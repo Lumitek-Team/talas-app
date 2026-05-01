@@ -1,15 +1,17 @@
 import { getTrpcCaller } from "@/app/_trpc/server";
 import { auth } from "@clerk/nextjs/server";
-import { uploadImage } from "@/lib/utils";
+import { uploadImage } from "@/lib/imageUtils";
 import { SelectCollabType } from "@/lib/type";
 
 export async function POST(req: Request) {
 	const trpc = await getTrpcCaller();
 	let image1Path: string;
 
+	const { getToken, userId: id_user } = await auth();
+	const supabaseToken = await getToken();
+
 	const formData = await req.formData();
 
-	const id_user = (await auth()).userId;
 	const id_category = formData.get("id_category")?.toString();
 	const title = formData.get("title")?.toString();
 	const content = formData.get("content")?.toString();
@@ -34,7 +36,8 @@ export async function POST(req: Request) {
 
 	if (image1) {
 		try {
-			image1Path = await uploadImage(image1, "project");
+			// Prepend id_user to path
+			image1Path = await uploadImage(image1, `${id_user}/project`, supabaseToken || undefined);
 		} catch (error) {
 			console.error("Upload error", error);
 			return new Response("Failed to upload image", { status: 500 });
@@ -49,7 +52,8 @@ export async function POST(req: Request) {
 	for (const image of images) {
 		if (image) {
 			try {
-				const imagePath = await uploadImage(image, "project");
+				// Prepend id_user to path
+				const imagePath = await uploadImage(image, `${id_user}/project`, supabaseToken || undefined);
 				imagePaths.push(imagePath);
 			} catch (error) {
 				console.error("Upload error", error);
