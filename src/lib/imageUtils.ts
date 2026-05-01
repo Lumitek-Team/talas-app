@@ -1,10 +1,13 @@
-import { supabase } from "./supabase";
+import { createClerkSupabaseClient, supabase as defaultSupabase } from "./supabase";
 import { randomUUID } from "crypto";
 
-const BUCKET_NAME = "project-image";
+const BUCKET_NAME = "project-images";
 
-export async function uploadImage(file: File, folder: string): Promise<string> {
+export async function uploadImage(file: File, folder: string, token?: string): Promise<string> {
   try {
+    // Use authenticated client if token is provided, otherwise use default
+    const supabase = token ? createClerkSupabaseClient(token) : defaultSupabase;
+
     // Convert the file to buffer/arrayBuffer for Supabase
     const arrayBuffer = await file.arrayBuffer();
 
@@ -40,7 +43,10 @@ export async function uploadImage(file: File, folder: string): Promise<string> {
   }
 }
 
-export async function deleteImages(imageUrls: string[]): Promise<void> {
+export async function deleteImages(imageUrls: string[], token?: string): Promise<void> {
+  // Use authenticated client if token is provided, otherwise use default
+  const supabase = token ? createClerkSupabaseClient(token) : defaultSupabase;
+
   for (const url of imageUrls) {
     try {
       // Extract relative path from Supabase Public URL
@@ -67,8 +73,6 @@ export async function deleteImages(imageUrls: string[]): Promise<void> {
       console.log("Deleted file from Supabase:", filePath);
     } catch (err) {
       console.error("Error deleting image from Supabase:", err);
-      // We don't necessarily want to throw here to allow other deletions to proceed,
-      // but we log it.
     }
   }
 }
