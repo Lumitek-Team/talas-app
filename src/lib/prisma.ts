@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 // Declare a global variable to hold the Prisma Client instance.
 // This ensures that the same instance is used across hot reloads in development.
@@ -14,7 +14,7 @@ const prisma = global.prisma ?? new PrismaClient();
 
 // In non-production environments, assign the new or existing client to the global variable.
 // This caches the instance for the next hot reload.
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== "production") {
   global.prisma = prisma;
 }
 
