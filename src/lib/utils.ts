@@ -1,22 +1,10 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import imageCompression from "browser-image-compression";
-import prisma from "./prisma";
+import prisma from "@/lib/prisma";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function retryConnect(fn: () => Promise<any>, retries = 3) {
-	try {
-		return await fn();
-	} catch (err) {
-		if (retries <= 0) throw err;
-		console.log("Retrying DB connection...", err);
-		await new Promise((res) => setTimeout(res, 1000));
-		return retryConnect(fn, retries - 1);
-	}
 }
 
 export function getInitials(name: string) {
@@ -181,9 +169,6 @@ export function getPublicUrl(path: string | null | undefined): string {
 	return `${process.env.BASE_URL || "http://localhost:3000"}${path}`;
 }
 
-// DELETE the old getAllDescendantCommentIds function
-
-// ADD this new, efficient function
 export async function getCommentTreeIds(parentId: string): Promise<string[]> {
 	// Hasil akhir
 	const descendants: string[] = [];
@@ -204,24 +189,3 @@ export async function getCommentTreeIds(parentId: string): Promise<string[]> {
 	await fetchChildren([parentId]);
 	return descendants;
 }
-
-// export async function getCommentTreeIds(parentId: string): Promise<string[]> {
-// 	// This raw SQL query is extremely efficient and runs in a single database roundtrip.
-// 	// Note: The table name "Comment" must exactly match your database table name (it's case-sensitive).
-// 	const result = await prisma.$queryRaw<Array<{ id: string }>>`
-//         WITH RECURSIVE CommentTree AS (
-//             -- This is the starting point: the direct parent comment
-//             SELECT id FROM "Comment" WHERE id = ${parentId}
-//             UNION ALL
-//             -- This part runs repeatedly, finding all children of the previous set
-//             SELECT c.id
-//             FROM "Comment" c
-//             JOIN CommentTree ct ON c.parent_id = ct.id
-//         )
-//         -- Finally, select all the IDs found, excluding the original parent
-//         SELECT id FROM CommentTree WHERE id != ${parentId}
-//     `;
-
-// 	// Extracts just the ID strings from the result
-// 	return result.map((row) => row.id);
-// }

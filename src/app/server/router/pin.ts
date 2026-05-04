@@ -2,7 +2,6 @@ import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { retryConnect } from "@/lib/utils";
 
 export const pinRouter = router({
 	// Follow a user
@@ -17,30 +16,28 @@ export const pinRouter = router({
 			const { id_project, id_user } = input;
 
 			try {
-				const project = await retryConnect(() =>
-					prisma.project.findFirst({
-						where: {
-							OR: [{ id: id_project }, { slug: id_project }],
-							project_user: {
-								some: {
-									id_user: id_user,
-									OR: [
-										{ ownership: "OWNER" },
-										{
-											AND: [
-												{ ownership: "COLLABORATOR" },
-												{ collabStatus: "ACCEPTED" },
-											],
-										},
-									],
-								},
+				const project = await prisma.project.findFirst({
+					where: {
+						OR: [{ id: id_project }, { slug: id_project }],
+						project_user: {
+							some: {
+								id_user: id_user,
+								OR: [
+									{ ownership: "OWNER" },
+									{
+										AND: [
+											{ ownership: "COLLABORATOR" },
+											{ collabStatus: "ACCEPTED" },
+										],
+									},
+								],
 							},
 						},
-						select: {
-							id: true,
-						},
-					})
-				);
+					},
+					select: {
+						id: true,
+					},
+				});
 
 				if (!project) {
 					throw new TRPCError({
@@ -49,14 +46,12 @@ export const pinRouter = router({
 					});
 				}
 
-				const existingPin = await retryConnect(() =>
-					prisma.pinProject.findFirst({
-						where: {
-							id_project: project.id,
-							id_user: id_user,
-						},
-					})
-				);
+				const existingPin = await prisma.pinProject.findFirst({
+					where: {
+						id_project: project.id,
+						id_user: id_user,
+					},
+				});
 				if (existingPin) {
 					throw new TRPCError({
 						code: "CONFLICT",
@@ -64,14 +59,12 @@ export const pinRouter = router({
 					});
 				}
 
-				const pin = await retryConnect(() =>
-					prisma.pinProject.create({
-						data: {
-							id_project: project.id,
-							id_user: id_user,
-						},
-					})
-				);
+				const pin = await prisma.pinProject.create({
+					data: {
+						id_project: project.id,
+						id_user: id_user,
+					},
+				});
 
 				return {
 					success: true,
@@ -102,30 +95,28 @@ export const pinRouter = router({
 			const { id_project, id_user } = input;
 
 			try {
-				const project = await retryConnect(() =>
-					prisma.project.findFirst({
-						where: {
-							OR: [{ id: id_project }, { slug: id_project }],
-							project_user: {
-								some: {
-									id_user: id_user,
-									OR: [
-										{ ownership: "OWNER" },
-										{
-											AND: [
-												{ ownership: "COLLABORATOR" },
-												{ collabStatus: "ACCEPTED" },
-											],
-										},
-									],
-								},
+				const project = await prisma.project.findFirst({
+					where: {
+						OR: [{ id: id_project }, { slug: id_project }],
+						project_user: {
+							some: {
+								id_user: id_user,
+								OR: [
+									{ ownership: "OWNER" },
+									{
+										AND: [
+											{ ownership: "COLLABORATOR" },
+											{ collabStatus: "ACCEPTED" },
+										],
+									},
+								],
 							},
 						},
-						select: {
-							id: true,
-						},
-					})
-				);
+					},
+					select: {
+						id: true,
+					},
+				});
 
 				if (!project) {
 					throw new TRPCError({
@@ -134,14 +125,12 @@ export const pinRouter = router({
 					});
 				}
 
-				const existingPin = await retryConnect(() =>
-					prisma.pinProject.findFirst({
-						where: {
-							id_project: project.id,
-							id_user: id_user,
-						},
-					})
-				);
+				const existingPin = await prisma.pinProject.findFirst({
+					where: {
+						id_project: project.id,
+						id_user: id_user,
+					},
+				});
 
 				if (!existingPin) {
 					throw new TRPCError({
@@ -150,13 +139,11 @@ export const pinRouter = router({
 					});
 				}
 
-				await retryConnect(() =>
-					prisma.pinProject.delete({
-						where: {
-							id: existingPin.id,
-						},
-					})
-				);
+				await prisma.pinProject.delete({
+					where: {
+						id: existingPin.id,
+					},
+				});
 
 				return {
 					success: true,

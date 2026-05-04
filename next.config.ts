@@ -38,6 +38,11 @@ const securityHeaders = [
   },
 ];
 
+const supabaseHostname = new URL(
+  process.env.NEXT_PUBLIC_SUPABASE_URL ??
+    "https://znmzfbfdlqxrvebilche.supabase.co",
+).hostname;
+
 const nextConfig = {
   async headers() {
     return [
@@ -64,7 +69,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "ivpwvybbpejezeeqxsnn.supabase.co",
+        hostname: supabaseHostname,
         pathname: "/storage/v1/object/public/**",
       },
       {

@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import { uploadImage, deleteImages } from "@/lib/imageUtils";
-
+import { auth } from "@clerk/nextjs/server";
 export async function POST(req: Request) {
-  try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    const folder = formData.get("folder") as string | undefined;
-    const oldImagePath = formData.get("oldImagePath") as string | undefined;
+	try {
+		const { getToken, userId } = await auth();
+		const supabaseToken = await getToken();
+
+		if (!userId) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+
+		const formData = await req.formData();
+		const file = formData.get("file") as File | null;
+		const folder = formData.get("folder") as string | undefined;
+		const oldImagePath = formData.get("oldImagePath") as string | undefined;
 
     if (!file || !folder) {
       return NextResponse.json(
@@ -15,16 +22,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // Delete the old image if it exists
-    if (oldImagePath) {
-      await deleteImages([oldImagePath]);
-    }
+		// Prepend userId to create a unique path for the user: userId/folder/filename
+		const secureFolder = `${userId}/${folder}`;
 
-    // Upload the new image and get the relative path
-    const newImagePath = await uploadImage(file, folder);
+		// Delete the old image if it exists
+		if (oldImagePath) {
+			await deleteImages([oldImagePath], supabaseToken || undefined);
+		}
+
+		// Upload the new image
+		const newImagePath = await uploadImage(file, secureFolder, supabaseToken || undefined);
+
+		return NextResponse.json({ newImagePath });
 
     // Return the relative path
-    return NextResponse.json({ newImagePath });
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
       console.error("Error editing profile image:", error);

@@ -2,7 +2,6 @@ import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { retryConnect } from "@/lib/utils";
 import { ProjectUser } from "@prisma/client";
 
 export const likeProjectRouter = router({
@@ -16,28 +15,22 @@ export const likeProjectRouter = router({
 		.mutation(async ({ input }) => {
 			try {
 				const [project, liker, existingLike] = await Promise.all([
-					retryConnect(() =>
-						prisma.project.findUnique({
-							where: { id: input.id_project },
-							include: {
-								project_user: true,
-							},
-						})
-					),
-					retryConnect(() =>
-						prisma.user.findUnique({
-							where: { id: input.id_user },
-							select: { username: true, name: true },
-						})
-					),
-					retryConnect(() =>
-						prisma.likeProject.findFirst({
-							where: {
-								id_user: input.id_user,
-								id_project: input.id_project,
-							},
-						})
-					),
+					prisma.project.findUnique({
+						where: { id: input.id_project },
+						include: {
+							project_user: true,
+						},
+					}),
+					prisma.user.findUnique({
+						where: { id: input.id_user },
+						select: { username: true, name: true },
+					}),
+					prisma.likeProject.findFirst({
+						where: {
+							id_user: input.id_user,
+							id_project: input.id_project,
+						},
+					}),
 				]);
 
 				if (!project) {
@@ -88,31 +81,29 @@ export const likeProjectRouter = router({
 						};
 					});
 
-				const [, updatedProject] = await retryConnect(() =>
-					prisma.$transaction([
-						prisma.likeProject.create({
-							data: {
-								id_user: input.id_user,
-								id_project: input.id_project,
+				const [, updatedProject] = await prisma.$transaction([
+					prisma.likeProject.create({
+						data: {
+							id_user: input.id_user,
+							id_project: input.id_project,
+						},
+					}),
+					prisma.project.update({
+						where: { id: input.id_project },
+						data: {
+							count_likes: {
+								increment: 1,
 							},
-						}),
-						prisma.project.update({
-							where: { id: input.id_project },
-							data: {
-								count_likes: {
-									increment: 1,
-								},
-							},
-							select: {
-								count_likes: true,
-								title: true,
-							},
-						}),
-						prisma.notification.createMany({
-							data: notifications,
-						}),
-					])
-				);
+						},
+						select: {
+							count_likes: true,
+							title: true,
+						},
+					}),
+					prisma.notification.createMany({
+						data: notifications,
+					}),
+				]);
 
 				return {
 					success: true,
@@ -139,14 +130,12 @@ export const likeProjectRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			try {
-				const like = await retryConnect(() =>
-					prisma.likeProject.findFirst({
-						where: {
-							id_user: input.id_user,
-							id_project: input.id_project,
-						},
-					})
-				);
+				const like = await prisma.likeProject.findFirst({
+					where: {
+						id_user: input.id_user,
+						id_project: input.id_project,
+					},
+				});
 
 				if (!like) {
 					throw new TRPCError({
@@ -156,26 +145,24 @@ export const likeProjectRouter = router({
 				}
 
 				// Transaksi: hapus like dan update count
-				const [, updatedProject] = await retryConnect(() =>
-					prisma.$transaction([
-						prisma.likeProject.delete({
-							where: {
-								id: like.id,
+				const [, updatedProject] = await prisma.$transaction([
+					prisma.likeProject.delete({
+						where: {
+							id: like.id,
+						},
+					}),
+					prisma.project.update({
+						where: { id: input.id_project },
+						data: {
+							count_likes: {
+								decrement: 1,
 							},
-						}),
-						prisma.project.update({
-							where: { id: input.id_project },
-							data: {
-								count_likes: {
-									decrement: 1,
-								},
-							},
-							select: {
-								count_likes: true,
-							},
-						}),
-					])
-				);
+						},
+						select: {
+							count_likes: true,
+						},
+					}),
+				]);
 
 				return {
 					success: true,

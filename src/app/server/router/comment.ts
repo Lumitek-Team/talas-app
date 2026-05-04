@@ -2,9 +2,8 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
-import { getCommentTreeIds, retryConnect } from "@/lib/utils";
+import { getCommentTreeIds } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
-import { Comment, Project } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { ProjectOneType } from "@/lib/type";
 import { Prisma } from "@prisma/client";
@@ -21,7 +20,7 @@ export const commentRouter = router({
 				parent_id: z.string().nullable(),
 			})
 		)
-		.mutation(async ({ input, ctx }) => {
+		.mutation(async ({ input }) => {
 			const { id_project, content, parent_id } = input;
 			const userClerk = await currentUser();
 			const user = await prisma.user.findUnique({
@@ -43,12 +42,10 @@ export const commentRouter = router({
 
 			// Cek reply hanya boleh satu level
 			if (parent_id) {
-				const parentComment = await retryConnect(() =>
-					prisma.comment.findUnique({
-						where: { id: parent_id },
-						select: { parent_id: true, id_user: true }, // tambahkan id_user untuk notif
-					})
-				);
+				const parentComment = await prisma.comment.findUnique({
+					where: { id: parent_id },
+					select: { parent_id: true, id_user: true }, // tambahkan id_user untuk notif
+				});
 
 				if (!parentComment) {
 					throw new TRPCError({
@@ -65,22 +62,29 @@ export const commentRouter = router({
 				}
 			}
 
-			const project: ProjectOneType = await retryConnect(() =>
-				prisma.project.findUnique({
-					where: { id: input.id_project },
-					include: {
-						project_user: {
-							include: {
-								user: {
-									select: {
-										id: true,
-									},
+			const projectNullable = await prisma.project.findUnique({
+				where: { id: input.id_project },
+				include: {
+					project_user: {
+						include: {
+							user: {
+								select: {
+									id: true,
 								},
 							},
 						},
 					},
-				})
-			);
+				},
+			});
+
+			if (!projectNullable) {
+				throw new TRPCError({
+					code: "NOT_FOUND",
+					message: "Project not found",
+				});
+			}
+
+			const project = projectNullable as unknown as ProjectOneType;
 
 			const projectUsers = project?.project_user;
 			if (!projectUsers || projectUsers.length === 0) {
@@ -118,12 +122,10 @@ export const commentRouter = router({
 			// Jika reply, tambahkan notifikasi ke author parent comment (jika belum termasuk di atas)
 			let parentCommentUserId: string | undefined = undefined;
 			if (parent_id) {
-				const parentComment = await retryConnect(() =>
-					prisma.comment.findUnique({
-						where: { id: parent_id },
-						select: { id_user: true },
-					})
-				);
+				const parentComment = await prisma.comment.findUnique({
+					where: { id: parent_id },
+					select: { id_user: true },
+				});
 				parentCommentUserId = parentComment?.id_user;
 				if (parentCommentUserId && parentCommentUserId !== user.id) {
 					notifications.push({
@@ -136,35 +138,31 @@ export const commentRouter = router({
 			}
 
 			try {
-				const [comment, updatedProject] = await retryConnect(() =>
-					prisma.$transaction(
-						[
-							prisma.comment.create({
-								data: {
-									id_project,
-									content,
-									parent_id,
-									id_user: user.id,
-								},
-							}),
-							prisma.project.update({
-								where: {
-									id: id_project,
-								},
-								data: {
-									count_comments: {
-										increment: 1,
-									},
-								},
-							}),
-							notifications.length > 0
-								? prisma.notification.createMany({
-										data: notifications,
-								  })
-								: undefined,
-						].filter(Boolean) as any
-					)
-				);
+				const [comment, updatedProject] = await prisma.$transaction(async (tx) => {
+					const createdComment = await tx.comment.create({
+						data: {
+							id_project,
+							content,
+							parent_id,
+							id_user: user.id,
+						},
+					});
+
+					const updated = await tx.project.update({
+						where: { id: id_project },
+						data: {
+							count_comments: { increment: 1 },
+						},
+					});
+
+					if (notifications.length > 0) {
+						await tx.notification.createMany({
+							data: notifications,
+						});
+					}
+
+					return [createdComment, updated] as const;
+				});
 
 				return {
 					success: true,
@@ -210,18 +208,16 @@ export const commentRouter = router({
 			}
 
 			try {
-				const comment = await retryConnect(() =>
-					prisma.comment.update({
-						where: {
-							id: input.id,
-							id_user: user.id, // Ensure they can only update their own comment
-						},
-						data: {
-							content: input.content,
-							updated_at: new Date(), // Explicitly set updated_at
-						},
-					})
-				);
+				const comment = await prisma.comment.update({
+					where: {
+						id: input.id,
+						id_user: user.id, // Ensure they can only update their own comment
+					},
+					data: {
+						content: input.content,
+						updated_at: new Date(), // Explicitly set updated_at
+					},
+				});
 				return {
 					success: true,
 					message: "Successfully edit comment",
@@ -275,25 +271,23 @@ export const commentRouter = router({
 				// Ambil semua id turunan (anak, cucu, dst)
 				const descendantIds = await getCommentTreeIds(input.id);
 				// Hapus semua komentar (root + semua turunan)
-				await retryConnect(() =>
-					prisma.$transaction([
-						prisma.comment.deleteMany({
-							where: {
-								id: { in: [input.id, ...descendantIds] },
+				await prisma.$transaction([
+					prisma.comment.deleteMany({
+						where: {
+							id: { in: [input.id, ...descendantIds] },
+						},
+					}),
+					prisma.project.update({
+						where: {
+							id: input.id_project,
+						},
+						data: {
+							count_comments: {
+								decrement: descendantIds.length + 1,
 							},
-						}),
-						prisma.project.update({
-							where: {
-								id: input.id_project,
-							},
-							data: {
-								count_comments: {
-									decrement: descendantIds.length + 1,
-								},
-							},
-						}),
-					])
-				);
+						},
+					}),
+				]);
 
 				return {
 					success: true,
