@@ -18,10 +18,12 @@ export function ProfileFollow({
   const utils = trpc.useUtils();
 
   // Query untuk cek apakah udah follow
-  const { data, isLoading: isChecking } = trpc.follow.checkIsFollowing.useQuery({
-    id_follower: idCurrentUser,
-    id_following: idTargetUser,
-  });
+  const { data, isLoading: isChecking } = trpc.follow.checkIsFollowing.useQuery(
+    {
+      id_follower: idCurrentUser,
+      id_following: idTargetUser,
+    },
+  );
 
   const followMutation = trpc.follow.following.useMutation({
     onSettled: () => {
@@ -64,7 +66,9 @@ export function ProfileFollow({
         });
       }
     } catch (err) {
-      console.error("Failed to toggle follow:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to toggle follow:", err);
+      }
     }
   };
 

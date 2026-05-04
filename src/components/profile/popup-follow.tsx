@@ -26,12 +26,12 @@ export function PopupFollow({ open, onClose, userId, type }: PopupFollowProps) {
 
   const getFollowers = trpc.user.getAllFollower.useQuery(
     { id_following: userId },
-    { enabled: false }
+    { enabled: false },
   );
 
   const getFollowings = trpc.user.getAllFollowing.useQuery(
     { id_follower: userId },
-    { enabled: false }
+    { enabled: false },
   );
 
   useEffect(() => {
@@ -48,7 +48,9 @@ export function PopupFollow({ open, onClose, userId, type }: PopupFollowProps) {
           setUsers(res.data?.data ?? []);
         }
       } catch (error) {
-        console.error("Failed to fetch follow data", error);
+        if (process.env.NODE_ENV === "development") {
+          console.error("Failed to fetch follow data", error);
+        }
       } finally {
         setIsPending(false);
       }
@@ -67,7 +69,10 @@ export function PopupFollow({ open, onClose, userId, type }: PopupFollowProps) {
           <h2 className="text-white text-lg text-center font-semibold">
             {type === "followers" ? "Followers" : "Following"}
           </h2>
-          <button onClick={onClose} className="text-white hover:opacity-70 text-xl cursor-pointer">
+          <button
+            onClick={onClose}
+            className="text-white hover:opacity-70 text-xl cursor-pointer"
+          >
             ✕
           </button>
         </div>
@@ -75,7 +80,9 @@ export function PopupFollow({ open, onClose, userId, type }: PopupFollowProps) {
         {/* Scrollable list */}
         <div className="max-h-[320px] overflow-y-auto pr-1 space-y-3 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
           {isPending ? (
-            <p className="text-white text-sm text-center animate-pulse">Loading...</p>
+            <p className="text-white text-sm text-center animate-pulse">
+              Loading...
+            </p>
           ) : users.length === 0 ? (
             <p className="text-white text-sm text-center">No users found.</p>
           ) : (
@@ -103,7 +110,9 @@ export function PopupFollow({ open, onClose, userId, type }: PopupFollowProps) {
 
                   {/* User info */}
                   <div>
-                    <p className="text-white text-sm font-medium">{user.name}</p>
+                    <p className="text-white text-sm font-medium">
+                      {user.name}
+                    </p>
                     <p className="text-white/50 text-xs">@{user.username}</p>
                   </div>
                 </div>

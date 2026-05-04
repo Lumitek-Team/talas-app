@@ -38,7 +38,9 @@ export async function uploadImage(file: File, folder: string, token?: string): P
 
     return publicUrlData.publicUrl;
   } catch (error) {
-    console.error("Error uploading image to Supabase:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Error uploading image to Supabase:", error);
+    }
     throw new Error("Failed to upload image");
   }
 }
@@ -56,7 +58,9 @@ export async function deleteImages(imageUrls: string[], token?: string): Promise
       const pathParts = urlObj.pathname.split(`/public/${BUCKET_NAME}/`);
 
       if (pathParts.length < 2) {
-        console.warn("Invalid Supabase URL format, skipping delete:", url);
+        if (process.env.NODE_ENV === "development") {
+          console.warn("Invalid Supabase URL format, skipping delete:", url);
+        }
         continue;
       }
 
@@ -69,10 +73,12 @@ export async function deleteImages(imageUrls: string[], token?: string): Promise
       if (error) {
         throw error;
       }
-
-      console.log("Deleted file from Supabase:", filePath);
     } catch (err) {
-      console.error("Error deleting image from Supabase:", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Error deleting image from Supabase:", err);
+      }
+      // We don't necessarily want to throw here to allow other deletions to proceed,
+      // but we log it.
     }
   }
 }

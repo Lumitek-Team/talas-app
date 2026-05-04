@@ -3,13 +3,19 @@
 
 import { useState, useEffect } from "react";
 // MODIFICATION: Add AvatarImage and AvatarFallback
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar-gatau";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "@/components/ui/avatar-gatau";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { EllipsisHorizontalIcon, HeartIcon, ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 import {
-  HeartIcon as HeartIconSolid,
-} from "@heroicons/react/24/solid";
+  EllipsisHorizontalIcon,
+  HeartIcon,
+  ChatBubbleLeftIcon,
+} from "@heroicons/react/24/outline";
+import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +27,7 @@ import { trpc } from "@/app/_trpc/client";
 // MODIFICATION: Add getInitials
 import { getPublicUrl, getInitials } from "@/lib/utils";
 import { CommentForm } from "./comment-form";
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from "date-fns";
 import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog"; // Import the new dialog
 
 interface CommentItemProps {
@@ -81,9 +87,15 @@ export function CommentItem({
   const handleLikeComment = () => {
     if (!currentUserId) return;
     if (isLiked) {
-      unlikeCommentMutation.mutate({ id_user: currentUserId, id_comment: comment.id });
+      unlikeCommentMutation.mutate({
+        id_user: currentUserId,
+        id_comment: comment.id,
+      });
     } else {
-      likeCommentMutation.mutate({ id_user: currentUserId, id_comment: comment.id });
+      likeCommentMutation.mutate({
+        id_user: currentUserId,
+        id_comment: comment.id,
+      });
     }
   };
 
@@ -92,7 +104,9 @@ export function CommentItem({
       onCommentMutated();
     },
     onError: (error) => {
-      console.error("Failed to delete comment:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to delete comment:", error);
+      }
       alert("Error deleting comment: " + error.message);
     },
   });
@@ -109,20 +123,22 @@ export function CommentItem({
     if (!currentUserId || currentUserId !== comment.user.id) return;
     deleteCommentMutation.mutate({
       id: comment.id,
-      id_user: currentUserId,    // Changed back to snake_case
-      id_project: projectId,     // Changed back to snake_case
+      id_user: currentUserId, // Changed back to snake_case
+      id_project: projectId, // Changed back to snake_case
     });
   };
 
   const userAvatar = comment.user.photo_profile
-    ? (comment.user.photo_profile.startsWith('http') ? comment.user.photo_profile : getPublicUrl(comment.user.photo_profile))
+    ? comment.user.photo_profile.startsWith("http")
+      ? comment.user.photo_profile
+      : getPublicUrl(comment.user.photo_profile)
     : "/img/dummy/profile-photo-dummy.jpg";
 
   const canEditOrDelete = currentUserId === comment.user.id;
   const canReply = level === 0;
   const formattedTimestamp = comment.created_at
     ? formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })
-    : 'just now';
+    : "just now";
 
   let itemContainerClasses = "flex flex-col";
   if (level === 0) {
@@ -133,7 +149,8 @@ export function CommentItem({
   // Removed redundant else if (level === 0) that was previously here
 
   let editFormContainerClasses = "mt-2 py-2";
-  if (level === 0) { // Apply bottom margin to edit form if it's a top-level comment
+  if (level === 0) {
+    // Apply bottom margin to edit form if it's a top-level comment
     editFormContainerClasses += " mb-4";
   } else if (level === 1) {
     editFormContainerClasses += " ml-11";
@@ -147,7 +164,10 @@ export function CommentItem({
           mode="edit"
           currentCommentId={comment.id}
           initialContent={comment.content}
-          onSuccess={() => { setIsEditing(false); onCommentMutated(); }}
+          onSuccess={() => {
+            setIsEditing(false);
+            onCommentMutated();
+          }}
           onCancel={() => setIsEditing(false)}
           compact={false}
           autoFocus={true}
@@ -158,26 +178,40 @@ export function CommentItem({
 
   return (
     <>
-      <div className={itemContainerClasses}> {/* This will now have mb-4 for level 0 comments */}
+      <div className={itemContainerClasses}>
+        {" "}
+        {/* This will now have mb-4 for level 0 comments */}
         <div className="flex gap-3 py-1">
           <Avatar className="w-8 h-8 mt-1">
-            <AvatarImage src={userAvatar} alt={comment.user.name || comment.user.username} />
+            <AvatarImage
+              src={userAvatar}
+              alt={comment.user.name || comment.user.username}
+            />
             <AvatarFallback>
-              {getInitials(comment.user.name || comment.user.username || 'U')}
+              {getInitials(comment.user.name || comment.user.username || "U")}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-2">
-                <span className="font-semibold text-sm text-white">{comment.user.name || comment.user.username}</span>
-                <span className="text-xs text-muted-foreground" title={new Date(comment.created_at).toLocaleString()}>
+                <span className="font-semibold text-sm text-white">
+                  {comment.user.name || comment.user.username}
+                </span>
+                <span
+                  className="text-xs text-muted-foreground"
+                  title={new Date(comment.created_at).toLocaleString()}
+                >
                   {formattedTimestamp}
                 </span>
               </div>
               {canEditOrDelete && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-white">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-white"
+                    >
                       <EllipsisHorizontalIcon className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -186,7 +220,10 @@ export function CommentItem({
                     align="end"
                     className="bg-card border border-white/10 text-white shadow-lg" // Matching page container
                   >
-                    <DropdownMenuItem onClick={() => setIsEditing(true)} className="cursor-pointer hover:!bg-slate-700/50 focus:!bg-slate-700/80">
+                    <DropdownMenuItem
+                      onClick={() => setIsEditing(true)}
+                      className="cursor-pointer hover:!bg-slate-700/50 focus:!bg-slate-700/80"
+                    >
                       Edit
                     </DropdownMenuItem>
                     <DropdownMenuItem
@@ -194,21 +231,30 @@ export function CommentItem({
                       disabled={deleteCommentMutation.isPending}
                       className="text-red-500 cursor-pointer hover:!bg-red-500/20 focus:!bg-red-500/20 focus:!text-red-500"
                     >
-                      {deleteCommentMutation.isPending ? "Deleting..." : "Delete"}
+                      {deleteCommentMutation.isPending
+                        ? "Deleting..."
+                        : "Delete"}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
             </div>
-            <p className="text-sm mt-1 mb-2 text-slate-300 whitespace-pre-line">{comment.content}</p>
+            <p className="text-sm mt-1 mb-2 text-slate-300 whitespace-pre-line">
+              {comment.content}
+            </p>
             <div className="flex items-center gap-3">
               {canReply && currentUserId && (
                 <button
-                  onClick={() => { setShowReplyForm(!showReplyForm); if (isEditing) setIsEditing(false); }}
+                  onClick={() => {
+                    setShowReplyForm(!showReplyForm);
+                    if (isEditing) setIsEditing(false);
+                  }}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white transition-all"
                 >
                   <ChatBubbleLeftIcon className="w-3.5 h-3.5" />
-                  <span>{showReplyForm ? "Cancel" : `${comment.reply_count} Reply`}</span>
+                  <span>
+                    {showReplyForm ? "Cancel" : `${comment.reply_count} Reply`}
+                  </span>
                 </button>
               )}
               {/* likes button */}
@@ -230,7 +276,10 @@ export function CommentItem({
                   projectId={projectId}
                   parentId={comment.id}
                   mode="create"
-                  onSuccess={() => { setShowReplyForm(false); onCommentMutated(); }}
+                  onSuccess={() => {
+                    setShowReplyForm(false);
+                    onCommentMutated();
+                  }}
                   onCancel={() => setShowReplyForm(false)}
                   compact={true}
                   autoFocus={true}
@@ -241,8 +290,15 @@ export function CommentItem({
         </div>
         {comment.children && comment.children.length > 0 && (
           <div className="mt-0 flex flex-col">
-            {comment.children.map(reply => (
-              <CommentItem key={reply.id} comment={reply} projectId={projectId} currentUserId={currentUserId} onCommentMutated={onCommentMutated} level={level + 1} />
+            {comment.children.map((reply) => (
+              <CommentItem
+                key={reply.id}
+                comment={reply}
+                projectId={projectId}
+                currentUserId={currentUserId}
+                onCommentMutated={onCommentMutated}
+                level={level + 1}
+              />
             ))}
           </div>
         )}

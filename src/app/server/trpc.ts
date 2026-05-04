@@ -1,8 +1,11 @@
 // src/app/server/trpc.ts
-import { initTRPC, TRPCError } from '@trpc/server'
-import { Context } from './context'
+import { initTRPC, TRPCError } from "@trpc/server";
+import superjson from "superjson";
+import { Context } from "./context";
 
-const t = initTRPC.context<Context>().create()
+const t = initTRPC.context<Context>().create({
+  transformer: superjson,
+});
 
 const timingMiddleware = t.middleware(async ({ path, type, next, ctx }) => {
 	const start = performance.now()

@@ -7,7 +7,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import ImageCropperModal from "@/components/imageCropper";
 import { TitleSection } from "./form-sections/title-section";
 import { CaptionSection } from "./form-sections/caption-section";
@@ -23,19 +31,32 @@ import CollaboratorSelect from "./CollaboratorSelect";
 // import { ProjectCollaborators } from "./ProjectCollaborators";
 
 const projectFormSchema = z.object({
-  title: z.string().min(1, "Title is required").max(100, "Title must be 100 characters or less"),
+  title: z
+    .string()
+    .min(1, "Title is required")
+    .max(100, "Title must be 100 characters or less"),
   caption: z.string().min(1, "Caption (content) is required"),
-  githubUrl: z.string().url("Please enter a valid URL if provided, or leave empty to clear.").optional().or(z.literal("")),
-  figmaUrl: z.string().url("Please enter a valid URL if provided, or leave empty to clear.").optional().or(z.literal("")),
+  githubUrl: z
+    .string()
+    .url("Please enter a valid URL if provided, or leave empty to clear.")
+    .optional()
+    .or(z.literal("")),
+  figmaUrl: z
+    .string()
+    .url("Please enter a valid URL if provided, or leave empty to clear.")
+    .optional()
+    .or(z.literal("")),
   category: z.string().min(1, "Category is required"),
-  collaborators: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      username: z.string(),
-      photo_profile: z.string().optional(),
-    })
-  ).nullish(),
+  collaborators: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        username: z.string(),
+        photo_profile: z.string().optional(),
+      }),
+    )
+    .nullish(),
 });
 
 export type ProjectFormValues = z.infer<typeof projectFormSchema>;
@@ -58,9 +79,11 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
 
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
 
-  const { data: fetchedCategories, isLoading: isLoadingCategories } = trpc.category.getAll.useQuery(undefined, {
-    enabled: isUserLoaded && (mode === "create" || (mode === "edit" && !!project)),
-  });
+  const { data: fetchedCategories, isLoading: isLoadingCategories } =
+    trpc.category.getAll.useQuery(undefined, {
+      enabled:
+        isUserLoaded && (mode === "create" || (mode === "edit" && !!project)),
+    });
 
   const availableCategories = useMemo(() => {
     return fetchedCategories?.data ?? [];
@@ -69,7 +92,12 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      title: "", caption: "", githubUrl: "", figmaUrl: "", category: "", collaborators: [],
+      title: "",
+      caption: "",
+      githubUrl: "",
+      figmaUrl: "",
+      category: "",
+      collaborators: [],
     },
   });
 
@@ -83,12 +111,24 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
         category: project.category?.id || "",
       });
       const existingImageUrls = [
-        project.image1, project.image2, project.image3, project.image4, project.image5,
-      ].map(url => url ? getPublicUrl(url) : "").filter(Boolean) as string[];
+        project.image1,
+        project.image2,
+        project.image3,
+        project.image4,
+        project.image5,
+      ]
+        .map((url) => (url ? getPublicUrl(url) : ""))
+        .filter(Boolean) as string[];
       setImagePreviews(existingImageUrls);
       setImageFiles([]);
     } else if (mode === "create") {
-      form.reset({ title: "", caption: "", githubUrl: "", figmaUrl: "", category: "" });
+      form.reset({
+        title: "",
+        caption: "",
+        githubUrl: "",
+        figmaUrl: "",
+        category: "",
+      });
       setImagePreviews([]);
       setImageFiles([]);
     }
@@ -102,35 +142,44 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
     },
     onError: (error) => {
       setIsSubmittingForm(false);
-      form.setError("root", { message: error.message || "Failed to create project." });
+      form.setError("root", {
+        message: error.message || "Failed to create project.",
+      });
     },
   });
 
   const projectUpdateMutation = trpc.project.edit.useMutation({
     onSuccess: (data) => {
       setIsSubmittingForm(false);
-      if (project) {
-        utils.project.getOne.invalidate({ id: project.id, id_user: user?.id });
-        utils.project.getOne.invalidate({ id: project.slug, id_user: user?.id });
+      if (project && user?.id) {
+        utils.project.getOne.invalidate({ id: project.id, id_user: user.id });
+        utils.project.getOne.invalidate({ id: project.slug, id_user: user.id });
       }
       utils.project.getAll.invalidate();
       router.replace(`/project/${data.data.slug}`);
     },
     onError: (error) => {
       setIsSubmittingForm(false);
-      form.setError("root", { message: error.message || "Failed to update project." });
+      form.setError("root", {
+        message: error.message || "Failed to update project.",
+      });
     },
   });
 
   // handleCropComplete for CREATE mode (appends to list)
   // This is called by ImageCropperModal
   const handleCropComplete = (croppedFile: File) => {
-    if (mode === "create") { // Ensure this logic only runs in create mode
-      if (imageFiles.length < 5) { // Max 5 images
-        setImageFiles(prevFiles => [...prevFiles, croppedFile]);
+    if (mode === "create") {
+      // Ensure this logic only runs in create mode
+      if (imageFiles.length < 5) {
+        // Max 5 images
+        setImageFiles((prevFiles) => [...prevFiles, croppedFile]);
         const reader = new FileReader();
         reader.onload = () => {
-          setImagePreviews(prevPreviews => [...prevPreviews, reader.result as string]);
+          setImagePreviews((prevPreviews) => [
+            ...prevPreviews,
+            reader.result as string,
+          ]);
         };
         reader.readAsDataURL(croppedFile);
       }
@@ -139,7 +188,10 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
     setTempImageSrc(null); // Always clear temp image
   };
 
-  async function uploadImagesToApi(files: File[], folder: string): Promise<string[]> {
+  async function uploadImagesToApi(
+    files: File[],
+    folder: string,
+  ): Promise<string[]> {
     const formData = new FormData();
     files.forEach((file, index) => {
       formData.append(`files[${index}]`, file);
@@ -183,7 +235,6 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
         }
         console.log("Uploaded files:", uploadedImagePaths);
 
-
         const finalImagePaths = new Array(5).fill(undefined);
         uploadedImagePaths.forEach((path, index) => {
           if (index < 5) finalImagePaths[index] = path;
@@ -198,7 +249,7 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
           image4: finalImagePaths[3],
           image5: finalImagePaths[4],
           is_archived: false,
-          collaborators: (data.collaborators ?? []).map(collab => ({
+          collaborators: (data.collaborators ?? []).map((collab) => ({
             id: collab.id,
             name: collab.name,
             username: collab.username,
@@ -207,7 +258,11 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
         });
       } catch (error) {
         setIsSubmittingForm(false);
-        form.setError("root", { message: (error as Error).message || "Image upload or project creation failed." });
+        form.setError("root", {
+          message:
+            (error as Error).message ||
+            "Image upload or project creation failed.",
+        });
       }
     } else if (mode === "edit" && project && project.id) {
       await projectUpdateMutation.mutateAsync({
@@ -252,7 +307,11 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
               setShowCropper={setShowCropper}
               isEditMode={mode === "edit"}
             />
-            {mode === "edit" && <p className="text-sm text-muted-foreground text-center">Image editing is not available for existing projects.</p>}
+            {mode === "edit" && (
+              <p className="text-sm text-muted-foreground text-center">
+                Image editing is not available for existing projects.
+              </p>
+            )}
 
             <CategorySection
               form={form}
@@ -269,7 +328,10 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
                   <FormItem>
                     <FormLabel>Collaborators</FormLabel>
                     <FormControl>
-                      <CollaboratorSelect value={field.value || []} onChange={field.onChange} />
+                      <CollaboratorSelect
+                        value={field.value || []}
+                        onChange={field.onChange}
+                      />
                     </FormControl>
                     <FormDescription>
                       Tambahkan user yang akan berkolaborasi.
@@ -278,7 +340,6 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
                   </FormItem>
                 )}
               />
-
             )}
           </div>
           {form.formState.errors.root && (
@@ -287,10 +348,18 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
           <div className="flex w-full pt-4">
             <Button
               type="submit"
-              disabled={isSubmittingForm || !isUserLoaded || isLoadingCategories}
+              disabled={
+                isSubmittingForm || !isUserLoaded || isLoadingCategories
+              }
               className="w-full bg-primary text-white px-6 py-2.5 rounded-md hover:bg-primary-foreground text-sm font-medium transition-all duration-200 active:scale-90"
             >
-              {isSubmittingForm ? (mode === "create" ? "Posting..." : "Updating...") : (mode === "create" ? "Post" : "Update Project")}
+              {isSubmittingForm
+                ? mode === "create"
+                  ? "Posting..."
+                  : "Updating..."
+                : mode === "create"
+                  ? "Post"
+                  : "Update Project"}
             </Button>
           </div>
         </form>
