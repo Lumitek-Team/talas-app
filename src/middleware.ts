@@ -22,15 +22,6 @@ const isProtectedRoute = createRouteMatcher([
   "/search(.*)", // search is within the authenticated feed
 ]);
 
-// Public routes — accessible without login (for recruiters and visitors)
-const isPublicRoute = createRouteMatcher([
-  "/", // homepage
-  "/profile/(.*)", // viewing profiles is public (recruiters must see portfolios)
-  "/project/(.*)", // viewing projects is public (no login wall for portfolios)
-  "/sign-in(.*)", // sign-in page
-  "/sign-up(.*)", // sign-up page
-]);
-
 export default clerkMiddleware(async (auth, req) => {
   // If it's a protected route, require authentication
   if (isProtectedRoute(req)) {

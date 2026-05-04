@@ -54,13 +54,11 @@ export interface ProjectWithInteractionsType {
 }
 
 export interface UserSearchType {
+  id: string;
   name: string;
   username: string;
   photo_profile: string;
   github: string;
-  instagram: string;
-  linkedin: string;
-  gender: string;
   count_summary: {
     count_project: number;
     count_follower: number;
@@ -138,7 +136,6 @@ export interface ProjectOneType {
       photo_profile?: string;
     };
     ownership: ownershipType;
-    collabStatus: collabStatusType;
   }[];
 }
 
@@ -271,21 +268,6 @@ export interface RequestCollabType {
         photo_profile?: string | null;
       };
     }[];
-  };
-}
-
-export interface UserSearchType {
-  name: string;
-  username: string;
-  photo_profile: string;
-  github: string;
-  instagram: string;
-  linkedin: string;
-  gender: string;
-  count_summary: {
-    count_project: number;
-    count_follower: number;
-    count_following: number;
   };
 }
 
