@@ -49,3 +49,6 @@ next-env.d.ts
 .env.local
 .env.*.local
 enveuy
+
+# local-only documentation
+/Docs/
