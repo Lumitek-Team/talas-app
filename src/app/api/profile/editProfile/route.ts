@@ -34,9 +34,6 @@ export async function POST(req: Request) {
 		const newImagePath = await uploadImage(file, secureFolder, supabaseToken || undefined);
 
 		return NextResponse.json({ newImagePath });
-
-		// Return the relative path
-		return NextResponse.json({ newImagePath });
 	} catch (error) {
 		console.error("Error editing profile image:", error);
 		return NextResponse.json(

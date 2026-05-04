@@ -8,7 +8,7 @@ import {
 	SelectCollabType,
 	UserProjectsCondition,
 } from "@/lib/type";
-import { retryConnect } from "@/lib/utils";
+import { toProjectWithInteractionsDTO } from "@/lib/dto";
 import { Notification } from "@prisma/client";
 import { z } from "zod";
 
@@ -24,13 +24,11 @@ export const userRouter = router({
 			})
 		)
 		.mutation(async ({ input }) => {
-			const existingUser = await retryConnect(() =>
-				prisma.user.findFirst({
-					where: {
-						OR: [{ id: input.id }, { email: input.email }],
-					},
-				})
-			);
+			const existingUser = await prisma.user.findFirst({
+				where: {
+					OR: [{ id: input.id }, { email: input.email }],
+				},
+			});
 
 			let username = input.email.split("@")[0];
 
@@ -39,12 +37,10 @@ export const userRouter = router({
 				let unique = false;
 				let candidate = username;
 				while (!unique) {
-					const userWithUsername = await retryConnect(() =>
-						prisma.user.findFirst({
-							where: { username: candidate },
-							select: { id: true },
-						})
-					);
+					const userWithUsername = await prisma.user.findFirst({
+						where: { username: candidate },
+						select: { id: true },
+					});
 					if (!userWithUsername) {
 						username = candidate;
 						unique = true;
@@ -58,22 +54,20 @@ export const userRouter = router({
 			try {
 				if (!existingUser) {
 					// FIX: Use a nested create to make the User and their count_summary at the same time.
-					const user = await retryConnect(() =>
-						prisma.user.create({
-							data: {
-								id: input.id,
-								username: username,
-								name: input.name,
-								email: input.email,
-								auth_type: input.auth_type,
-								photo_profile: input.photo_profile,
-								// This line creates the associated count_summary record automatically
-								count_summary: {
-									create: {},
-								},
+					const user = await prisma.user.create({
+						data: {
+							id: input.id,
+							username: username,
+							name: input.name,
+							email: input.email,
+							auth_type: input.auth_type,
+							photo_profile: input.photo_profile,
+							// This line creates the associated count_summary record automatically
+							count_summary: {
+								create: {},
 							},
-						})
-					);
+						},
+					});
 
 					return {
 						success: true,
@@ -105,23 +99,21 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data = await retryConnect(() =>
-					prisma.user.findMany({
-						take: input?.limit,
-						skip: input?.offset,
-						select: {
-							username: true,
-							name: true,
-							bio: true,
-							photo_profile: true,
-							instagram: true,
-							linkedin: true,
-							github: true,
-							gender: true,
-							email_contact: true,
-						},
-					})
-				);
+				const data = await prisma.user.findMany({
+					take: input?.limit,
+					skip: input?.offset,
+					select: {
+						username: true,
+						name: true,
+						bio: true,
+						photo_profile: true,
+						instagram: true,
+						linkedin: true,
+						github: true,
+						gender: true,
+						email_contact: true,
+					},
+				});
 
 				return {
 					success: true,
@@ -141,33 +133,31 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data = await retryConnect(() =>
-					prisma.user.findUnique({
-						where: {
-							id: input.id,
-						},
-						select: {
-							id: true,
-							username: true,
-							name: true,
-							bio: true,
-							photo_profile: true,
-							instagram: true,
-							linkedin: true,
-							github: true,
-							gender: true,
-							email_contact: true,
-							count_summary: {
-								select: {
-									count_project: true,
-									count_follower: true,
-									count_following: true,
-									all_notif_read: true,
-								},
+				const data = await prisma.user.findUnique({
+					where: {
+						id: input.id,
+					},
+					select: {
+						id: true,
+						username: true,
+						name: true,
+						bio: true,
+						photo_profile: true,
+						instagram: true,
+						linkedin: true,
+						github: true,
+						gender: true,
+						email_contact: true,
+						count_summary: {
+							select: {
+								count_project: true,
+								count_follower: true,
+								count_following: true,
+								all_notif_read: true,
 							},
 						},
-					})
-				);
+					},
+				});
 
 				return {
 					success: true,
@@ -187,32 +177,30 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data = await retryConnect(() =>
-					prisma.user.findFirst({
-						where: {
-							username: input.username,
-						},
-						select: {
-							id: true,
-							username: true,
-							name: true,
-							bio: true,
-							photo_profile: true,
-							instagram: true,
-							linkedin: true,
-							github: true,
-							gender: true,
-							email_contact: true,
-							count_summary: {
-								select: {
-									count_project: true,
-									count_follower: true,
-									count_following: true,
-								},
+				const data = await prisma.user.findFirst({
+					where: {
+						username: input.username,
+					},
+					select: {
+						id: true,
+						username: true,
+						name: true,
+						bio: true,
+						photo_profile: true,
+						instagram: true,
+						linkedin: true,
+						github: true,
+						gender: true,
+						email_contact: true,
+						count_summary: {
+							select: {
+								count_project: true,
+								count_follower: true,
+								count_following: true,
 							},
 						},
-					})
-				);
+					},
+				});
 
 				return {
 					success: true,
@@ -234,24 +222,22 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const followers: FollowerType[] = await retryConnect(() =>
-					prisma.follow.findMany({
-						where: {
-							id_following: input.id_following,
-						},
-						take: input.limit,
-						skip: input.offset,
-						select: {
-							follower: {
-								select: {
-									username: true,
-									name: true,
-									photo_profile: true,
-								},
+				const followers: FollowerType[] = await prisma.follow.findMany({
+					where: {
+						id_following: input.id_following,
+					},
+					take: input.limit,
+					skip: input.offset,
+					select: {
+						follower: {
+							select: {
+								username: true,
+								name: true,
+								photo_profile: true,
 							},
 						},
-					})
-				);
+					},
+				});
 
 				const data = followers.map((follow) => ({
 					...follow.follower,
@@ -277,24 +263,22 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const followings: FollowingType[] = await retryConnect(() =>
-					prisma.follow.findMany({
-						where: {
-							id_follower: input.id_follower,
-						},
-						take: input.limit,
-						skip: input.offset,
-						select: {
-							following: {
-								select: {
-									username: true,
-									name: true,
-									photo_profile: true,
-								},
+				const followings: FollowingType[] = await prisma.follow.findMany({
+					where: {
+						id_follower: input.id_follower,
+					},
+					take: input.limit,
+					skip: input.offset,
+					select: {
+						following: {
+							select: {
+								username: true,
+								name: true,
+								photo_profile: true,
 							},
 						},
-					})
-				);
+					},
+				});
 
 				const data = followings.map((follow) => ({
 					...follow.following,
@@ -319,16 +303,14 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data = await retryConnect(() =>
-					prisma.user.findFirst({
-						where: {
-							OR: [{ id: input.id }, { username: input.username }],
-						},
-						select: {
-							photo_profile: true,
-						},
-					})
-				);
+				const data = await prisma.user.findFirst({
+					where: {
+						OR: [{ id: input.id }, { username: input.username }],
+					},
+					select: {
+						photo_profile: true,
+					},
+				});
 
 				return {
 					success: true,
@@ -361,57 +343,51 @@ export const userRouter = router({
 			try {
 				// Cek jika username ingin diubah, pastikan unik
 				if (input.data.username) {
-					const existing = await retryConnect(() =>
-						prisma.user.findFirst({
-							where: {
-								username: input.data.username,
-								id: { not: input.id },
-							},
-							select: { id: true },
-						})
-					);
+					const existing = await prisma.user.findFirst({
+						where: {
+							username: input.data.username,
+							id: { not: input.id },
+						},
+						select: { id: true },
+					});
 					if (existing) {
 						throw new Error("Username sudah digunakan oleh pengguna lain.");
 					}
 				}
 
-				await retryConnect(() =>
-					prisma.user.update({
-						where: {
-							id: input.id,
-						},
-						data: {
-							...input.data,
-						},
-					})
-				);
+				await prisma.user.update({
+					where: {
+						id: input.id,
+					},
+					data: {
+						...input.data,
+					},
+				});
 
-				const updatedUser = await retryConnect(() =>
-					prisma.user.findUnique({
-						where: {
-							id: input.id,
-						},
-						select: {
-							username: true,
-							name: true,
-							bio: true,
-							photo_profile: true,
-							instagram: true,
-							linkedin: true,
-							github: true,
-							gender: true,
-							email_contact: true,
-							count_summary: {
-								select: {
-									count_project: true,
-									count_follower: true,
-									count_following: true,
-									all_notif_read: true,
-								},
+				const updatedUser = await prisma.user.findUnique({
+					where: {
+						id: input.id,
+					},
+					select: {
+						username: true,
+						name: true,
+						bio: true,
+						photo_profile: true,
+						instagram: true,
+						linkedin: true,
+						github: true,
+						gender: true,
+						email_contact: true,
+						count_summary: {
+							select: {
+								count_project: true,
+								count_follower: true,
+								count_following: true,
+								all_notif_read: true,
 							},
 						},
-					})
-				);
+					},
+				});
 
 				return {
 					success: true,
@@ -437,90 +413,88 @@ export const userRouter = router({
 			const limit = input.limit ?? 12;
 			const { cursor } = input;
 			try {
-				const bookmarks = await retryConnect(() =>
-					prisma.bookmark.findMany({
-						where: {
-							id_user: input.id,
-						},
-						take: limit + 1,
-						cursor: cursor ? { id: cursor } : undefined,
-						orderBy: {
-							created_at: "desc",
-						},
-						select: {
-							id: true,
-							id_user: true,
-							project: {
-								select: {
-									id: true,
-									title: true,
-									slug: true,
-									content: true,
-									image1: true,
-									image2: true,
-									image3: true,
-									image4: true,
-									image5: true,
-									video: true,
-									count_likes: true,
-									count_comments: true,
-									link_figma: true,
-									link_github: true,
-									created_at: true,
-									updated_at: true,
-									category: {
-										select: {
-											id: true,
-											title: true,
-											slug: true,
-										},
+				const bookmarks = await prisma.bookmark.findMany({
+					where: {
+						id_user: input.id,
+					},
+					take: limit + 1,
+					cursor: cursor ? { id: cursor } : undefined,
+					orderBy: {
+						created_at: "desc",
+					},
+					select: {
+						id: true,
+						id_user: true,
+						project: {
+							select: {
+								id: true,
+								title: true,
+								slug: true,
+								content: true,
+								image1: true,
+								image2: true,
+								image3: true,
+								image4: true,
+								image5: true,
+								video: true,
+								count_likes: true,
+								count_comments: true,
+								link_figma: true,
+								link_github: true,
+								created_at: true,
+								updated_at: true,
+								category: {
+									select: {
+										id: true,
+										title: true,
+										slug: true,
 									},
-									project_user: {
-										select: {
-											user: {
-												select: {
-													id: true,
-													name: true,
-													username: true,
-													photo_profile: true,
-												},
-											},
-											ownership: true,
-											collabStatus: true,
-										},
-										where: {
-											OR: [
-												{
-													ownership: "OWNER",
-												},
-												{
-													ownership: "COLLABORATOR",
-													collabStatus: "ACCEPTED",
-												},
-											],
-										},
-										orderBy: {
-											created_at: "asc",
-										},
-									},
-									bookmarks: input.id_user
-										? {
-												where: { id_user: input.id_user },
-												select: { id: true },
-										  }
-										: false,
-									LikeProject: input.id_user
-										? {
-												where: { id_user: input.id_user },
-												select: { id: true },
-										  }
-										: false,
 								},
+								project_user: {
+									select: {
+										user: {
+											select: {
+												id: true,
+												name: true,
+												username: true,
+												photo_profile: true,
+											},
+										},
+										ownership: true,
+										collabStatus: true,
+									},
+									where: {
+										OR: [
+											{
+												ownership: "OWNER",
+											},
+											{
+												ownership: "COLLABORATOR",
+												collabStatus: "ACCEPTED",
+											},
+										],
+									},
+									orderBy: {
+										created_at: "asc",
+									},
+								},
+								bookmarks: input.id_user
+									? {
+											where: { id_user: input.id_user },
+											select: { id: true },
+									  }
+									: false,
+								LikeProject: input.id_user
+									? {
+											where: { id_user: input.id_user },
+											select: { id: true },
+									  }
+									: false,
 							},
-							created_at: true,
 						},
-					})
-				);
+						created_at: true,
+					},
+				});
 
 				const hasNextPage = bookmarks.length > limit;
 				const items = hasNextPage ? bookmarks.slice(0, -1) : bookmarks;
@@ -543,23 +517,26 @@ export const userRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const data: SelectCollabType[] = await retryConnect(() =>
-					prisma.user.findMany({
-						where: {
-							id: { not: input.id_user }, // exclude self
-							OR: [
-								{ username: { contains: input.query } },
-								{ name: { contains: input.query } },
-							],
-						},
-						select: {
-							id: true,
-							name: true,
-							username: true,
-							photo_profile: true,
-						},
-					})
-				);
+				const data: SelectCollabType[] = (await prisma.user.findMany({
+					where: {
+						id: { not: input.id_user }, // exclude self
+						OR: [
+							{ username: { contains: input.query } },
+							{ name: { contains: input.query } },
+						],
+					},
+					select: {
+						id: true,
+						name: true,
+						username: true,
+						photo_profile: true,
+					},
+				}))
+					.map((u) => ({
+						...u,
+						photo_profile: u.photo_profile ?? undefined,
+					}));
+
 				return {
 					success: true,
 					message: "Successfully get options for collaborator",
@@ -587,22 +564,20 @@ export const userRouter = router({
 			oneMonthAgo.setMonth(now.getMonth() - 1);
 
 			try {
-				const notifications: Notification[] = await retryConnect(() =>
-					prisma.notification.findMany({
-						where: {
-							id_user: input.id_user,
-							created_at: {
-								gte: oneMonthAgo,
-								lte: now,
-							},
+				const notifications: Notification[] = await prisma.notification.findMany({
+					where: {
+						id_user: input.id_user,
+						created_at: {
+							gte: oneMonthAgo,
+							lte: now,
 						},
-						take: limit + 1,
-						cursor: cursor ? { id: cursor } : undefined,
-						orderBy: {
-							created_at: "desc",
-						},
-					})
-				);
+					},
+					take: limit + 1,
+					cursor: cursor ? { id: cursor } : undefined,
+					orderBy: {
+						created_at: "desc",
+					},
+				});
 
 				const hasNextPage = notifications.length > limit;
 				const items = hasNextPage ? notifications.slice(0, -1) : notifications;
@@ -619,48 +594,61 @@ export const userRouter = router({
 		.input(z.string())
 		.query(async ({ input }) => {
 			try {
-				const requests: RequestCollabType[] = await retryConnect(() =>
-					prisma.projectUser.findMany({
-						where: {
-							id_user: input,
-							collabStatus: "PENDING",
-						},
-						select: {
-							id: true,
-							created_at: true, // Ensure created_at is selected
-							project: {
-								select: {
-									id: true,
-									title: true,
-									slug: true,
-									image1: true,
-									image2: true,
-									image3: true,
-									image4: true,
-									image5: true,
-									project_user: {
-										where: {
-											id_user: { not: input },
-											ownership: "OWNER",
-										},
-										select: {
-											user: {
-												select: {
-													username: true,
-													name: true,
-													photo_profile: true,
-												},
+				const requests: RequestCollabType[] = (await prisma.projectUser.findMany({
+					where: {
+						id_user: input,
+						collabStatus: "PENDING",
+					},
+					select: {
+						id: true,
+						created_at: true, // Ensure created_at is selected
+						project: {
+							select: {
+								id: true,
+								title: true,
+								slug: true,
+								image1: true,
+								image2: true,
+								image3: true,
+								image4: true,
+								image5: true,
+								project_user: {
+									select: {
+										user: {
+											select: {
+												username: true,
+												name: true,
+												photo_profile: true,
 											},
 										},
 									},
 								},
 							},
 						},
-						orderBy: {
-							created_at: "desc",
+					},
+				}))
+					.map((r) => ({
+						id: r.id,
+						created_at: r.created_at.toISOString(),
+						project: {
+							id: r.project.id,
+							title: r.project.title,
+							slug: r.project.slug,
+							image1: r.project.image1 ?? undefined,
+							image2: r.project.image2 ?? undefined,
+							image3: r.project.image3 ?? undefined,
+							image4: r.project.image4 ?? undefined,
+							image5: r.project.image5 ?? undefined,
+							project_user: r.project.project_user.map((pu) => ({
+								user: {
+									username: pu.user.username,
+									name: pu.user.name,
+									photo_profile: pu.user.photo_profile ?? undefined,
+								},
+							})),
 						},
-					})
-				);
+					}));
+
 				return {
 					success: true,
 					message: "Successfully get request collaboration",
@@ -709,69 +697,67 @@ export const userRouter = router({
 					};
 				}
 
-				const projects = await retryConnect(() =>
-					prisma.project.findMany({
-						where,
-						select: {
-							id: true,
-							title: true,
-							slug: true,
-							content: true,
-							image1: true,
-							image2: true,
-							image3: true,
-							image4: true,
-							image5: true,
-							video: true,
-							count_likes: true,
-							count_comments: true,
-							link_figma: true,
-							link_github: true,
-							created_at: true,
-							updated_at: true,
-							category: {
-								select: {
-									id: true,
-									title: true,
-									slug: true,
-								},
+				const projects = await prisma.project.findMany({
+					where,
+					select: {
+						id: true,
+						title: true,
+						slug: true,
+						content: true,
+						image1: true,
+						image2: true,
+						image3: true,
+						image4: true,
+						image5: true,
+						video: true,
+						count_likes: true,
+						count_comments: true,
+						link_figma: true,
+						link_github: true,
+						created_at: true,
+						updated_at: true,
+						category: {
+							select: {
+								id: true,
+								title: true,
+								slug: true,
 							},
-							project_user: {
-								select: {
-									user: {
-										select: {
-											id: true,
-											name: true,
-											username: true,
-											photo_profile: true,
-										},
+						},
+						project_user: {
+							select: {
+								user: {
+									select: {
+										id: true,
+										name: true,
+										username: true,
+										photo_profile: true,
 									},
-									ownership: true,
 								},
-								orderBy: {
-									created_at: "asc",
-								},
+								ownership: true,
 							},
-							bookmarks: id_user
-								? {
-										where: { id_user: id_user },
-										select: { id: true },
-								  }
-								: false,
-							LikeProject: id_user
-								? {
-										where: { id_user: id_user },
-										select: { id: true },
-								  }
-								: false,
+							orderBy: {
+								created_at: "asc",
+							},
 						},
-						orderBy: {
-							created_at: "desc",
-						},
-						take: limit + 1,
-						cursor: cursor ? { id: cursor } : undefined,
-					})
-				);
+						bookmarks: id_user
+							? {
+									where: { id_user: id_user },
+									select: { id: true },
+							  }
+							: false,
+						LikeProject: id_user
+							? {
+									where: { id_user: id_user },
+									select: { id: true },
+							  }
+							: false,
+					},
+					orderBy: {
+						created_at: "desc",
+					},
+					take: limit + 1,
+					cursor: cursor ? { id: cursor } : undefined,
+				});
 
 				let nextCursor: typeof cursor | undefined = undefined;
 
@@ -780,23 +766,21 @@ export const userRouter = router({
 					nextCursor = nextItem!.id;
 				}
 
-				// Add is_bookmarked property
-				const ProjectWithInteractionsType = projects.map(
-					(p: ProjectWithInteractionsType) => ({
-						...p,
-						is_bookmarked: id_user
-							? p.bookmarks && p.bookmarks.length > 0
-							: false,
-						is_liked: id_user
-							? p.LikeProject && p.LikeProject.length > 0
-							: false,
-					})
+				// Add is_bookmarked / is_liked and serialize to DTO
+				const data: ProjectWithInteractionsType[] = projects.map((p) =>
+					toProjectWithInteractionsDTO({
+						...(p as unknown as Parameters<typeof toProjectWithInteractionsDTO>[0]),
+						id_category: (p as unknown as { id_category?: string | null }).id_category,
+						is_archived: false,
+						is_bookmarked: id_user ? !!p.bookmarks?.length : false,
+						is_liked: id_user ? !!p.LikeProject?.length : false,
+					}),
 				);
 
 				return {
 					success: true,
 					message: "Successfully get all projects in user",
-					data: ProjectWithInteractionsType,
+					data,
 					nextCursor,
 				};
 			} catch (error) {
@@ -813,74 +797,77 @@ export const userRouter = router({
 		.query(async ({ input }) => {
 			const { id_user } = input;
 			try {
-				const pinnedProjects = await retryConnect(() =>
-					prisma.project.findMany({
-						where: {
-							pinProject: {
-								some: { id_user: id_user },
+				const pinnedProjects = await prisma.project.findMany({
+					where: {
+						pinProject: {
+							some: { id_user: id_user },
+						},
+					},
+					select: {
+						id: true,
+						id_category: true,
+						slug: true,
+						title: true,
+						content: true,
+						is_archived: true,
+						image1: true,
+						image2: true,
+						image3: true,
+						image4: true,
+						image5: true,
+						video: true,
+						count_likes: true,
+						count_comments: true,
+						link_figma: true,
+						link_github: true,
+						created_at: true,
+						updated_at: true,
+						category: {
+							select: {
+								id: true,
+								title: true,
+								slug: true,
 							},
 						},
-						select: {
-							id: true,
-							id_category: true,
-							slug: true,
-							title: true,
-							content: true,
-							is_archived: true,
-							image1: true,
-							image2: true,
-							image3: true,
-							image4: true,
-							image5: true,
-							video: true,
-							count_likes: true,
-							count_comments: true,
-							link_figma: true,
-							link_github: true,
-							created_at: true,
-							updated_at: true,
-							category: {
-								select: {
-									id: true,
-									title: true,
-									slug: true,
-								},
-							},
-							project_user: {
-								select: {
-									user: {
-										select: {
-											id: true,
-											name: true,
-											username: true,
-											photo_profile: true,
-										},
+						project_user: {
+							select: {
+								user: {
+									select: {
+										id: true,
+										name: true,
+										username: true,
+										photo_profile: true,
 									},
 								},
-								orderBy: {
-									created_at: "asc",
-								},
 							},
-							bookmarks: {
-								where: { id_user: id_user },
-								select: { id: true },
-							},
-							LikeProject: {
-								where: { id_user: id_user },
-								select: { id: true },
+							orderBy: {
+								created_at: "asc",
 							},
 						},
-						orderBy: {
-							created_at: "desc",
+						bookmarks: {
+							where: { id_user: id_user },
+							select: { id: true },
 						},
-					})
-				);
+						LikeProject: {
+							where: { id_user: id_user },
+							select: { id: true },
+						},
+					},
+					orderBy: {
+						created_at: "desc",
+					},
+				});
 
-				const data = pinnedProjects.map((p: ProjectWithInteractionsType) => ({
-					...p,
-					is_bookmarked: p.bookmarks && p.bookmarks.length > 0,
-					is_liked: p.LikeProject && p.LikeProject.length > 0,
-				}));
+				// Add is_bookmarked / is_liked and serialize to DTO
+				const data: ProjectWithInteractionsType[] = pinnedProjects.map((p) =>
+					toProjectWithInteractionsDTO({
+						...(p as unknown as Parameters<typeof toProjectWithInteractionsDTO>[0]),
+						id_category: p.id_category,
+						is_archived: p.is_archived,
+						is_bookmarked: !!p.bookmarks?.length,
+						is_liked: !!p.LikeProject?.length,
+					}),
+				);
 
 				return {
 					success: true,
