@@ -45,4 +45,12 @@ next-env.d.ts
 
 /public/storage/*
 
-/.zed/
+.zed
+
+# local env files and misc sensitive
+.env.local
+.env.*.local
+enveuy
+
+# local-only documentation
+/Docs/

@@ -7,20 +7,20 @@ import { toProjectWithInteractionsDTO, toUserSearchDTO } from "@/lib/dto";
 import { Prisma } from "@prisma/client";
 
 export const searchRouter = router({
-	search: protectedProcedure
-		.input(
-			z.object({
-				search: z.string().max(100).optional(),
-				type: z.enum(["PROJECT", "USER", "CATEGORY"]),
-				category: z.string().optional(),
-				limit: z.number().min(1).max(100).nullish(),
-				cursor: z.string().nullish(),
-				id_user: z.string(),
-			})
-		)
-		.query(async ({ input }) => {
-			const limit = input.limit ?? 50;
-			const { cursor, id_user } = input;
+  search: protectedProcedure
+    .input(
+      z.object({
+        search: z.string().max(100).optional(),
+        type: z.enum(["PROJECT", "USER", "CATEGORY"]),
+        category: z.string().optional(),
+        limit: z.number().min(1).max(100).nullish(),
+        cursor: z.string().nullish(),
+        id_user: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const limit = input.limit ?? 50;
+      const { cursor, id_user } = input;
 
 			try {
 				switch (input.type) {
@@ -33,9 +33,9 @@ export const searchRouter = router({
 							});
 						}
 
-						const projectWhere: Prisma.ProjectWhereInput = {
-							is_archived: false,
-						};
+            const projectWhere: Prisma.ProjectWhereInput = {
+              is_archived: false,
+            };
 
 						if (input.search && input.search !== "__all__") {
 							projectWhere.title = {
@@ -111,11 +111,11 @@ export const searchRouter = router({
 							cursor: cursor ? { id: cursor } : undefined,
 						});
 
-						let nextCursor: typeof cursor | undefined = undefined;
-						if (projects.length > limit) {
-							const nextItem = projects.pop();
-							nextCursor = nextItem!.id;
-						}
+            let nextCursor: typeof cursor | undefined = undefined;
+            if (projects.length > limit) {
+              const nextItem = projects.pop();
+              nextCursor = nextItem!.id;
+            }
 
 						const projectItems: ProjectWithInteractionsType[] = projects.map((p) =>
 							toProjectWithInteractionsDTO({
@@ -392,20 +392,20 @@ export const searchRouter = router({
 							: false,
 					}));
 
-				return {
-					success: true,
-					message: "Successfully get popular projects",
-					data: ProjectWithInteractionsType,
-				};
-			} catch (error) {
-				throw new TRPCError({
-					code: "INTERNAL_SERVER_ERROR",
-					message: `Failed to get popular projects: ${
-						error instanceof Error ? error.message : "Unknown error"
-					}`,
-				});
-			}
-		}),
+        return {
+          success: true,
+          message: "Successfully get popular projects",
+          data: ProjectWithInteractionsType,
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to get popular projects: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+        });
+      }
+    }),
 });
 
 export type SearchRouter = typeof searchRouter;

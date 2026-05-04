@@ -82,7 +82,9 @@ export function CardProjectProfile({
       onMutateSuccess?.();
     },
     onError: (error) => {
-      console.error("Delete Error", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Delete Error", error);
+      }
     },
   });
 
@@ -93,7 +95,9 @@ export function CardProjectProfile({
       onMutateSuccess?.();
     },
     onError: (err) => {
-      console.error("Pin Error", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Pin Error", err);
+      }
     },
   });
 
@@ -104,7 +108,9 @@ export function CardProjectProfile({
       onMutateSuccess?.();
     },
     onError: (err) => {
-      console.error("Unpin Error", err);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Unpin Error", err);
+      }
     },
   });
 
@@ -130,7 +136,7 @@ export function CardProjectProfile({
   };
 
   const isOwner = project.project_user.some(
-    (pu) => pu.ownership === "OWNER" && pu.user.id === userId
+    (pu) => pu.ownership === "OWNER" && pu.user.id === userId,
   );
 
   return (
@@ -161,7 +167,9 @@ export function CardProjectProfile({
         onOpenChange={setDeleteDialogOpen}
         title="Delete Project"
         description="Are you sure you want to delete this project? This action cannot be undone."
-        onConfirm={() => deleteProject.mutate({ id: project.id, id_user: userId })}
+        onConfirm={() =>
+          deleteProject.mutate({ id: project.id, id_user: userId })
+        }
         confirmText="Delete"
         confirmButtonVariant="destructive"
       />

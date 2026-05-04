@@ -14,12 +14,12 @@ export async function POST(req: Request) {
 		const formData = await req.formData();
 		const folder = formData.get("folder") as string | undefined;
 
-		if (!folder) {
-			return NextResponse.json(
-				{ error: "Folder is required." },
-				{ status: 400 }
-			);
-		}
+    if (!folder) {
+      return NextResponse.json(
+        { error: "Folder is required." },
+        { status: 400 },
+      );
+    }
 
 		// Prepend userId for secure path
 		const secureFolder = `${userId}/${folder}`;
@@ -31,12 +31,12 @@ export async function POST(req: Request) {
 			}
 		});
 
-		if (files.length === 0) {
-			return NextResponse.json(
-				{ error: "No files provided." },
-				{ status: 400 }
-			);
-		}
+    if (files.length === 0) {
+      return NextResponse.json(
+        { error: "No files provided." },
+        { status: 400 },
+      );
+    }
 
 		const filePaths = await Promise.all(
 			files.map((file) => uploadImage(file, secureFolder, supabaseToken || undefined))

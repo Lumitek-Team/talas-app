@@ -8,7 +8,10 @@ import { trpc } from "@/app/_trpc/client";
 import { PageContainer } from "@/components/ui/page-container";
 import { Sidebar } from "@/components/layout/sidebar";
 // Ensure ProjectForm is adapted to handle edit mode and these props
-import { ProjectForm, ProjectFormValues } from "@/components/project/project-form";
+import {
+  ProjectForm,
+  ProjectFormValues,
+} from "@/components/project/project-form";
 import { useEffect, useState } from "react";
 import { ProjectOneType } from "@/lib/type"; // Type for project data
 
@@ -28,18 +31,22 @@ export default function EditProjectPage() {
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 690);
     handleResize(); // Initial check
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const { data: project, isLoading: isLoadingProject, error: projectError } = trpc.project.getOne.useQuery(
+  const {
+    data: project,
+    isLoading: isLoadingProject,
+    error: projectError,
+  } = trpc.project.getOne.useQuery(
     {
       id: projectIdOrSlug, // Pass the slug (or ID) to fetch the project
-      id_user: user!.id,   // Pass current user ID for backend checks (e.g., viewing own archived project)
+      id_user: user!.id, // Pass current user ID for backend checks (e.g., viewing own archived project)
     },
     {
       enabled: !!projectIdOrSlug && isUserLoaded && !!user, // Enable query when slug/ID and user are available
-    }
+    },
   );
 
   // The updateProjectMutation is defined here for clarity, but the actual call
@@ -48,22 +55,31 @@ export default function EditProjectPage() {
   const updateProjectMutation = trpc.project.edit.useMutation({
     onSuccess: (updatedProjectData) => {
       // Invalidate relevant queries to refetch data on other pages
-      utils.project.getOne.invalidate({ id: updatedProjectData.data.slug, id_user: user?.id });
+      utils.project.getOne.invalidate({
+        id: updatedProjectData.data.slug,
+        id_user: user?.id,
+      });
       // If you sometimes query by raw ID, invalidate that too
-      utils.project.getOne.invalidate({ id: updatedProjectData.data.id, id_user: user?.id });
+      utils.project.getOne.invalidate({
+        id: updatedProjectData.data.id,
+        id_user: user?.id,
+      });
       utils.project.getAll.invalidate(); // Invalidate project lists/feeds
       // Potentially invalidate user-specific project lists if they exist
 
-      router.push(`/project/${updatedProjectData.data.slug || projectIdOrSlug}`); // Navigate back to the project detail page
+      router.push(
+        `/project/${updatedProjectData.data.slug || projectIdOrSlug}`,
+      ); // Navigate back to the project detail page
       // Consider adding a success toast notification here
     },
     onError: (error) => {
-      console.error("Failed to update project:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to update project:", error);
+      }
       // Display a toast notification to the user
       alert(`Error updating project: ${error.message}`); // Replace with a proper toast
     },
   });
-
 
   // Page loading states
   if (!isUserLoaded || isLoadingProject) {
@@ -72,7 +88,8 @@ export default function EditProjectPage() {
         <Sidebar />
         <PageContainer title="Loading..." showBackButton={true}>
           <div className="p-6">
-            <p>Loading project details for editing...</p> {/* Consider a skeleton loader here */}
+            <p>Loading project details for editing...</p>{" "}
+            {/* Consider a skeleton loader here */}
           </div>
         </PageContainer>
       </>
@@ -82,12 +99,16 @@ export default function EditProjectPage() {
   // Handling user not signed in (Clerk usually handles this with middleware for protected routes)
   if (isUserLoaded && !user) {
     // This should ideally be caught by route protection, but as a fallback:
-    useEffect(() => { router.push("/sign-in"); }, [router]);
+    useEffect(() => {
+      router.push("/sign-in");
+    }, [router]);
     return (
       <>
         <Sidebar />
         <PageContainer title="Authentication Required" showBackButton={false}>
-          <div className="p-6"><p>Redirecting to sign-in...</p></div>
+          <div className="p-6">
+            <p>Redirecting to sign-in...</p>
+          </div>
         </PageContainer>
       </>
     );
@@ -98,9 +119,17 @@ export default function EditProjectPage() {
     return (
       <>
         <Sidebar />
-        <PageContainer title={projectError ? "Error" : "Project Not Found"} showBackButton={true} backButtonHref="/feeds">
+        <PageContainer
+          title={projectError ? "Error" : "Project Not Found"}
+          showBackButton={true}
+          backButtonHref="/feeds"
+        >
           <div className="p-6">
-            <p>{projectError ? `Could not load project: ${projectError.message}` : "The project you're trying to edit doesn't exist or has been removed."}</p>
+            <p>
+              {projectError
+                ? `Could not load project: ${projectError.message}`
+                : "The project you're trying to edit doesn't exist or has been removed."}
+            </p>
           </div>
         </PageContainer>
       </>
@@ -110,7 +139,7 @@ export default function EditProjectPage() {
   // Authorization: Check if the current user is the owner of the project
   // Assumes project_user[0] is the primary owner.
   const isOwner = project.data.project_user.some(
-    (pu) => pu.ownership === "OWNER" && pu.user.id === user.id
+    (pu) => pu.ownership === "OWNER" && pu.user.id === user.id,
   );
 
   if (!isOwner) {
@@ -122,8 +151,14 @@ export default function EditProjectPage() {
     return (
       <>
         <Sidebar />
-        <PageContainer title="Unauthorized" showBackButton={true} backButtonHref={`/project/${project?.data.slug || projectIdOrSlug}`}>
-          <div className="p-6"><p>You are not authorized to edit this project. Redirecting...</p></div>
+        <PageContainer
+          title="Unauthorized"
+          showBackButton={true}
+          backButtonHref={`/project/${project?.data.slug || projectIdOrSlug}`}
+        >
+          <div className="p-6">
+            <p>You are not authorized to edit this project. Redirecting...</p>
+          </div>
         </PageContainer>
       </>
     );
@@ -145,13 +180,20 @@ export default function EditProjectPage() {
     project.data.image3,
     project.data.image4,
     project.data.image5,
-  ].map(url => url || null); // Use null for empty image slots
+  ].map((url) => url || null); // Use null for empty image slots
 
   return (
     <>
-      <Sidebar activeItem="Create" /> {/* Or a more relevant activeItem like "My Projects" */}
-      <PageContainer title={`Edit: ${project.data.title}`} showBackButton={true} backButtonHref={`/project/${project.data.slug || projectIdOrSlug}`}>
-        <div className={`overflow-hidden ${isMobile ? 'bg-background' : 'bg-card rounded-3xl border border-white/10'}`}>
+      <Sidebar activeItem="Create" />{" "}
+      {/* Or a more relevant activeItem like "My Projects" */}
+      <PageContainer
+        title={`Edit: ${project.data.title}`}
+        showBackButton={true}
+        backButtonHref={`/project/${project.data.slug || projectIdOrSlug}`}
+      >
+        <div
+          className={`overflow-hidden ${isMobile ? "bg-background" : "bg-card rounded-3xl border border-white/10"}`}
+        >
           <div className="p-6 space-y-6">
             {/*
               The ProjectForm component needs to be significantly enhanced to:
@@ -168,7 +210,7 @@ export default function EditProjectPage() {
             <ProjectForm
               mode="edit"
               project={project.data} // Pass the fetched project data directly
-            // initialData, existingImageUrls, projectId props are removed from ProjectForm
+              // initialData, existingImageUrls, projectId props are removed from ProjectForm
             />
           </div>
         </div>
