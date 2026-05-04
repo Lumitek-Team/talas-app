@@ -44,3 +44,8 @@ next-env.d.ts
 /.clerk/
 
 /public/storage/*
+
+# local env files and misc sensitive
+.env.local
+.env.*.local
+enveuy
