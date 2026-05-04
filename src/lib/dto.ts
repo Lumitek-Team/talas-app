@@ -129,6 +129,7 @@ export function toProjectOneDTO(input: {
 }
 
 export function toUserSearchDTO(input: {
+	id: string;
 	name: string | null;
 	username: string;
 	photo_profile: string | null;
@@ -143,13 +144,11 @@ export function toUserSearchDTO(input: {
 	};
 }): UserSearchType {
 	return {
+		id: input.id,
 		name: input.name ?? "",
 		username: input.username,
 		photo_profile: input.photo_profile ?? "",
 		github: input.github ?? "",
-		instagram: input.instagram ?? "",
-		linkedin: input.linkedin ?? "",
-		gender: input.gender ?? "",
 		count_summary: input.count_summary,
 	};
 }
