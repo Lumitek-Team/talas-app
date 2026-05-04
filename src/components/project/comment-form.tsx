@@ -93,7 +93,9 @@ export function CommentForm({
         type: "manual",
         message: error.message || "Failed to post comment.",
       });
-      console.error("Failed to create comment:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to create comment:", error);
+      }
     },
   });
 
@@ -109,7 +111,9 @@ export function CommentForm({
         type: "manual",
         message: error.message || "Failed to update comment.",
       });
-      console.error("Failed to edit comment:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to edit comment:", error);
+      }
     },
   });
 

@@ -213,7 +213,9 @@ export default function ProjectDetailPage() {
       // Add success toast
     },
     onError: (error) => {
-      console.error("Failed to delete project:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to delete project:", error);
+      }
       alert(`Failed to delete project: ${error.message}`); // Replace with toast
     },
   });
@@ -224,7 +226,9 @@ export default function ProjectDetailPage() {
       // Add success toast
     },
     onError: (error) => {
-      console.error("Failed to archive project:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to archive project:", error);
+      }
       alert(`Failed to archive project: ${error.message}`); // Replace with toast
     },
   });
@@ -235,7 +239,9 @@ export default function ProjectDetailPage() {
       // Add success toast
     },
     onError: (error) => {
-      console.error("Failed to unarchive project:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to unarchive project:", error);
+      }
       alert(`Failed to unarchive project: ${error.message}`); // Replace with toast
     },
   });
