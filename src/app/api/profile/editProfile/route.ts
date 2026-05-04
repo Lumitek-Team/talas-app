@@ -15,12 +15,12 @@ export async function POST(req: Request) {
 		const folder = formData.get("folder") as string | undefined;
 		const oldImagePath = formData.get("oldImagePath") as string | undefined;
 
-		if (!file || !folder) {
-			return NextResponse.json(
-				{ error: "File and folder are required." },
-				{ status: 400 }
-			);
-		}
+    if (!file || !folder) {
+      return NextResponse.json(
+        { error: "File and folder are required." },
+        { status: 400 },
+      );
+    }
 
 		// Prepend userId to create a unique path for the user: userId/folder/filename
 		const secureFolder = `${userId}/${folder}`;
@@ -35,13 +35,15 @@ export async function POST(req: Request) {
 
 		return NextResponse.json({ newImagePath });
 
-		// Return the relative path
-		return NextResponse.json({ newImagePath });
-	} catch (error) {
-		console.error("Error editing profile image:", error);
-		return NextResponse.json(
-			{ error: "Failed to edit profile image." },
-			{ status: 500 }
-		);
-	}
+    // Return the relative path
+    return NextResponse.json({ newImagePath });
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("Error editing profile image:", error);
+    }
+    return NextResponse.json(
+      { error: "Failed to edit profile image." },
+      { status: 500 },
+    );
+  }
 }

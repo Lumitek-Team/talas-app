@@ -10,10 +10,10 @@ import { CommentSection } from "@/components/project/comment-section";
 import { LoadingSpinner } from "@/components/ui/loading"; // Added import
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
-import { ProjectOneType } from "@/lib/type";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog";
+import { skipToken } from "@tanstack/react-query";
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -22,8 +22,12 @@ export default function ProjectDetailPage() {
   const projectId = params.id as string;
   const [isMobile, setIsMobile] = useState(false);
 
-  const [optimisticLike, setOptimisticLike] = useState<boolean | undefined>(undefined);
-  const [optimisticBookmark, setOptimisticBookmark] = useState<boolean | undefined>(undefined);
+  const [optimisticLike, setOptimisticLike] = useState<boolean | undefined>(
+    undefined,
+  );
+  const [optimisticBookmark, setOptimisticBookmark] = useState<
+    boolean | undefined
+  >(undefined);
 
   // State for confirmation dialogs
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -31,95 +35,174 @@ export default function ProjectDetailPage() {
   const [isUnarchiveConfirmOpen, setIsUnarchiveConfirmOpen] = useState(false);
 
   const utils = trpc.useUtils();
-  const currentUserId = user?.id || "";
+  const currentUserId = user?.id;
 
-  const queryClientKeyProjectGetOne = useMemo(() => ({
-    id: projectId,
-    id_user: currentUserId,
-  }), [projectId, currentUserId]);
+  const queryClientKeyProjectGetOne = useMemo(
+    () =>
+      currentUserId && projectId
+        ? { id: projectId, id_user: currentUserId }
+        : undefined,
+    [projectId, currentUserId],
+  );
 
   const {
     data: project,
     isLoading,
     error,
-    refetch: refetchProject
-  } = trpc.project.getOne.useQuery(queryClientKeyProjectGetOne, {
-    enabled: !!projectId && isUserLoaded && (!!user || !currentUserId),
+    refetch: refetchProject,
+  } = trpc.project.getOne.useQuery(queryClientKeyProjectGetOne || skipToken, {
+    enabled: !!projectId && isUserLoaded && !!user,
   });
 
   useEffect(() => {
     const data = project?.data;
     if (data) {
       if (optimisticLike === undefined) setOptimisticLike(data.is_liked);
-      if (optimisticBookmark === undefined) setOptimisticBookmark(data.is_bookmarked);
+      if (optimisticBookmark === undefined)
+        setOptimisticBookmark(data.is_bookmarked);
     }
   }, [project, optimisticLike, optimisticBookmark]);
 
   // Project mutations (like, bookmark - from previous refactor)
   const bookmarkMutation = trpc.bookmark.create.useMutation({
-    onMutate: async () => { /* ... */ await utils.project.getOne.cancel(queryClientKeyProjectGetOne); const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne); utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) => oldData ? { ...oldData, is_bookmarked: true } : undefined); return { previousProjectData }; },
-    onError: (err, variables, context) => { setOptimisticBookmark(false); if (context?.previousProjectData) utils.project.getOne.setData(queryClientKeyProjectGetOne, context.previousProjectData); },
-    onSettled: () => { utils.project.getOne.invalidate(queryClientKeyProjectGetOne); if (user?.id) utils.user.getBookmarked.invalidate({ id: user.id }); },
+    onMutate: async () => {
+      /* ... */ await utils.project.getOne.cancel(queryClientKeyProjectGetOne);
+      const previousProjectData = utils.project.getOne.getData(
+        queryClientKeyProjectGetOne,
+      );
+      if (queryClientKeyProjectGetOne)
+        utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) =>
+          oldData ? { ...oldData, is_bookmarked: true } : undefined,
+        );
+      return { previousProjectData };
+    },
+    onError: (err, variables, context) => {
+      setOptimisticBookmark(false);
+      if (context?.previousProjectData)
+        if (queryClientKeyProjectGetOne)
+          utils.project.getOne.setData(
+            queryClientKeyProjectGetOne,
+            context.previousProjectData,
+          );
+    },
+    onSettled: () => {
+      utils.project.getOne.invalidate(queryClientKeyProjectGetOne);
+      if (user?.id) utils.user.getBookmarked.invalidate({ id: user.id });
+    },
   });
   const unbookmarkMutation = trpc.bookmark.delete.useMutation({
-    onMutate: async () => { /* ... */ await utils.project.getOne.cancel(queryClientKeyProjectGetOne); const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne); utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) => oldData ? { ...oldData, is_bookmarked: false } : undefined); return { previousProjectData }; },
-    onError: (err, variables, context) => { setOptimisticBookmark(true); if (context?.previousProjectData) utils.project.getOne.setData(queryClientKeyProjectGetOne, context.previousProjectData); },
-    onSettled: () => { utils.project.getOne.invalidate(queryClientKeyProjectGetOne); if (user?.id) utils.user.getBookmarked.invalidate({ id: user.id }); },
+    onMutate: async () => {
+      /* ... */ await utils.project.getOne.cancel(queryClientKeyProjectGetOne);
+      const previousProjectData = utils.project.getOne.getData(
+        queryClientKeyProjectGetOne,
+      );
+      if (queryClientKeyProjectGetOne)
+        utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) =>
+          oldData ? { ...oldData, is_bookmarked: false } : undefined,
+        );
+      return { previousProjectData };
+    },
+    onError: (err, variables, context) => {
+      setOptimisticBookmark(true);
+      if (context?.previousProjectData)
+        if (queryClientKeyProjectGetOne)
+          utils.project.getOne.setData(
+            queryClientKeyProjectGetOne,
+            context.previousProjectData,
+          );
+    },
+    onSettled: () => {
+      utils.project.getOne.invalidate(queryClientKeyProjectGetOne);
+      if (user?.id) utils.user.getBookmarked.invalidate({ id: user.id });
+    },
   });
   const likeMutation = trpc.likeProject.like.useMutation({
     onMutate: async () => {
       await utils.project.getOne.cancel(queryClientKeyProjectGetOne);
-      const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne);
-      utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) =>
-        oldData ? { ...oldData, is_liked: true, count_likes: (oldData.data.count_likes || 0) + 1 } : undefined
+      const previousProjectData = utils.project.getOne.getData(
+        queryClientKeyProjectGetOne,
       );
+      if (queryClientKeyProjectGetOne)
+        utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) =>
+          oldData
+            ? {
+                ...oldData,
+                is_liked: true,
+                count_likes: (oldData.data.count_likes || 0) + 1,
+              }
+            : undefined,
+        );
       setOptimisticLike(true); // Explicitly set optimistic state here too
       return { previousProjectData };
     },
-    onError: (err: any, variables, context) => {
+    onError: (err: unknown, _variables, context) => {
       // Revert optimistic update
       setOptimisticLike(false);
       if (context?.previousProjectData) {
-        utils.project.getOne.setData(queryClientKeyProjectGetOne, context.previousProjectData);
+        if (queryClientKeyProjectGetOne)
+          utils.project.getOne.setData(
+            queryClientKeyProjectGetOne,
+            context.previousProjectData,
+          );
       }
       // Handle specific error for already liked (Conflict)
-      if (err.data?.code === 'CONFLICT') {
+      if ((err as { data?: { code: string } }).data?.code === "CONFLICT") {
         // Ensure UI reflects server state: it IS liked
-        utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) =>
-          oldData ? { ...oldData, is_liked: true } : undefined
-        );
+        if (queryClientKeyProjectGetOne)
+          utils.project.getOne.setData(
+            queryClientKeyProjectGetOne,
+            (oldData) => (oldData ? { ...oldData, is_liked: true } : undefined),
+          );
         setOptimisticLike(true);
       }
     },
-    onSettled: () => utils.project.getOne.invalidate(queryClientKeyProjectGetOne),
+    onSettled: () =>
+      utils.project.getOne.invalidate(queryClientKeyProjectGetOne),
   });
 
   const unlikeMutation = trpc.likeProject.unlike.useMutation({
     onMutate: async () => {
       await utils.project.getOne.cancel(queryClientKeyProjectGetOne);
-      const previousProjectData = utils.project.getOne.getData(queryClientKeyProjectGetOne);
-      utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) =>
-        oldData ? { ...oldData, is_liked: false, count_likes: Math.max(0, (oldData.data.count_likes || 0) - 1) } : undefined
+      const previousProjectData = utils.project.getOne.getData(
+        queryClientKeyProjectGetOne,
       );
+      if (queryClientKeyProjectGetOne)
+        utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) =>
+          oldData
+            ? {
+                ...oldData,
+                is_liked: false,
+                count_likes: Math.max(0, (oldData.data.count_likes || 0) - 1),
+              }
+            : undefined,
+        );
       setOptimisticLike(false); // Explicitly set optimistic state here too
       return { previousProjectData };
     },
-    onError: (err: any, variables, context) => {
+    onError: (err: unknown, _variables, context) => {
       // Revert optimistic update
       setOptimisticLike(true);
       if (context?.previousProjectData) {
-        utils.project.getOne.setData(queryClientKeyProjectGetOne, context.previousProjectData);
+        if (queryClientKeyProjectGetOne)
+          utils.project.getOne.setData(
+            queryClientKeyProjectGetOne,
+            context.previousProjectData,
+          );
       }
       // Handle specific error for not liked (Not Found)
-      if (err.data?.code === 'NOT_FOUND') {
-        // Ensure UI reflects server state: it is NOT liked
-        utils.project.getOne.setData(queryClientKeyProjectGetOne, (oldData) =>
-          oldData ? { ...oldData, is_liked: false } : undefined
-        );
+      if ((err as { data?: { code: string } }).data?.code === "NOT_FOUND") {
+        if (queryClientKeyProjectGetOne)
+          // Ensure UI reflects server state: it is NOT liked
+          utils.project.getOne.setData(
+            queryClientKeyProjectGetOne,
+            (oldData) =>
+              oldData ? { ...oldData, is_liked: false } : undefined,
+          );
         setOptimisticLike(false);
       }
     },
-    onSettled: () => utils.project.getOne.invalidate(queryClientKeyProjectGetOne),
+    onSettled: () =>
+      utils.project.getOne.invalidate(queryClientKeyProjectGetOne),
   });
 
   // Owner action mutations (Delete, Archive, Unarchive)
@@ -130,7 +213,9 @@ export default function ProjectDetailPage() {
       // Add success toast
     },
     onError: (error) => {
-      console.error("Failed to delete project:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to delete project:", error);
+      }
       alert(`Failed to delete project: ${error.message}`); // Replace with toast
     },
   });
@@ -141,7 +226,9 @@ export default function ProjectDetailPage() {
       // Add success toast
     },
     onError: (error) => {
-      console.error("Failed to archive project:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to archive project:", error);
+      }
       alert(`Failed to archive project: ${error.message}`); // Replace with toast
     },
   });
@@ -152,7 +239,9 @@ export default function ProjectDetailPage() {
       // Add success toast
     },
     onError: (error) => {
-      console.error("Failed to unarchive project:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.error("Failed to unarchive project:", error);
+      }
       alert(`Failed to unarchive project: ${error.message}`); // Replace with toast
     },
   });
@@ -160,15 +249,34 @@ export default function ProjectDetailPage() {
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 690);
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const handleToggleBookmark = () => { /* ... as before ... */ if (!user || !project) return; const currentIsBookmarked = optimisticBookmark !== undefined ? optimisticBookmark : project.data.is_bookmarked; setOptimisticBookmark(!currentIsBookmarked); if (currentIsBookmarked) { unbookmarkMutation.mutate({ id_user: user.id, id_project: project.data.id }); } else { bookmarkMutation.mutate({ id_user: user.id, id_project: project.data.id }); } };
+  const handleToggleBookmark = () => {
+    /* ... as before ... */ if (!user || !project) return;
+    const currentIsBookmarked =
+      optimisticBookmark !== undefined
+        ? optimisticBookmark
+        : project.data.is_bookmarked;
+    setOptimisticBookmark(!currentIsBookmarked);
+    if (currentIsBookmarked) {
+      unbookmarkMutation.mutate({
+        id_user: user.id,
+        id_project: project.data.id,
+      });
+    } else {
+      bookmarkMutation.mutate({
+        id_user: user.id,
+        id_project: project.data.id,
+      });
+    }
+  };
   const handleToggleLike = () => {
     if (!user || !project) return;
     // Optimistic update is now more robustly handled in onMutate and onError
-    const currentIsLiked = optimisticLike !== undefined ? optimisticLike : project.data.is_liked;
+    const currentIsLiked =
+      optimisticLike !== undefined ? optimisticLike : project.data.is_liked;
     // No need to call setOptimisticLike here directly if mutations handle it well
     if (currentIsLiked) {
       unlikeMutation.mutate({ id_user: user.id, id_project: project.data.id });
@@ -218,16 +326,21 @@ export default function ProjectDetailPage() {
     return (
       <>
         <Sidebar />
-        <PageContainer title={error ? "Error" : "Project Not Found"} showBackButton={true}>
+        <PageContainer
+          title={error ? "Error" : "Project Not Found"}
+          showBackButton={true}
+        >
           <div className="p-8 text-center">
             <h2 className="text-xl font-bold mb-4">
               {error ? "Could not load project" : "Project not found"}
             </h2>
             <p>
-              {error ? error.message : "The project you're looking for doesn't exist or has been removed."}
+              {error
+                ? error.message
+                : "The project you're looking for doesn't exist or has been removed."}
             </p>
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.push("/")}
               className="mt-6 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-foreground transition-colors"
             >
               Go to Home
@@ -238,15 +351,18 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const primaryProjectUser = project.data.project_user && project.data.project_user[0]?.user;
   const isOwner = project.data.project_user.some(
-    (pu) => pu.ownership === "OWNER" && pu.user.id === currentUserId
+    (pu) => pu.ownership === "OWNER" && pu.user.id === currentUserId,
   );
 
   const postCardData = {
     ...project,
-    isBookmarked: optimisticBookmark !== undefined ? optimisticBookmark : !!project.data.is_bookmarked,
-    isLiked: optimisticLike !== undefined ? optimisticLike : !!project?.data.is_liked,
+    isBookmarked:
+      optimisticBookmark !== undefined
+        ? optimisticBookmark
+        : !!project.data.is_bookmarked,
+    isLiked:
+      optimisticLike !== undefined ? optimisticLike : !!project?.data.is_liked,
     onToggleBookmark: handleToggleBookmark,
     onToggleLike: handleToggleLike,
   };
@@ -254,7 +370,10 @@ export default function ProjectDetailPage() {
   return (
     <>
       <Sidebar />
-      <PageContainer title={project.data.title || "Project Details"} showBackButton={true}>
+      <PageContainer
+        title={project.data.title || "Project Details"}
+        showBackButton={true}
+      >
         {/* Owner Actions Section */}
         {isOwner && (
           <div className="flex justify-end gap-2 mb-4 px-4 pt-4 md:px-0 md:pt-0">
@@ -266,7 +385,9 @@ export default function ProjectDetailPage() {
                 disabled={unarchiveProjectMutation.isPending}
                 className="border-slate-700 hover:bg-slate-700/80"
               >
-                {unarchiveProjectMutation.isPending ? "Unarchiving..." : "Unarchive"}
+                {unarchiveProjectMutation.isPending
+                  ? "Unarchiving..."
+                  : "Unarchive"}
               </Button>
             ) : (
               <Button
@@ -280,7 +401,13 @@ export default function ProjectDetailPage() {
               </Button>
             )}
             <Link href={`/project/${project.data.slug}/edit`}>
-              <Button variant="outline" size="sm" className="border-slate-700 hover:bg-slate-700/80">Edit</Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-slate-700 hover:bg-slate-700/80"
+              >
+                Edit
+              </Button>
             </Link>
             <Button
               variant="destructive"
@@ -293,7 +420,9 @@ export default function ProjectDetailPage() {
           </div>
         )}
 
-        <div className={`overflow-hidden ${isMobile ? 'bg-background' : 'bg-card rounded-3xl border border-white/10'}`}>
+        <div
+          className={`overflow-hidden ${isMobile ? "bg-background" : "bg-card rounded-3xl border border-white/10"}`}
+        >
           <div className={isOwner && !isMobile ? "p-2" : "p-2"}>
             <PostCard {...postCardData} />
             <div className="my-1 border-t border-white/10 mx-4"></div>
