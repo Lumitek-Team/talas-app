@@ -11,6 +11,7 @@ import {
 import { toProjectOneDTO } from "@/lib/dto";
 import { collabStatusType, ownershipType } from "@prisma/client";
 import { deleteImages } from "@/lib/imageUtils";
+import { TRPCError } from "@trpc/server";
 
 export const projectRouter = router({
   getOne: protectedProcedure
@@ -622,7 +623,24 @@ export const projectRouter = router({
         await deleteImages(images);
 
         await prisma.$transaction([
+          // Explicitly delete all child records to guard against
+          // migrations where DB-level CASCADE was not applied
+          prisma.likeComment.deleteMany({
+            where: { comment: { id_project: input.id } },
+          }),
           prisma.comment.deleteMany({
+            where: { id_project: input.id },
+          }),
+          prisma.likeProject.deleteMany({
+            where: { id_project: input.id },
+          }),
+          prisma.bookmark.deleteMany({
+            where: { id_project: input.id },
+          }),
+          prisma.pinProject.deleteMany({
+            where: { id_project: input.id },
+          }),
+          prisma.projectUser.deleteMany({
             where: { id_project: input.id },
           }),
           prisma.project.delete({
@@ -643,7 +661,11 @@ export const projectRouter = router({
           message: "Successfully delete project",
         };
       } catch (error) {
-        throw new Error("Error deleting project: " + error);
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Error deleting project: " + (error instanceof Error ? error.message : String(error)),
+        });
       }
     }),
 
@@ -829,15 +851,21 @@ export const projectRouter = router({
         });
 
         if (!existingProject) {
-          throw new Error("Project not found or access denied.");
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Project not found.",
+          });
         }
 
         const ownerUser = existingProject.project_user.find(
           (pu) => pu.ownership === "OWNER",
         );
 
-        if (!ownerUser || ownerUser.id_user !== input.id_user) {
-          throw new Error("Project not found or access denied.");
+        if (!ownerUser || ownerUser.id_user.trim() !== input.id_user.trim()) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You do not have permission to unarchive this project.",
+          });
         }
 
         const [project] = await prisma.$transaction([
@@ -861,7 +889,11 @@ export const projectRouter = router({
           data: project,
         };
       } catch (error) {
-        throw new Error("Error unarchiving project: " + error);
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Error unarchiving project: " + (error instanceof Error ? error.message : String(error)),
+        });
       }
     }),
 });
