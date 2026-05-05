@@ -112,19 +112,22 @@ export const notificationRouter = router({
 		)
 		.query(async ({ input }) => {
 			try {
-				const count = await prisma.notification.count({
-					where: {
-						id_user: input.id_user,
-						is_read: false,
-					},
-				});
-				// dapatkan collaboration pending request
-				const pendingCollabCount = await prisma.projectUser.count({
-					where: {
-						id_user: input.id_user,
-						collabStatus: "PENDING",
-					},
-				});
+				// Run both COUNT queries in parallel — no dependency between them
+				const [count, pendingCollabCount] = await Promise.all([
+					prisma.notification.count({
+						where: {
+							id_user: input.id_user,
+							is_read: false,
+						},
+					}),
+					// dapatkan collaboration pending request
+					prisma.projectUser.count({
+						where: {
+							id_user: input.id_user,
+							collabStatus: "PENDING",
+						},
+					}),
+				]);
 
 				const isUnread: boolean = count > 0 || pendingCollabCount > 0;
 
