@@ -8,6 +8,7 @@ import { z } from "zod";
 import Link from "next/link";
 import Image from "next/image";
 import { Sidebar } from "@/components/layout/sidebar";
+import { STALE } from "@/lib/query-config";
 import { PageContainer } from "@/components/ui/page-container";
 import { SearchInput } from "@/components/search/search-input";
 import { FilterButton } from "@/components/search/filter-button";
@@ -193,11 +194,11 @@ export default function SearchPage() {
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const formValues = form.watch();
 
-  const { data: categoryResponse } = trpc.category.getAll.useQuery(undefined);
+  const { data: categoryResponse } = trpc.category.getAll.useQuery(undefined, { staleTime: STALE.STATIC });
 
   const { data: popularProjectsRaw, isLoading: loadingPopularProjectsRaw } = trpc.search.getPopularPost.useQuery({
     id_user: user?.id || "",
-  })
+  }, { staleTime: STALE.MEDIUM })
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 690);
@@ -239,6 +240,7 @@ export default function SearchPage() {
     queryInput, {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled: !!viewingCategory || (!!committedValues.query && committedValues.query.trim().length > 0),
+    staleTime: STALE.SHORT,
     refetchOnWindowFocus: false,
   }
   );

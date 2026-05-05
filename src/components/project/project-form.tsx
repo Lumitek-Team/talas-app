@@ -29,7 +29,7 @@ import { getPublicUrl } from "@/lib/utils";
 import { ProjectOneType } from "@/lib/type";
 import { uploadImage } from "@/lib/imageUtils";
 import CollaboratorSelect from "./CollaboratorSelect";
-// import { ProjectCollaborators } from "./ProjectCollaborators";
+import { STALE } from "@/lib/query-config";
 
 const projectFormSchema = z.object({
   title: z
@@ -82,6 +82,7 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
 
   const { data: fetchedCategories, isLoading: isLoadingCategories } =
     trpc.category.getAll.useQuery(undefined, {
+      staleTime: STALE.STATIC,
       enabled:
         isUserLoaded && (mode === "create" || (mode === "edit" && !!project)),
     });

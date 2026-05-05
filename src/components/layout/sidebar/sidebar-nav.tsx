@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { trpc } from "@/app/_trpc/client";
+import { STALE } from "@/lib/query-config";
 import { cn } from "@/lib/utils";
 import { AuthPromptDialog } from "@/components/ui/auth-prompt-dialog";
 import { useState } from "react";
@@ -47,13 +48,13 @@ export function SidebarNav({
 
   const { data } = trpc.user.getById.useQuery(
     { id: userId || "" },
-    { enabled: !!userId },
+    { enabled: !!userId, staleTime: STALE.LONG },
   );
   const username = data?.data?.username;
 
   const isUnRead = trpc.notification.getIsUnread.useQuery(
     { id_user: userId || "" },
-    { enabled: !!userId },
+    { enabled: !!userId, staleTime: STALE.SHORT, refetchInterval: 30 * 1000 },
   );
 
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
