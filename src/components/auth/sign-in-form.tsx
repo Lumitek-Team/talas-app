@@ -28,7 +28,7 @@ export function SignInForm() {
         
         <div className="text-center mb-8">
           <h1 className="text-[24px] font-bold text-white tracking-tight leading-tight mb-3">
-            Log in or sign up for Talas
+            Log In or Sign Up
           </h1>
           <p className="text-[#777777] text-[15px] leading-relaxed">
             See what people are talking about and join the conversation.

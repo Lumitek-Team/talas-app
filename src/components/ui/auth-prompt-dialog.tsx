@@ -4,7 +4,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface AuthPromptDialogProps {
   isOpen: boolean;
@@ -18,19 +19,37 @@ export function AuthPromptDialog({
   message = "Create an account or sign in to interact with projects, leave comments, and save your favourites.",
 }: AuthPromptDialogProps) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
 
   const handleSignIn = useCallback(() => {
     onClose();
     router.push("/sign-in");
   }, [onClose, router]);
 
-  return (
+  if (!mounted) return null;
+
+  const dialogContent = (
     <AnimatePresence>
       {isOpen && (
         <>
           <motion.div
             key="backdrop"
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -43,13 +62,13 @@ export function AuthPromptDialog({
             role="dialog"
             aria-modal="true"
             aria-labelledby="auth-prompt-title"
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 font-inter"
+            className="fixed inset-0 z-[99999] flex items-center justify-center px-4 font-inter pointer-events-none"
             initial={{ opacity: 0, scale: 0.95, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 16 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
-            <div className="relative w-full max-w-[400px] bg-[#181818] border border-white/5 rounded-[24px] shadow-2xl p-8 sm:p-10 flex flex-col">
+            <div className="relative w-full max-w-[400px] bg-[#181818] border border-white/5 rounded-[24px] shadow-2xl p-8 sm:p-10 flex flex-col pointer-events-auto">
               
               <button
                 onClick={onClose}
@@ -110,4 +129,6 @@ export function AuthPromptDialog({
       )}
     </AnimatePresence>
   );
+
+  return createPortal(dialogContent, document.body);
 }
