@@ -65,6 +65,8 @@ model Project {
 
   @@index([id_category], map: "idx_category")
   @@index([slug], map: "idx_slug_project")
+  @@index([is_archived, created_at], map: "idx_archived_created")
+  @@index([popularity_score], map: "idx_popularity_score")
 }
 
 model Comment {
@@ -95,6 +97,7 @@ model Notification {
   user       User      @relation(fields: [id_user], references: [id])
 
   @@index([id_user], map: "idx_user_notification")
+  @@index([id_user, is_read], map: "idx_user_notification_read")
 }
 
 model Category {
@@ -141,6 +144,7 @@ model ProjectUser {
   user         User              @relation(fields: [id_user], references: [id])
 
   @@index([id_user, id_project], map: "idx_user_project")
+  @@index([id_user, collabStatus], map: "idx_user_collab_status")
 }
 
 model Bookmark {
