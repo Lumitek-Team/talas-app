@@ -1,4 +1,4 @@
-import { protectedProcedure, router } from "../trpc";
+import { protectedProcedure, publicProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
@@ -170,7 +170,7 @@ export const userRouter = router({
 			}
 		}),
 
-	getByUsername: protectedProcedure
+	getByUsername: publicProcedure
 		.input(
 			z.object({
 				username: z.string(),
@@ -213,7 +213,7 @@ export const userRouter = router({
 			}
 		}),
 
-	getAllFollower: protectedProcedure
+	getAllFollower: publicProcedure
 		.input(
 			z.object({
 				id_following: z.string(),
@@ -254,7 +254,7 @@ export const userRouter = router({
 			}
 		}),
 
-	getAllFollowing: protectedProcedure
+	getAllFollowing: publicProcedure
 		.input(
 			z.object({
 				id_follower: z.string(),

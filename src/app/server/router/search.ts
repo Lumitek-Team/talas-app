@@ -1,4 +1,4 @@
-import { protectedProcedure, router } from "../trpc";
+import { protectedProcedure, publicProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -7,7 +7,7 @@ import { toProjectOneDTO, toUserSearchDTO } from "@/lib/dto";
 import { Prisma } from "@prisma/client";
 
 export const searchRouter = router({
-  search: protectedProcedure
+  search: publicProcedure
     .input(
       z.object({
         search: z.string().max(100).optional(),
@@ -15,7 +15,7 @@ export const searchRouter = router({
         category: z.string().optional(),
         limit: z.number().min(1).max(100).nullish(),
         cursor: z.string().nullish(),
-        id_user: z.string(),
+        id_user: z.string().optional(),
       }),
     )
     .query(async ({ input }) => {
@@ -255,13 +255,13 @@ export const searchRouter = router({
 		}
 	}),
 
-	getPopularPost: protectedProcedure
+	getPopularPost: publicProcedure
 		.input(
 			z.object({
-				id_user: z.string(),
+				id_user: z.string().optional(),
 			})
 		)
-		.query(async ({ input }: { input: { id_user: string } }) => {
+		.query(async ({ input }: { input: { id_user?: string } }) => {
 			const { id_user } = input;
 			try {
 				// Step 1: Lightweight query — fetch id + id_category ordered by

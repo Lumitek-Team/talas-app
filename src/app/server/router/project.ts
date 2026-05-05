@@ -1,6 +1,6 @@
 // src/app/server/router/project.ts
 
-import { protectedProcedure, router } from "../trpc";
+import { protectedProcedure, publicProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import slugify from "slugify";
@@ -14,11 +14,11 @@ import { deleteImages } from "@/lib/imageUtils";
 import { TRPCError } from "@trpc/server";
 
 export const projectRouter = router({
-  getOne: protectedProcedure
+  getOne: publicProcedure
     .input(
       z.object({
         id: z.string(),
-        id_user: z.string(), // id_user is used for checking bookmark and like status
+        id_user: z.string().optional(), // id_user is used for checking bookmark and like status
       }),
     )
     .query(async ({ input }) => {
@@ -130,7 +130,7 @@ export const projectRouter = router({
       }
     }),
 
-  getAll: protectedProcedure
+  getAll: publicProcedure
     .input(
       z.object({
         limit: z.number().min(1).max(100).nullish(),
@@ -669,7 +669,7 @@ export const projectRouter = router({
       }
     }),
 
-  getComments: protectedProcedure
+  getComments: publicProcedure
     .input(
       z.object({
         id: z.string(),
