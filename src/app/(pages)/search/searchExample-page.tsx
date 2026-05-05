@@ -428,7 +428,7 @@ const SearchPage = () => {
                         {data?.pages.map((page, pageIndex) => (
                             <div key={pageIndex}>
                                 {
-                                    page.data.map((project: ProjectOneType) => {
+                                    (page.data as ProjectOneType[]).map((project: ProjectOneType) => {
                                         const isBookmarked = optimisticBookmarks[project.id] !== undefined
                                             ? optimisticBookmarks[project.id]
                                             : project.is_bookmarked
@@ -512,7 +512,7 @@ const SearchPage = () => {
                     ) : (
                         userData?.pages.map((page, pageIndex) => (
                             <div key={pageIndex}>
-                                {page.data.map((user: UserSearchType) => (
+                                {(page.data as UserSearchType[]).map((user: UserSearchType) => (
                                     <div key={user.username} className="flex items-center gap-4 border-b py-4">
                                         <Avatar>
                                             <AvatarImage src={user.photo_profile || undefined} />
@@ -547,7 +547,7 @@ const SearchPage = () => {
                     ) : (
                         categoryData?.pages.map((page, pageIndex) => (
                             <div key={pageIndex}>
-                                {page.data.map((cat: CategoryType) => (
+                                {(page.data as CategoryType[]).map((cat: CategoryType) => (
                                     <div key={cat.id} className="p-4 border rounded flex flex-col gap-1 mb-2">
                                         <button
                                             type="button"

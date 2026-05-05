@@ -252,7 +252,7 @@ export default function SearchPage() {
     }
   }, [data, queryInput.type, optimisticLikes, optimisticBookmarks]);
 
-  const allRawResults = useMemo(() => data?.pages.flatMap(page => page.data || []) || [], [data]);
+  const allRawResults = useMemo(() => data?.pages.flatMap(page => (page.data as any[]) || []) || [], [data]);
 
   // FUNCTIONALITY FIX: Add trpc utils and mutations from feeds page
   const utils = trpc.useUtils();
