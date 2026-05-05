@@ -34,17 +34,17 @@ export const collaborationRouter = router({
 			});
 		}
 
-		// Notify the owner
+		// Notify the owner (non-blocking — don't delay response for this)
 		const ownerId = collab.project.project_user[0]?.id_user;
 		if (ownerId) {
-			await prisma.notification.create({
+			prisma.notification.create({
 				data: {
 					id_user: ownerId,
 					title: `Your collaboration request for project "${collab.project.title}" has been accepted.`,
 					is_read: false,
 					type: "COLLABORATION" as const,
 				},
-			});
+			}).catch(console.error);
 		}
 
 		const collabData = {
@@ -86,17 +86,17 @@ export const collaborationRouter = router({
 			});
 		}
 
-		// Notify the owner
+		// Notify the owner (non-blocking — don't delay response for this)
 		const ownerId = collab.project.project_user[0]?.id_user;
 		if (ownerId) {
-			await prisma.notification.create({
+			prisma.notification.create({
 				data: {
 					id_user: ownerId,
 					title: `Your collaboration request for project "${collab.project.title}" has been rejected.`,
 					is_read: false,
 					type: "COLLABORATION" as const,
 				},
-			});
+			}).catch(console.error);
 		}
 
 		const collabData = {

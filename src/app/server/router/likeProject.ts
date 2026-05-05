@@ -18,7 +18,15 @@ export const likeProjectRouter = router({
 					prisma.project.findUnique({
 						where: { id: input.id_project },
 						include: {
-							project_user: true,
+							project_user: {
+								// Only notify OWNER and ACCEPTED collaborators, not PENDING
+								where: {
+									OR: [
+										{ ownership: "OWNER" },
+										{ ownership: "COLLABORATOR", collabStatus: "ACCEPTED" },
+									],
+								},
+							},
 						},
 					}),
 					prisma.user.findUnique({

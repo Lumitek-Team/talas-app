@@ -11,7 +11,6 @@ import {
 	UserProjectsCondition,
 } from "@/lib/type";
 import { toProjectOneDTO } from "@/lib/dto";
-import { Notification } from "@prisma/client";
 import { z } from "zod";
 
 export const userRouter = router({
@@ -603,13 +602,21 @@ export const userRouter = router({
 			oneMonthAgo.setMonth(now.getMonth() - 1);
 
 			try {
-				const notifications: Notification[] = await prisma.notification.findMany({
+				const notifications = await prisma.notification.findMany({
 					where: {
 						id_user: input.id_user,
 						created_at: {
 							gte: oneMonthAgo,
 							lte: now,
 						},
+					},
+					select: {
+						id: true,
+						title: true,
+						is_read: true,
+						type: true,
+						created_at: true,
+						id_user: true,
 					},
 					take: limit + 1,
 					cursor: cursor ? { id: cursor } : undefined,
