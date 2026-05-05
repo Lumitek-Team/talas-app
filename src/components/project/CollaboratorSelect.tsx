@@ -9,6 +9,7 @@ import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { debounce, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useToast } from "@/contexts/toast-context";
 
 interface CollaboratorSelectProps {
     value: SelectCollabType[];
@@ -19,6 +20,7 @@ export default function CollaboratorSelect({ value, onChange }: CollaboratorSele
     const [inputValue, setInputValue] = useState("");
     const [query, setQuery] = useState("");
     const { user, isLoaded } = useUser();
+    const { showToast } = useToast();
     const userId = user?.id;
 
     // Debounced search
@@ -45,7 +47,7 @@ export default function CollaboratorSelect({ value, onChange }: CollaboratorSele
 
     function handleSelect(user: SelectCollabType) {
         if (user.id === userId) {
-            alert("You cannot select yourself as a collaborator.");
+            showToast("You cannot select yourself as a collaborator.", "error");
             return;
         }
         if (!value.find(u => u.id === user.id)) {

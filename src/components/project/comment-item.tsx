@@ -29,6 +29,7 @@ import { getPublicUrl, getInitials } from "@/lib/utils";
 import { CommentForm } from "./comment-form";
 import { formatDistanceToNow } from "date-fns";
 import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog"; // Import the new dialog
+import { useToast } from "@/contexts/toast-context";
 
 interface CommentItemProps {
   comment: CommentsInProjectType;
@@ -50,6 +51,7 @@ export function CommentItem({
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false); // State for delete dialog
   const [optimisticLike, setOptimisticLike] = useState(comment.count_like || 0);
   const [isLiked, setIsLiked] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     // Check if the current user has already liked the comment
@@ -107,13 +109,13 @@ export function CommentItem({
       if (process.env.NODE_ENV === "development") {
         console.error("Failed to delete comment:", error);
       }
-      alert("Error deleting comment: " + error.message);
+      showToast("Error deleting comment: " + error.message, "error");
     },
   });
 
   const handleDeleteInitiate = () => {
     if (!currentUserId || currentUserId !== comment.user.id) {
-      alert("You can only delete your own comments.");
+      showToast("You can only delete your own comments.", "error");
       return;
     }
     setIsDeleteConfirmOpen(true); // Open the custom dialog

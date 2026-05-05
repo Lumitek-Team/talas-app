@@ -7,6 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/nextjs";
+import { useToast } from "@/contexts/toast-context";
 
 interface CollaborationRequestCardProps {
   request: RequestCollabType;
@@ -14,6 +15,7 @@ interface CollaborationRequestCardProps {
 
 export function CollaborationRequestCard({ request }: CollaborationRequestCardProps) {
   const { user, isLoaded } = useUser();
+  const { showToast } = useToast();
   const utils = trpc.useUtils();
 
   const projectOwner = request.project.project_user[0]?.user;
@@ -27,7 +29,7 @@ export function CollaborationRequestCard({ request }: CollaborationRequestCardPr
       }
     },
     onError: (error) => {
-        alert(`Failed to accept: ${error.message}`); // Replace with a toast
+        showToast(`Failed to accept: ${error.message}`, "error");
     }
   });
 
@@ -39,7 +41,7 @@ export function CollaborationRequestCard({ request }: CollaborationRequestCardPr
        }
     },
      onError: (error) => {
-        alert(`Failed to reject: ${error.message}`); // Replace with a toast
+        showToast(`Failed to reject: ${error.message}`, "error");
     }
   });
 

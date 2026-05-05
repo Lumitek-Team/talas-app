@@ -8,10 +8,8 @@ import { trpc } from "@/app/_trpc/client";
 import { PageContainer } from "@/components/ui/page-container";
 import { Sidebar } from "@/components/layout/sidebar";
 // Ensure ProjectForm is adapted to handle edit mode and these props
-import {
-  ProjectForm,
-  ProjectFormValues,
-} from "@/components/project/project-form";
+import { ProjectForm, ProjectFormValues } from "@/components/project/project-form";
+import { useToast } from "@/contexts/toast-context";
 import { useEffect, useState } from "react";
 import { ProjectOneType } from "@/lib/type"; // Type for project data
 
@@ -20,6 +18,7 @@ export default function EditProjectPage() {
   const router = useRouter();
   const utils = trpc.useUtils();
   const { user, isLoaded: isUserLoaded } = useUser();
+  const { showToast } = useToast();
 
   // Assuming the route is /project/[slug]/edit, so params.id is the slug.
   // If the route uses the actual ID, this would be params.id.
@@ -77,7 +76,7 @@ export default function EditProjectPage() {
         console.error("Failed to update project:", error);
       }
       // Display a toast notification to the user
-      alert(`Error updating project: ${error.message}`); // Replace with a proper toast
+      showToast(`Error updating project: ${error.message}`, "error"); // Replace with a proper toast
     },
   });
 

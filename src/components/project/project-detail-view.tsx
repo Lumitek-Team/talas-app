@@ -15,6 +15,7 @@ import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog";
 import { AuthPromptDialog } from "@/components/ui/auth-prompt-dialog";
 import { skipToken } from "@tanstack/react-query";
 import { STALE } from "@/lib/query-config";
+import { useToast } from "@/contexts/toast-context";
 
 interface ProjectDetailViewProps {
   projectId: string;
@@ -24,6 +25,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   const router = useRouter();
   const { user, isLoaded: isUserLoaded } = useUser();
   const [isMobile, setIsMobile] = useState(false);
+  const { showToast } = useToast();
 
   const [optimisticLike, setOptimisticLike] = useState<boolean | undefined>(undefined);
   const [optimisticBookmark, setOptimisticBookmark] = useState<boolean | undefined>(undefined);
@@ -170,18 +172,18 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
       router.push("/feeds");
     },
     onError: (error) => {
-      alert(`Failed to delete project: ${error.message}`);
+      showToast(`Failed to delete project: ${error.message}`, "error");
     },
   });
 
   const archiveProjectMutation = trpc.project.archive.useMutation({
     onSuccess: () => refetchProject(),
-    onError: (error) => alert(`Failed to archive project: ${error.message}`),
+    onError: (error) => showToast(`Failed to archive project: ${error.message}`, "error"),
   });
 
   const unarchiveProjectMutation = trpc.project.unarchive.useMutation({
     onSuccess: () => refetchProject(),
-    onError: (error) => alert(`Failed to unarchive project: ${error.message}`),
+    onError: (error) => showToast(`Failed to unarchive project: ${error.message}`, "error"),
   });
 
   useEffect(() => {

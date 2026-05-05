@@ -3,6 +3,7 @@ import { FormLabel } from "@/components/ui/form";
 import { X } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
 import Image from "next/image";
+import { useToast } from "@/contexts/toast-context";
 
 interface ImagesSectionProps {
   imagePreviews: string[];
@@ -26,6 +27,7 @@ export function ImagesSection({
   setShowCropper,
   isEditMode = false, 
 }: ImagesSectionProps) {
+  const { showToast } = useToast();
   
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isEditMode) return; // Do nothing if in edit mode
@@ -40,7 +42,7 @@ export function ImagesSection({
       };
       reader.readAsDataURL(file);
     } else if (file && imageFiles.length >= maxFiles) {
-      alert(`You can upload a maximum of ${maxFiles} images.`);
+      showToast(`You can upload a maximum of ${maxFiles} images.`, "error");
     }
     
     if (e.target) {

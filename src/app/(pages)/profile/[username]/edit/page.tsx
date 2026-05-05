@@ -13,6 +13,7 @@ import { TextAreaForm } from "@/components/profile/edit/form-textarea";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
+import { useToast } from "@/contexts/toast-context";
 import { debounce } from "@/lib/utils";
 import { deleteImages, uploadImage } from "@/lib/imageUtils";
 // import { uploadFile, getImageUrl } from "@/lib/supabase/storage";
@@ -43,6 +44,7 @@ export default function EditProfile() {
   const router = useRouter();
   const usernameFromUrl = params?.username as string | undefined;
   const { user, isLoaded } = useUser();
+  const { showToast } = useToast();
   const [isMobile, setIsMobile] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -79,7 +81,7 @@ export default function EditProfile() {
     },
     onError: (error) => {
       console.error("Gagal update user:", error);
-      alert("Gagal menyimpan data. Silakan coba lagi.");
+      showToast("Gagal menyimpan data. Silakan coba lagi.", "error");
     },
   });
 
@@ -203,18 +205,18 @@ export default function EditProfile() {
   }, [debouncedUsername, userData, usernameCheckData]);
 
   const handleSubmit = useCallback(async () => {
-    if (!userData || !user) {
-      alert("Data pengguna tidak lengkap.");
+    if (!userData) {
+      showToast("Data pengguna tidak lengkap.", "error");
       return;
     }
 
-    if (!name.trim() || !usernameInput.trim()) {
-      alert("Nama dan username wajib diisi.");
+    if (!name || !usernameInput) {
+      showToast("Nama dan username wajib diisi.", "error");
       return;
     }
 
     if (usernameError) {
-      alert(usernameError);
+      showToast(usernameError, "error");
       return;
     }
 
@@ -228,15 +230,14 @@ export default function EditProfile() {
           await deleteImages([userData.photo_profile]);
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        console.error("Upload error:", message);
-        alert("Failed to upload profile image. Please try again.");
+        console.error("Error uploading profile image:", error);
+        showToast("Failed to upload profile image. Please try again.", "error");
         return;
       }
     }
 
     updateMutation.mutate({
-      id: user.id,
+      id: userData.id,
       data: {
         name: name.trim(),
         username: usernameInput.trim(),
