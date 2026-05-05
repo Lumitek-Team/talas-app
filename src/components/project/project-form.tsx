@@ -27,6 +27,7 @@ import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { getPublicUrl } from "@/lib/utils";
 import { ProjectOneType } from "@/lib/type";
+import { uploadImage } from "@/lib/imageUtils";
 import CollaboratorSelect from "./CollaboratorSelect";
 // import { ProjectCollaborators } from "./ProjectCollaborators";
 
@@ -188,27 +189,11 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
     setTempImageSrc(null); // Always clear temp image
   };
 
-  async function uploadImagesToApi(
+  async function uploadImagesDirectly(
     files: File[],
     folder: string,
   ): Promise<string[]> {
-    const formData = new FormData();
-    files.forEach((file, index) => {
-      formData.append(`files[${index}]`, file);
-    });
-    formData.append("folder", folder);
-
-    const response = await fetch("/api/project/uploadImage", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to upload images.");
-    }
-
-    const data = await response.json();
-    return data.filePaths; // Expecting an array of file paths
+    return Promise.all(files.map((file) => uploadImage(file, folder)));
   }
 
   const onSubmit = async (data: ProjectFormValues) => {
@@ -231,9 +216,11 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
       try {
         let uploadedImagePaths: string[] = [];
         if (imageFiles.length > 0) {
-          uploadedImagePaths = await uploadImagesToApi(imageFiles, "project");
+          uploadedImagePaths = await uploadImagesDirectly(
+            imageFiles,
+            "project",
+          );
         }
-        console.log("Uploaded files:", uploadedImagePaths);
 
         const finalImagePaths = new Array(5).fill(undefined);
         uploadedImagePaths.forEach((path, index) => {

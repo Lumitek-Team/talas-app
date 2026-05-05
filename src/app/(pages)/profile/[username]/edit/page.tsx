@@ -14,6 +14,7 @@ import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { debounce } from "@/lib/utils";
+import { deleteImages, uploadImage } from "@/lib/imageUtils";
 // import { uploadFile, getImageUrl } from "@/lib/supabase/storage";
 // import { getPublicUrl, uploadImage } from "@/lib/utils";
 
@@ -51,7 +52,7 @@ export default function EditProfile() {
     error: loggedInUserError,
   } = trpc.user.getById.useQuery(
     { id: user?.id ?? "" },
-    { enabled: !!user?.id }
+    { enabled: !!user?.id },
   );
 
   const {
@@ -60,7 +61,7 @@ export default function EditProfile() {
     error: userDetailError,
   } = trpc.user.getByUsername.useQuery(
     { username: usernameFromUrl ?? "" },
-    { enabled: !!usernameFromUrl }
+    { enabled: !!usernameFromUrl },
   );
 
   const userData = userDetail?.data as UserDetail | undefined;
@@ -159,7 +160,7 @@ export default function EditProfile() {
     if (!email && user?.primaryEmailAddress?.emailAddress) {
       setEmail(user.primaryEmailAddress.emailAddress);
     }
-  }, [userData, user]);
+  }, [userData, user, email]);
 
   useEffect(() => {
     return () => {
@@ -179,17 +180,14 @@ export default function EditProfile() {
   };
 
   // Cek username unik saat input berubah (pakai debouncedUsername)
-  const {
-    data: usernameCheckData,
-    isLoading: isUsernameCheckLoading,
-  } = trpc.user.getByUsername.useQuery(
-    { username: debouncedUsername },
-    {
-      enabled:
-        !!debouncedUsername &&
-        debouncedUsername !== userData?.username, // hanya cek jika berubah
-    }
-  );
+  const { data: usernameCheckData, isLoading: isUsernameCheckLoading } =
+    trpc.user.getByUsername.useQuery(
+      { username: debouncedUsername },
+      {
+        enabled:
+          !!debouncedUsername && debouncedUsername !== userData?.username, // hanya cek jika berubah
+      },
+    );
 
   useEffect(() => {
     if (
@@ -224,27 +222,14 @@ export default function EditProfile() {
 
     if (selectedFile) {
       try {
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-        formData.append("folder", "profile_photos");
+        uploadedImagePath = await uploadImage(selectedFile, "profile_photos");
+
         if (userData.photo_profile) {
-          formData.append("oldImagePath", userData.photo_profile);
+          await deleteImages([userData.photo_profile]);
         }
-
-        const response = await fetch("/api/profile/editProfile", {
-          method: "POST",
-          body: formData,
-        });
-
-
-        if (!response.ok) {
-          throw new Error("Failed to upload profile image.");
-        }
-
-        const { newImagePath } = await response.json();
-        uploadedImagePath = newImagePath;
-      } catch (error: any) {
-        console.error("Upload error:", error.message);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("Upload error:", message);
         alert("Failed to upload profile image. Please try again.");
         return;
       }
@@ -290,7 +275,8 @@ export default function EditProfile() {
   if (userDetailError || loggedInUserError) {
     return (
       <div className="text-center p-10 text-red-500">
-        Gagal memuat data:<br />
+        Gagal memuat data:
+        <br />
         {userDetailError?.message || loggedInUserError?.message}
         <br />
         <button
@@ -308,10 +294,11 @@ export default function EditProfile() {
       <Sidebar activeItem="Edit Profile" />
       <PageContainer title="Edit Profile" showBackButton>
         <div
-          className={`overflow-hidden ${isMobile
-            ? "bg-background"
-            : "bg-card rounded-3xl border border-white/10 max-w-4xl mx-auto"
-            }`}
+          className={`overflow-hidden ${
+            isMobile
+              ? "bg-background"
+              : "bg-card rounded-3xl border border-white/10 max-w-4xl mx-auto"
+          }`}
         >
           <FormWrapper>
             <ProfileRow gap="gap-10">
