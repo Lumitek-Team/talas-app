@@ -179,14 +179,14 @@ export function CommentForm({
   // Use database photo if available, otherwise fallback to Clerk's imageUrl
   const currentAvatarSrc = userProfile?.data?.photo_profile
     ? getPublicUrl(userProfile.data.photo_profile)
-    : user?.imageUrl || "/img/dummy/profile-photo-dummy.jpg";
+    : userclerk?.imageUrl || "/img/dummy/profile-photo-dummy.jpg";
 
   // Use database name/username if available, otherwise use Clerk's data
   const currentUsername =
     userProfile?.data?.name ||
     userProfile?.data?.username ||
-    user.fullName ||
-    user.username ||
+    userclerk?.fullName ||
+    userclerk?.username ||
     "User";
 
   return (

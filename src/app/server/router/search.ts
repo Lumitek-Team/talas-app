@@ -2,8 +2,8 @@ import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { ProjectWithInteractionsType, UserSearchType } from "@/lib/type";
-import { toProjectWithInteractionsDTO, toUserSearchDTO } from "@/lib/dto";
+import { ProjectOneType, ProjectWithInteractionsType, UserSearchType } from "@/lib/type";
+import { toProjectOneDTO, toUserSearchDTO } from "@/lib/dto";
 import { Prisma } from "@prisma/client";
 
 export const searchRouter = router({
@@ -117,13 +117,11 @@ export const searchRouter = router({
               nextCursor = nextItem!.id;
             }
 
-						const projectItems: ProjectWithInteractionsType[] = projects.map((p) =>
-							toProjectWithInteractionsDTO({
-								...(p as unknown as Parameters<typeof toProjectWithInteractionsDTO>[0]),
-								id_category: p.category.id,
-								is_archived: false,
-								is_bookmarked: id_user ? !!p.bookmarks?.length : false,
-								is_liked: id_user ? !!p.LikeProject?.length : false,
+						const projectItems: ProjectOneType[] = projects.map((p) =>
+							toProjectOneDTO({
+								...(p as unknown as Parameters<typeof toProjectOneDTO>[0]),
+								bookmarks: (p as unknown as { bookmarks?: { id: string }[] }).bookmarks,
+								LikeProject: (p as unknown as { LikeProject?: { id: string }[] }).LikeProject,
 							}),
 						);
 
@@ -363,39 +361,39 @@ export const searchRouter = router({
 					},
 				});
 
-				const ProjectWithInteractionsType: ProjectWithInteractionsType[] =
+				const projectWithInteractionsItems: ProjectWithInteractionsType[] =
 					projectsFromDb.map((p) => ({
-						...p,
-						project_user: p.project_user.map((pu) => ({
-							user: {
-								...pu.user,
-								photo_profile: pu.user.photo_profile ?? undefined,
-							},
-						})),
-						image1: p.image1 ?? undefined,
-						image2: p.image2 ?? undefined,
-						image3: p.image3 ?? undefined,
-						image4: p.image4 ?? undefined,
-						image5: p.image5 ?? undefined,
-						video: p.video ?? undefined,
-						link_figma: p.link_figma ?? "",
-						link_github: p.link_github ?? "",
-						created_at: p.created_at.toISOString(),
-						updated_at: p.updated_at.toISOString(),
-						id_category: (p as { id_category?: string }).id_category ?? p.category.id,
-						is_archived: false,
-						is_bookmarked: id_user
-							? p.bookmarks && p.bookmarks.length > 0
-							: false,
-						is_liked: id_user
-							? p.LikeProject && p.LikeProject.length > 0
-							: false,
-					}));
+ 						...p,
+ 						project_user: p.project_user.map((pu) => ({
+ 							user: {
+ 								...pu.user,
+ 								photo_profile: pu.user.photo_profile ?? undefined,
+ 							},
+ 						})),
+ 						image1: p.image1 ?? undefined,
+ 						image2: p.image2 ?? undefined,
+ 						image3: p.image3 ?? undefined,
+ 						image4: p.image4 ?? undefined,
+ 						image5: p.image5 ?? undefined,
+ 						video: p.video ?? undefined,
+ 						link_figma: p.link_figma ?? "",
+ 						link_github: p.link_github ?? "",
+ 						created_at: p.created_at.toISOString(),
+ 						updated_at: p.updated_at.toISOString(),
+ 						id_category: (p as { id_category?: string }).id_category ?? p.category.id,
+ 						is_archived: false,
+ 						is_bookmarked: id_user
+ 							? p.bookmarks && p.bookmarks.length > 0
+ 							: false,
+ 						is_liked: id_user
+ 							? p.LikeProject && p.LikeProject.length > 0
+ 							: false,
+ 					}));
 
         return {
           success: true,
           message: "Successfully get popular projects",
-          data: ProjectWithInteractionsType,
+          data: projectWithInteractionsItems,
         };
       } catch (error) {
         throw new TRPCError({

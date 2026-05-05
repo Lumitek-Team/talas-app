@@ -2,11 +2,12 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { getCommentTreeIds } from "@/lib/utils";
 import { currentUser } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
-import { ProjectOneType } from "@/lib/type";
-import { Prisma } from "@prisma/client";
+// NOTE: Avoid casting Prisma results to frontend DTO types (ProjectOneType/ProjectWithInteractionsType)
+// inside routers; select exactly what this router needs.
 
 export const commentRouter = router({
 	create: protectedProcedure
@@ -62,15 +63,22 @@ export const commentRouter = router({
 				}
 			}
 
+			type ProjectForCommentNotif = {
+				title: string;
+				project_user: Array<{ user: { id: string }; ownership: string }>;
+
+				// tambahkan field lain yang diperlukan jika ada
+			};
+
 			const projectNullable = await prisma.project.findUnique({
 				where: { id: input.id_project },
-				include: {
+				select: {
+					title: true,
 					project_user: {
-						include: {
+						select: {
+							ownership: true,
 							user: {
-								select: {
-									id: true,
-								},
+								select: { id: true },
 							},
 						},
 					},
@@ -84,7 +92,7 @@ export const commentRouter = router({
 				});
 			}
 
-			const project = projectNullable as unknown as ProjectOneType;
+			const project = projectNullable as ProjectForCommentNotif;
 
 			const projectUsers = project?.project_user;
 			if (!projectUsers || projectUsers.length === 0) {
@@ -225,15 +233,14 @@ export const commentRouter = router({
 				};
 			} catch (error) {
 				console.error("Error updating comment in backend:", error);
-				if (
-					error instanceof Prisma.PrismaClientKnownRequestError &&
-					error.code === "P2025"
-				) {
-					throw new TRPCError({
-						code: "NOT_FOUND",
-						message:
-							"Comment not found or you do not have permission to edit it.",
-					});
+				if (error instanceof Prisma.PrismaClientKnownRequestError) {
+					if (error.code === "P2025") {
+						throw new TRPCError({
+							code: "NOT_FOUND",
+							message:
+								"Comment not found or you do not have permission to edit it.",
+						});
+					}
 				}
 				throw new TRPCError({
 					code: "INTERNAL_SERVER_ERROR",

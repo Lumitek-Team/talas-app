@@ -1,14 +1,16 @@
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 import {
 	FollowingType,
 	FollowerType,
-	ProjectWithInteractionsType,
+	ProjectOneType,
 	RequestCollabType,
 	SelectCollabType,
 	UserProjectsCondition,
 } from "@/lib/type";
-import { toProjectWithInteractionsDTO } from "@/lib/dto";
+import { toProjectOneDTO } from "@/lib/dto";
 import { Notification } from "@prisma/client";
 import { z } from "zod";
 
@@ -351,22 +353,17 @@ export const userRouter = router({
 						select: { id: true },
 					});
 					if (existing) {
-						throw new Error("Username sudah digunakan oleh pengguna lain.");
+						throw new TRPCError({
+							code: "CONFLICT",
+							message: "Username sudah digunakan oleh pengguna lain.",
+						});
 					}
 				}
 
-				await prisma.user.update({
-					where: {
-						id: input.id,
-					},
+				const updatedUser = await prisma.user.update({
+					where: { id: input.id },
 					data: {
 						...input.data,
-					},
-				});
-
-				const updatedUser = await prisma.user.findUnique({
-					where: {
-						id: input.id,
 					},
 					select: {
 						username: true,
@@ -395,7 +392,20 @@ export const userRouter = router({
 					data: updatedUser,
 				};
 			} catch (error) {
-				throw new Error("Error updating user: " + error);
+				if (error instanceof TRPCError) throw error;
+				// Prisma throws P2025 when record not found
+				if (error instanceof Prisma.PrismaClientKnownRequestError) {
+					if (error.code === "P2025") {
+						throw new TRPCError({
+							code: "NOT_FOUND",
+							message: "User not found.",
+						});
+					}
+				}
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error updating user.",
+				});
 			}
 		}),
 
@@ -497,7 +507,36 @@ export const userRouter = router({
 				});
 
 				const hasNextPage = bookmarks.length > limit;
-				const items = hasNextPage ? bookmarks.slice(0, -1) : bookmarks;
+				const itemsFromDb = hasNextPage ? bookmarks.slice(0, -1) : bookmarks;
+
+				const items = itemsFromDb.map((b) => ({
+					id: b.id,
+					id_user: b.id_user,
+					created_at: b.created_at.toISOString(),
+					project: {
+						id: b.project.id,
+						title: b.project.title,
+						slug: b.project.slug,
+						image1: b.project.image1 ?? undefined,
+						image2: b.project.image2 ?? undefined,
+						image3: b.project.image3 ?? undefined,
+						image4: b.project.image4 ?? undefined,
+						image5: b.project.image5 ?? undefined,
+						created_at: b.project.created_at.toISOString(),
+						updated_at: b.project.updated_at.toISOString(),
+						project_user: b.project.project_user.map((pu) => ({
+							user: {
+								id: pu.user.id,
+								username: pu.user.username,
+								name: pu.user.name,
+								photo_profile: pu.user.photo_profile ?? undefined,
+							},
+							ownership: pu.ownership,
+							// Prisma can return null for owner rows; UI types expect a value.
+							collabStatus: pu.collabStatus ?? "ACCEPTED",
+						})),
+					},
+				}));
 
 				return {
 					items,
@@ -666,7 +705,7 @@ export const userRouter = router({
 				cursor: z.string().nullish(),
 				id_user: z.string().optional(),
 				excludePinned: z.boolean().optional(),
-			})
+			}),
 		)
 		.query(async ({ input }) => {
 			const limit = input.limit ?? 50;
@@ -701,6 +740,7 @@ export const userRouter = router({
 					where,
 					select: {
 						id: true,
+						id_category: true,
 						title: true,
 						slug: true,
 						content: true,
@@ -734,6 +774,7 @@ export const userRouter = router({
 									},
 								},
 								ownership: true,
+								collabStatus: true,
 							},
 							orderBy: {
 								created_at: "asc",
@@ -766,14 +807,11 @@ export const userRouter = router({
 					nextCursor = nextItem!.id;
 				}
 
-				// Add is_bookmarked / is_liked and serialize to DTO
-				const data: ProjectWithInteractionsType[] = projects.map((p) =>
-					toProjectWithInteractionsDTO({
-						...(p as unknown as Parameters<typeof toProjectWithInteractionsDTO>[0]),
-						id_category: (p as unknown as { id_category?: string | null }).id_category,
-						is_archived: false,
-						is_bookmarked: id_user ? !!p.bookmarks?.length : false,
-						is_liked: id_user ? !!p.LikeProject?.length : false,
+				const data: ProjectOneType[] = projects.map((p) =>
+					toProjectOneDTO({
+						...(p as unknown as Parameters<typeof toProjectOneDTO>[0]),
+						bookmarks: (p as unknown as { bookmarks?: { id: string }[] }).bookmarks,
+						LikeProject: (p as unknown as { LikeProject?: { id: string }[] }).LikeProject,
 					}),
 				);
 
@@ -824,48 +862,47 @@ export const userRouter = router({
 						updated_at: true,
 						category: {
 							select: {
-								id: true,
-								title: true,
-								slug: true,
-							},
-						},
-						project_user: {
-							select: {
-								user: {
-									select: {
-										id: true,
-										name: true,
-										username: true,
-										photo_profile: true,
-									},
-								},
-							},
-							orderBy: {
-								created_at: "asc",
-							},
-						},
-						bookmarks: {
-							where: { id_user: id_user },
-							select: { id: true },
-						},
-						LikeProject: {
-							where: { id_user: id_user },
-							select: { id: true },
-						},
-					},
-					orderBy: {
-						created_at: "desc",
-					},
-				});
+ 								id: true,
+ 								title: true,
+ 								slug: true,
+ 							},
+ 						},
+ 						project_user: {
+ 							select: {
+ 								user: {
+ 									select: {
+ 										id: true,
+ 										name: true,
+ 										username: true,
+ 										photo_profile: true,
+ 									},
+ 								},
+ 								ownership: true,
+ 								collabStatus: true,
+ 							},
+ 							orderBy: {
+ 								created_at: "asc",
+ 							},
+ 						},
+ 						bookmarks: {
+ 							where: { id_user: id_user },
+ 							select: { id: true },
+ 						},
+ 						LikeProject: {
+ 							where: { id_user: id_user },
+ 							select: { id: true },
+ 						},
+ 					},
+ 					orderBy: {
+ 						created_at: "desc",
+ 					},
+ 				});
 
-				// Add is_bookmarked / is_liked and serialize to DTO
-				const data: ProjectWithInteractionsType[] = pinnedProjects.map((p) =>
-					toProjectWithInteractionsDTO({
-						...(p as unknown as Parameters<typeof toProjectWithInteractionsDTO>[0]),
-						id_category: p.id_category,
-						is_archived: p.is_archived,
-						is_bookmarked: !!p.bookmarks?.length,
-						is_liked: !!p.LikeProject?.length,
+				const data: ProjectOneType[] = pinnedProjects.map((p) =>
+					toProjectOneDTO({
+						...(p as unknown as Parameters<typeof toProjectOneDTO>[0]),
+						bookmarks: (p as unknown as { bookmarks?: { id: string }[] }).bookmarks,
+						LikeProject: (p as unknown as { LikeProject?: { id: string }[] }).LikeProject,
 					}),
 				);
 
