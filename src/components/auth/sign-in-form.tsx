@@ -59,9 +59,17 @@ export function SignInForm() {
         title.setAttribute("style", "font-size: 16px");
       }
 
+      const form = document.querySelector(".cl-form");
+      const divider = document.querySelector(".cl-dividerRow");
+      const badge = document.querySelector(".cl-badge");
+      
+      if (form) form.setAttribute("style", "display: none;");
+      if (divider) divider.setAttribute("style", "display: none;");
+      if (badge) badge.setAttribute("style", "display: none;");
+
       if (footer) footer.setAttribute("style", "display: none;");
 
-      if (title && footer) clearInterval(interval);
+      if (title && footer && form && divider) clearInterval(interval);
     }, 100);
 
     return () => clearInterval(interval);

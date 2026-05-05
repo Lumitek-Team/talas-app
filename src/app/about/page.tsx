@@ -207,7 +207,7 @@ export default function AboutPage() {
               </h2>
               <p className="text-lg text-slate-400 leading-relaxed">
                 Talas is more than just a platform.
-                It's a growing ecosystem built by passionate developers and designers, aiming to foster collaboration, creativity,
+                It&apos;s a growing ecosystem built by passionate developers and designers, aiming to foster collaboration, creativity,
                 and meaningful connections through technology. With Talas, we envision a space where software projects are not
                 only shared — but celebrated, improved, and co-created.
               </p>

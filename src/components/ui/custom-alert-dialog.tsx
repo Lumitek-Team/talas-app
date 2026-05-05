@@ -10,9 +10,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger, // We might control it with isOpen prop instead
+   // We might control it with isOpen prop instead
 } from "@/components/ui/alert-dialog"; // Assuming shadcn/ui path
-import { Button } from "@/components/ui/button";
+
 
 interface CustomAlertDialogProps {
   isOpen: boolean;

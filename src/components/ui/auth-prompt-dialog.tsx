@@ -34,11 +34,6 @@ export function AuthPromptDialog({
     router.push("/sign-in");
   }, [onClose, router]);
 
-  const handleSignUp = useCallback(() => {
-    onClose();
-    router.push("/sign-up");
-  }, [onClose, router]);
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -113,24 +108,17 @@ export function AuthPromptDialog({
               {/* Actions */}
               <div className="flex flex-col gap-3">
                 <button
-                  id="auth-prompt-signup-btn"
-                  onClick={handleSignUp}
-                  className="w-full py-2.5 rounded-xl bg-primary text-black text-sm font-semibold hover:bg-primary/90 active:scale-95 transition-all duration-200 cursor-pointer"
-                >
-                  Create an Account
-                </button>
-                <button
                   id="auth-prompt-signin-btn"
                   onClick={handleSignIn}
-                  className="w-full py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-medium hover:bg-white/10 active:scale-95 transition-all duration-200 cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-primary text-black text-sm font-semibold hover:bg-primary/90 active:scale-95 transition-all duration-200 cursor-pointer"
                 >
-                  Sign In
+                  Continue with Google
                 </button>
               </div>
 
               {/* Subtle footer */}
               <p className="text-center text-xs text-white/30 mt-5">
-                Free forever · No credit card required
+                Secured with Clerk
               </p>
             </div>
           </motion.div>

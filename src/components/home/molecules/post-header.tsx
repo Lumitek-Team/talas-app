@@ -2,7 +2,7 @@
 
 import { Avatar } from "@/components/ui/avatar";
 import { AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
-import { useRouter } from "next/navigation";
+
 import Link from "next/link";
 
 interface PostHeaderProps {

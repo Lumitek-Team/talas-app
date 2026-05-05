@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 export function Hero() {
   const words = ["BIG", "AMAZING", "WONDERFUL", "MARVELLOUS", "INCREDIBLE"];

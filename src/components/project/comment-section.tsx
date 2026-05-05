@@ -1,13 +1,13 @@
 // components/project/comment-section.tsx (Refactored - Main Listing Component)
 "use client";
 
-import { Separator } from "@/components/ui/separator";
+
 import { CommentItem } from "./comment-item";      // Your refactored CommentItem
 import { CommentForm } from "./comment-form";      // The new, separate CommentForm
 import { trpc } from "@/app/_trpc/client";
 import { CommentsInProjectType } from "@/lib/type";
 import { useUser } from "@clerk/nextjs";
-import { useEffect } from "react"; // For potential initial focus or other effects
+ // For potential initial focus or other effects
 
 interface CommentSectionProps {
   projectId: string;
