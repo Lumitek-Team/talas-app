@@ -193,7 +193,7 @@ export default function SearchPage() {
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const formValues = form.watch();
 
-  const { data: categoryResponse, isLoading: isCategoryLoading } = trpc.category.getAll.useQuery(undefined);
+  const { data: categoryResponse } = trpc.category.getAll.useQuery(undefined);
 
   const { data: popularProjectsRaw, isLoading: loadingPopularProjectsRaw } = trpc.search.getPopularPost.useQuery({
     id_user: user?.id || "",
@@ -366,7 +366,7 @@ export default function SearchPage() {
                   </div>
                   {activeFilter === "Project" && (
                     <div className="w-full sm:w-auto sm:min-w-[200px] md:min-w-[220px]">
-                      <CategorySelect categories={categoryResponse?.data || []} value={formValues.category || ""} onChange={(e) => form.setValue("category", e.target.value)} disabled={isCategoryLoading} />
+                      <CategorySelect categories={categoryResponse?.data || []} value={formValues.category || ""} onChange={(e) => form.setValue("category", e.target.value)} disabled={false} />
                     </div>
                   )}
                 </div>

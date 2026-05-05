@@ -9,7 +9,7 @@ import {
   AvatarFallback,
 } from "@/components/ui/avatar-gatau";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+
 import {
   EllipsisHorizontalIcon,
   HeartIcon,

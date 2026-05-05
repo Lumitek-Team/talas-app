@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { cn } from "@/lib/utils";
+
 
 type ImageContainerProps = {
   images: string[];
 };
 
 export function ImageContainerProjectProfile({ images }: ImageContainerProps) {
-  const [loadedCount, setLoadedCount] = useState(0);
+  const [, setLoadedCount] = useState(0);
 
   const isCarouselActive = images.length > 1;
 

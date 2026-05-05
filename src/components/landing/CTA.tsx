@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import Link from "next/link"; // Add this import
+ // Add this import
 import { motion, Variants } from "framer-motion";
 import { memo } from "react";
 

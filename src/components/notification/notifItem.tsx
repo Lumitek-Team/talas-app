@@ -50,7 +50,7 @@ const getNotificationIcon = (notification: NotificationType) => {
 
 export function NotificationItems({
   notification,
-  onReadChange,
+  
 }: NotificationItemProps) {
   const IconComponent = getNotificationIcon(notification);
 

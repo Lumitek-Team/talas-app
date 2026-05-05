@@ -21,7 +21,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { CategoryType, ProjectOneType } from "@/lib/type";
+import {  ProjectOneType } from "@/lib/type";
 import { useState, useEffect, useRef } from "react";
 import { convertIframeToOembed, convertOembedToIframe } from "@/lib/utils";
 import RichEditor from "./example-ckeditor";

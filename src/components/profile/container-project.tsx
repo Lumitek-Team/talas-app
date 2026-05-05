@@ -1,4 +1,4 @@
-import { Pin } from "lucide-react";
+
 import { ReactNode } from "react";
 
 type PinnedProjectProps = {

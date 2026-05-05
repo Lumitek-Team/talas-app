@@ -6,7 +6,7 @@
  * See: https://nextjs.org/docs/messages/middleware-to-proxy
  *
  * Guest-friendly access policy:
- * - PUBLIC (no auth required):  /, /feeds, /project/[id], /search, /about, /sign-in, /sign-up
+ * - PUBLIC (no auth required):  /, /feeds, /project/[id], /search, /about, /sign-in
  * - PROTECTED (auth required):  /saved, /notifications, /settings, /create-project,
  *                               /profile/[username]/edit, /project/[id]/edit
  *
