@@ -138,7 +138,7 @@ export const projectRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const limit = input.limit ?? 50;
+      const limit = input.limit ?? 12; // Reduced from 50: fetch only first viewport worth
       const { cursor, id_user } = input;
 
       try {
