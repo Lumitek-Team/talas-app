@@ -7,9 +7,8 @@ import slugify from "slugify";
 import {
   CommentsInProjectType,
   ProjectOneType,
-  ProjectWithInteractionsType,
 } from "@/lib/type";
-import { toProjectOneDTO, toProjectWithInteractionsDTO } from "@/lib/dto";
+import { toProjectOneDTO } from "@/lib/dto";
 import { collabStatusType, ownershipType } from "@prisma/client";
 import { deleteImages } from "@/lib/imageUtils";
 
@@ -139,7 +138,7 @@ export const projectRouter = router({
       }),
     )
     .query(async ({ input }) => {
-      const limit = input.limit ?? 50;
+      const limit = input.limit ?? 12; // Reduced from 50: fetch only first viewport worth
       const { cursor, id_user } = input;
 
       try {
@@ -149,6 +148,7 @@ export const projectRouter = router({
           },
           select: {
             id: true,
+            id_category: true,
             title: true,
             slug: true,
             content: true,
@@ -182,6 +182,7 @@ export const projectRouter = router({
                   },
                 },
                 ownership: true,
+                collabStatus: true,
               },
               where: {
                 OR: [
@@ -225,20 +226,16 @@ export const projectRouter = router({
           nextCursor = nextItem!.id;
         }
 
-        const projects: ProjectWithInteractionsType[] = projectsFromDb.map((p) => {
+        const projects: ProjectOneType[] = projectsFromDb.map((p) => {
           const pWithOptional = p as unknown as {
-            id_category?: string | null;
-            category?: { id: string };
             bookmarks?: { id: string }[];
             LikeProject?: { id: string }[];
           };
 
-          return toProjectWithInteractionsDTO({
-            ...(p as unknown as Parameters<typeof toProjectWithInteractionsDTO>[0]),
-            id_category: pWithOptional.id_category ?? pWithOptional.category?.id,
-            is_archived: false,
-            is_bookmarked: id_user ? !!pWithOptional.bookmarks?.length : false,
-            is_liked: id_user ? !!pWithOptional.LikeProject?.length : false,
+          return toProjectOneDTO({
+            ...(p as unknown as Parameters<typeof toProjectOneDTO>[0]),
+            bookmarks: pWithOptional.bookmarks ?? undefined,
+            LikeProject: pWithOptional.LikeProject ?? undefined,
           });
         });
 

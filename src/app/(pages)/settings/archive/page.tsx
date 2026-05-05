@@ -60,14 +60,21 @@ export default function Archive() {
                   <LoadingSpinner />
                 </>
               ) : data?.projects?.length ? (
-                data.projects.map((project: ProjectType, index: number) => (
+                data.projects.map((project, index: number) => (
                   <div key={project.title}>
                     <div
                     // onClick={() => router.push(`/project/${project.title}`)}
                     // className="cursor-pointer"
                     >
                       <CardArchive
-                        project={project}
+                        project={{
+                          ...project,
+                          image1: project.image1 ?? undefined,
+                          image2: project.image2 ?? undefined,
+                          image3: project.image3 ?? undefined,
+                          image4: project.image4 ?? undefined,
+                          image5: project.image5 ?? undefined,
+                        }}
                         userId={userId}
                         setIsProcessing={setIsProcessing}
                       />
