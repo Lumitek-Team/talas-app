@@ -82,7 +82,7 @@ const ProfileAvatar = ({ src, alt, fallback }: { src?: string; alt?: string; fal
         useNextImage ? (
           <Image src={src} alt={alt || "Avatar"} width={48} height={48} className="w-full h-full object-cover" onError={() => setImageError(true)} />
         ) : (
-          <img src={src} alt={alt || "Avatar"} width={48} height={48} className="w-full h-full object-cover" onError={() => setImageError(true)} />
+          <Image src={src} alt={alt || "Avatar"} width={48} height={48} className="w-full h-full object-cover" onError={() => setImageError(true)} unoptimized />
         )
       ) : (
         <span className="text-neutral-200 font-medium text-sm">{fallback}</span>

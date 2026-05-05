@@ -18,7 +18,8 @@ interface CollaboratorSelectProps {
 export default function CollaboratorSelect({ value, onChange }: CollaboratorSelectProps) {
     const [inputValue, setInputValue] = useState("");
     const [query, setQuery] = useState("");
-    const userId = useUser().user?.id;
+    const { user, isLoaded } = useUser();
+    const userId = user?.id;
 
     // Debounced search
     const debouncedSetQuery = useMemo(
@@ -37,7 +38,7 @@ export default function CollaboratorSelect({ value, onChange }: CollaboratorSele
             query: encodeURIComponent(query),
             id_user: userId ?? "",
         }, {
-            enabled: query.length > 0,
+            enabled: isLoaded && query.length > 0,
         });
 
     const options: SelectCollabType[] = data?.data || [];

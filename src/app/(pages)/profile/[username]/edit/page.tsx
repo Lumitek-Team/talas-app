@@ -42,7 +42,7 @@ export default function EditProfile() {
   const params = useParams();
   const router = useRouter();
   const usernameFromUrl = params?.username as string | undefined;
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const [isMobile, setIsMobile] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -52,7 +52,7 @@ export default function EditProfile() {
     error: loggedInUserError,
   } = trpc.user.getById.useQuery(
     { id: user?.id ?? "" },
-    { enabled: !!user?.id },
+    { enabled: isLoaded && !!user?.id },
   );
 
   const {
@@ -268,7 +268,7 @@ export default function EditProfile() {
   // Fallback saat redirect
   if (isRedirecting) return null;
 
-  if (isUserDetailLoading || isLoggedInUserLoading) {
+  if (!isLoaded || isUserDetailLoading || isLoggedInUserLoading) {
     return <div className="text-center p-10 text-white">Memuat data...</div>;
   }
 

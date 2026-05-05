@@ -13,7 +13,7 @@ interface CollaborationRequestCardProps {
 }
 
 export function CollaborationRequestCard({ request }: CollaborationRequestCardProps) {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const utils = trpc.useUtils();
 
   const projectOwner = request.project.project_user[0]?.user;
@@ -76,7 +76,7 @@ export function CollaborationRequestCard({ request }: CollaborationRequestCardPr
             variant="outline" 
             size="sm"
             onClick={handleReject}
-            disabled={rejectMutation.isPending || acceptMutation.isPending}
+            disabled={!isLoaded || rejectMutation.isPending || acceptMutation.isPending}
         >
             {rejectMutation.isPending ? 'Rejecting...' : 'Reject'}
         </Button>
@@ -84,7 +84,7 @@ export function CollaborationRequestCard({ request }: CollaborationRequestCardPr
             variant="default" 
             size="sm"
             onClick={handleAccept}
-            disabled={acceptMutation.isPending || rejectMutation.isPending}
+            disabled={!isLoaded || acceptMutation.isPending || rejectMutation.isPending}
         >
             {acceptMutation.isPending ? 'Accepting...' : 'Accept'}
         </Button>

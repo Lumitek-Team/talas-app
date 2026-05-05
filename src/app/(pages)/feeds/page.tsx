@@ -79,6 +79,7 @@ export default function HomePage() {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     // Guests can browse feeds — no auth required
     enabled: isUserLoaded,
+    staleTime: 60 * 1000, // MEDIUM — 1 minute
     refetchOnWindowFocus: false,
   });
 

@@ -16,11 +16,11 @@ interface PostComposerProps {
 
 export function PostComposer({ avatarSrc, username, className = "" }: PostComposerProps) {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   // Fetch the latest user data from your database
   const { data: userProfile } = trpc.user.getById.useQuery(
     { id: user?.id ?? "" },
-    { enabled: !!user?.id }
+    { enabled: isLoaded && !!user?.id },
   );
 
   const handleRedirect = () => {

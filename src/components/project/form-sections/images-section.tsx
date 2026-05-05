@@ -2,7 +2,7 @@
 import { FormLabel } from "@/components/ui/form";
 import { X } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";
-import { PlusIcon } from '@heroicons/react/24/outline'
+import Image from "next/image";
 
 interface ImagesSectionProps {
   imagePreviews: string[];
@@ -69,10 +69,13 @@ export function ImagesSection({
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
           {imagePreviews.map((preview, index) => (
             <div key={index} className="relative aspect-video rounded-md overflow-hidden">
-              <img 
-                src={preview} 
-                alt={`Project image ${index + 1}`} 
-                className="w-full h-full object-cover"
+              {/* unoptimized: previews are data-URLs / blob-URLs that can't go through Next.js image optimizer */}
+              <Image
+                src={preview}
+                alt={`Project image ${index + 1}`}
+                fill
+                className="object-cover"
+                unoptimized
               />
               {!isEditMode && ( // Only show remove button if not in edit mode
                 <button

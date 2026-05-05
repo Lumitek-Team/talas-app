@@ -62,7 +62,7 @@ export function CommentForm({
   // Fetch the latest user data from your database
   const { data: userProfile } = trpc.user.getById.useQuery(
     { id: userclerk?.id || "" },
-    { enabled: !!userclerk?.id },
+    { enabled: isUserLoaded && !!userclerk?.id },
   );
 
   const user = userProfile?.data;
