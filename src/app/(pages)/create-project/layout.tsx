@@ -1,18 +1,17 @@
+import { AuthGuard } from "@/components/layout/auth-guard";
+
 export async function generateMetadata() {
-    return {
-        title: `Talas - Create Project`,
-        description: "A  web-based social media platform designed to showcase software engineering projects. Talas enables users to share, explore, and interact with innovative project portfolios in a modern and engaging way. Built for collaboration, inspiration, and growth in the tech community.",
-    };
+  return {
+    title: `Talas - Create Project`,
+    description:
+      "A  web-based social media platform designed to showcase software engineering projects. Talas enables users to share, explore, and interact with innovative project portfolios in a modern and engaging way. Built for collaboration, inspiration, and growth in the tech community.",
+  };
 }
 
 export default async function CreateLayout({
-    children,
+  children,
 }: Readonly<{
-    children: React.ReactNode
+  children: React.ReactNode;
 }>) {
-    return (
-        <>
-            {children}
-        </>
-    )
+  return <AuthGuard>{children}</AuthGuard>;
 }

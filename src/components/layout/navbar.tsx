@@ -26,12 +26,19 @@ export function Navbar() {
             About
           </Link>
           <SignedOut>
-            <SignInButton>
-              <p className="text-text-primary hover:text-primary transition-colors duration-200 text-lg cursor-pointer">Login</p>
+            <SignInButton mode="redirect" forceRedirectUrl="/feeds">
+              <p className="text-text-primary hover:text-primary transition-colors duration-200 text-lg cursor-pointer">
+                Login
+              </p>
             </SignInButton>
           </SignedOut>
           <SignedIn>
-            <Link href={"/feeds"} className="text-text-primary hover:text-accent-green transition-colors duration-200 text-lg cursor-pointer">Feeds</Link>
+            <Link
+              href={"/feeds"}
+              className="text-text-primary hover:text-accent-green transition-colors duration-200 text-lg cursor-pointer"
+            >
+              Feeds
+            </Link>
           </SignedIn>
         </div>
       </nav>

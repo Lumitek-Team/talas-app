@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { SignOutButton } from "@clerk/nextjs";
-import { usePathname } from "next/navigation";
 import {
   ArrowRightEndOnRectangleIcon,
   CogIcon,
@@ -28,8 +27,6 @@ export function MoreLeftSidebar({
   activeItem,
   isMobile = false,
 }: MoreLeftSidebarProps) {
-  const pathname = usePathname();
-
   const moreItems: MoreItem[] = [
     { icon: "settings", label: "Settings", href: "/settings" },
     { icon: "logout", label: "Log Out", href: "#", isLogout: true },
@@ -58,15 +55,18 @@ export function MoreLeftSidebar({
       <nav className="w-full border">
         <ul className="flex justify-evenly w-full">
           {moreItems.map((item) => {
-            const isActive = item.label.toLowerCase() === activeItem?.toLowerCase();
+            const isActive =
+              item.label.toLowerCase() === activeItem?.toLowerCase();
 
             return (
               <li key={item.label}>
                 {item.isLogout ? (
-                  <SignOutButton>
+                  <SignOutButton redirectUrl="/">
                     <button
                       className={`flex items-center justify-center p-2 rounded-md transition-colors ${
-                        isActive ? "text-primary" : "text-white hover:bg-white/10"
+                        isActive
+                          ? "text-primary"
+                          : "text-white hover:bg-white/10"
                       }`}
                       title={item.label}
                     >
@@ -96,12 +96,13 @@ export function MoreLeftSidebar({
     <nav>
       <ul className="flex flex-col gap-y-2">
         {moreItems.map((item) => {
-          const isActive = item.label.toLowerCase() === activeItem?.toLowerCase();
+          const isActive =
+            item.label.toLowerCase() === activeItem?.toLowerCase();
 
           return (
             <li key={item.label}>
               {item.isLogout ? (
-                <SignOutButton>
+                <SignOutButton redirectUrl="/">
                   <button
                     className={`flex items-center cursor-pointer${
                       isCollapsed ? "justify-center" : ""
