@@ -1,4 +1,4 @@
-import { protectedProcedure, router } from "../trpc";
+import { protectedProcedure, publicProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
@@ -11,7 +11,6 @@ import {
 	UserProjectsCondition,
 } from "@/lib/type";
 import { toProjectOneDTO } from "@/lib/dto";
-import { Notification } from "@prisma/client";
 import { z } from "zod";
 
 export const userRouter = router({
@@ -171,7 +170,7 @@ export const userRouter = router({
 			}
 		}),
 
-	getByUsername: protectedProcedure
+	getByUsername: publicProcedure
 		.input(
 			z.object({
 				username: z.string(),
@@ -214,7 +213,7 @@ export const userRouter = router({
 			}
 		}),
 
-	getAllFollower: protectedProcedure
+	getAllFollower: publicProcedure
 		.input(
 			z.object({
 				id_following: z.string(),
@@ -255,7 +254,7 @@ export const userRouter = router({
 			}
 		}),
 
-	getAllFollowing: protectedProcedure
+	getAllFollowing: publicProcedure
 		.input(
 			z.object({
 				id_follower: z.string(),
@@ -603,13 +602,21 @@ export const userRouter = router({
 			oneMonthAgo.setMonth(now.getMonth() - 1);
 
 			try {
-				const notifications: Notification[] = await prisma.notification.findMany({
+				const notifications = await prisma.notification.findMany({
 					where: {
 						id_user: input.id_user,
 						created_at: {
 							gte: oneMonthAgo,
 							lte: now,
 						},
+					},
+					select: {
+						id: true,
+						title: true,
+						is_read: true,
+						type: true,
+						created_at: true,
+						id_user: true,
 					},
 					take: limit + 1,
 					cursor: cursor ? { id: cursor } : undefined,

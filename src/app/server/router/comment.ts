@@ -75,6 +75,13 @@ export const commentRouter = router({
 				select: {
 					title: true,
 					project_user: {
+						// Only notify OWNER and ACCEPTED collaborators, not PENDING
+						where: {
+							OR: [
+								{ ownership: "OWNER" },
+								{ ownership: "COLLABORATOR", collabStatus: "ACCEPTED" },
+							],
+						},
 						select: {
 							ownership: true,
 							user: {

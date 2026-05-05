@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { protectedProcedure, router } from "../trpc";
+import { protectedProcedure, publicProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { CategoryType } from "@/lib/type";
 
 export const categoryRouter = router({
-	getAll: protectedProcedure.query(async () => {
+	getAll: publicProcedure.query(async () => {
 		const data: CategoryType[] = await prisma.category.findMany({
 			select: {
 				id: true,
@@ -24,7 +24,7 @@ export const categoryRouter = router({
 		};
 	}),
 
-	getOne: protectedProcedure
+	getOne: publicProcedure
 		.input(
 			z.object({
 				id: z.string().optional(),
