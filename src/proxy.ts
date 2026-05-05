@@ -4,18 +4,26 @@
  *
  * Next.js 16 renames the `middleware` file convention to `proxy`.
  * See: https://nextjs.org/docs/messages/middleware-to-proxy
+ *
+ * Guest-friendly access policy:
+ * - PUBLIC (no auth required):  /, /feeds, /project/[id], /search, /about, /sign-in, /sign-up
+ * - PROTECTED (auth required):  /saved, /notifications, /settings, /create-project,
+ *                               /profile/[username]/edit, /project/[id]/edit
+ *
+ * NOTE: /notification (singular) is also protected as it's an account-specific page.
  */
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-// Routes that require authentication
+// Only routes that must be strictly authenticated.
+// Feeds, search, and project detail pages are intentionally public
+// so guests (e.g., recruiters) can browse without friction.
 const isProtectedRoute = createRouteMatcher([
-  "/feeds(.*)",
-  "/create-project(.*)",
-  "/settings(.*)",
-  "/notification(.*)",
   "/saved(.*)",
-  "/search(.*)",
+  "/notifications(.*)",
+  "/notification(.*)",
+  "/settings(.*)",
+  "/create-project(.*)",
   "/profile/(.*)/edit(.*)",
   "/project/(.*)/edit(.*)",
 ]);

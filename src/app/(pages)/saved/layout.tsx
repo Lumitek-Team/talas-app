@@ -1,3 +1,5 @@
+import { AuthGuard } from "@/components/layout/auth-guard";
+
 export async function generateMetadata() {
     return {
         title: `Talas - Saved Projects`,
@@ -11,8 +13,8 @@ export default async function SavedLayout({
     children: React.ReactNode
 }>) {
     return (
-        <>
+        <AuthGuard>
             {children}
-        </>
+        </AuthGuard>
     )
 }

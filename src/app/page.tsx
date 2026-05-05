@@ -5,6 +5,8 @@ import { LandingPageClient } from "@/components/landing/landing-page-client";
 export default async function LandingPage() {
   const user = await currentUser();
 
+  // Authenticated users skip the landing page and go straight to feeds.
+  // Guests see the landing page and can click "Get Started" to browse feeds freely.
   if (user) {
     redirect("/feeds");
   }

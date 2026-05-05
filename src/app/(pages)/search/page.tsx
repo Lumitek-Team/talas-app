@@ -21,6 +21,7 @@ import { ProjectOneType } from "@/lib/type";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
 import { Separator } from "@/components/ui/separator";
+import { AuthPromptDialog } from "@/components/ui/auth-prompt-dialog";
 
 type FilterType = "Project" | "Profile" | "Category";
 type BackendFilterType = "PROJECT" | "USER" | "CATEGORY";
@@ -181,6 +182,8 @@ export default function SearchPage() {
   const [optimisticBookmarks, setOptimisticBookmarks] = useState<Record<string, boolean>>({});
   const [optimisticLikes, setOptimisticLikes] = useState<Record<string, boolean>>({});
   const [displayablePosts, setDisplayablePosts] = useState<ReturnType<typeof transformProjectToPost>[]>([]);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [authDialogMessage, setAuthDialogMessage] = useState<string | undefined>(undefined);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { type: initialType, query: initialQuery, category: initialCategory }
@@ -235,7 +238,7 @@ export default function SearchPage() {
   const searchQuery = trpc.search.search.useInfiniteQuery(
     queryInput, {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    enabled: !!user?.id && (!!viewingCategory || (!!committedValues.query && committedValues.query.trim().length > 0)),
+    enabled: !!viewingCategory || (!!committedValues.query && committedValues.query.trim().length > 0),
     refetchOnWindowFocus: false,
   }
   );
@@ -301,7 +304,11 @@ export default function SearchPage() {
 
   // FUNCTIONALITY FIX: Implement the logic for the handlers
   const handleToggleBookmark = (projectId: string, currentIsBookmarked: boolean) => {
-    if (!user) return;
+    if (!user) {
+      setAuthDialogMessage("Sign in to save projects to your personal collection.");
+      setAuthDialogOpen(true);
+      return;
+    }
     setOptimisticBookmarks((prev) => ({ ...prev, [projectId]: !currentIsBookmarked }));
     if (currentIsBookmarked) {
       unbookmarkMutation.mutate({ id_user: user.id, id_project: projectId });
@@ -311,7 +318,11 @@ export default function SearchPage() {
   };
 
   const handleToggleLike = (projectId: string, currentIsLiked: boolean) => {
-    if (!user) return;
+    if (!user) {
+      setAuthDialogMessage("Sign in to like projects and show your appreciation.");
+      setAuthDialogOpen(true);
+      return;
+    }
     setOptimisticLikes((prev) => ({ ...prev, [projectId]: !currentIsLiked }));
     if (currentIsLiked) {
       unlikeMutation.mutate({ id_user: user.id, id_project: projectId });
@@ -320,9 +331,14 @@ export default function SearchPage() {
     }
   };
 
-  const handleCreateProjectClick = () => router.push("/project/create");
-  if (!isLoaded) { /* ... */ }
-  if (!user) { /* ... */ }
+  const handleCreateProjectClick = () => {
+    if (!user) {
+      setAuthDialogMessage("Sign in to create and share your own projects.");
+      setAuthDialogOpen(true);
+      return;
+    }
+    router.push("/project/create");
+  };
   const showInitialPrompt = !committedValues.query || (committedValues.query.trim().length === 0);
 
   // Always render the layout structure
@@ -337,18 +353,8 @@ export default function SearchPage() {
             <LoadingSpinner />
           )}
 
-          {/* Show sign-in message when user is loaded but not authenticated */}
-          {isLoaded && !user && (
-            <div className="flex items-center justify-center h-64">
-              <div className="text-center">
-                <h3 className="text-lg font-semibold mb-2">Sign In Required</h3>
-                <p className="text-muted-foreground">Please sign in to search for projects and profiles.</p>
-              </div>
-            </div>
-          )}
-
-          {/* Show main content when user is loaded and authenticated */}
-          {isLoaded && user && (
+          {/* Show main content when user is loaded */}
+          {isLoaded && (
             <>
               <div className={cn("p-4 border-b border-neutral-700/50", { 'hidden': !!viewingCategory })}>
                 <SearchInput value={formValues.query || ''} onChange={(e) => form.setValue("query", e.target.value)} placeholder="Search projects, profiles, or categories..." />
@@ -451,6 +457,11 @@ export default function SearchPage() {
         </div>
       </PageContainer>
       <FloatingActionButton onClick={handleCreateProjectClick} />
+      <AuthPromptDialog
+        isOpen={authDialogOpen}
+        onClose={() => setAuthDialogOpen(false)}
+        message={authDialogMessage}
+      />
     </>
   );
 }

@@ -7,6 +7,7 @@ import { PostCard } from "@/components/home/organisms/post-card";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { PageContainer } from "@/components/ui/page-container";
 import { LoadingSpinner } from "@/components/ui/loading";
+import { AuthPromptDialog } from "@/components/ui/auth-prompt-dialog";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { ProjectOneType } from "@/lib/type";
@@ -18,19 +19,6 @@ const transformProjectToPost = (
   optimisticLikes: Record<string, boolean>,
   optimisticBookmarks: Record<string, boolean>,
 ) => {
-  // const primaryUser = project.project_user && project.project_user[0]?.user;
-
-  // let resolvedAvatarSrc: string;
-  // if (primaryUser?.photo_profile) {
-  //   if (primaryUser.photo_profile.startsWith('http')) {
-  //     resolvedAvatarSrc = primaryUser.photo_profile;
-  //   } else {
-  //     resolvedAvatarSrc = getPublicUrl(primaryUser.photo_profile);
-  //   }
-  // } else {
-  //   resolvedAvatarSrc = '/img/dummy/profile-photo-dummy.jpg';
-  // }
-
   const isLiked =
     optimisticLikes[project.id] !== undefined
       ? optimisticLikes[project.id]
@@ -63,6 +51,12 @@ export default function HomePage() {
     Record<string, boolean>
   >({});
 
+  // Auth-prompt dialog state (for guests)
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [authDialogMessage, setAuthDialogMessage] = useState<
+    string | undefined
+  >(undefined);
+
   const utils = trpc.useUtils();
   const currentUserIdFeeds = user?.id || undefined;
   const queryClientKeyProjectGetAll = useMemo(
@@ -83,7 +77,8 @@ export default function HomePage() {
     error,
   } = trpc.project.getAll.useInfiniteQuery(queryClientKeyProjectGetAll, {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    enabled: !!user && isUserLoaded,
+    // Guests can browse feeds — no auth required
+    enabled: isUserLoaded,
     refetchOnWindowFocus: false,
   });
 
@@ -207,14 +202,11 @@ export default function HomePage() {
       return { previousQueryData };
     },
     onError: (err, variables, context) => {
-      // If the error is a CONFLICT, it means the post was already liked.
-      // Set optimistic state to true (liked).
       if (err.data?.code === "CONFLICT") {
         setOptimisticLikes((prev) => ({
           ...prev,
           [variables.id_project]: true,
         }));
-        // Update the count if possible, or rely on onSettled to refetch
         utils.project.getAll.setInfiniteData(
           queryClientKeyProjectGetAll,
           (oldData) => {
@@ -227,14 +219,13 @@ export default function HomePage() {
                   (p: ProjectOneType) =>
                     p.id === variables.id_project
                       ? { ...p, is_liked: true, count_likes: p.count_likes }
-                      : p, // Ensure count isn't wrongly decremented
+                      : p,
                 ),
               })),
             };
           },
         );
       } else {
-        // For other errors, revert to previous state (not liked)
         setOptimisticLikes((prev) => ({
           ...prev,
           [variables.id_project]: false,
@@ -282,14 +273,11 @@ export default function HomePage() {
       return { previousQueryData };
     },
     onError: (err, variables, context) => {
-      // If the error is NOT_FOUND, it means the post was already not liked.
-      // Set optimistic state to false (not liked).
       if (err.data?.code === "NOT_FOUND") {
         setOptimisticLikes((prev) => ({
           ...prev,
           [variables.id_project]: false,
         }));
-        // Update the count if possible, or rely on onSettled to refetch
         utils.project.getAll.setInfiniteData(
           queryClientKeyProjectGetAll,
           (oldData) => {
@@ -302,14 +290,13 @@ export default function HomePage() {
                   (p: ProjectOneType) =>
                     p.id === variables.id_project
                       ? { ...p, is_liked: false, count_likes: p.count_likes }
-                      : p, // Ensure count isn't wrongly incremented
+                      : p,
                 ),
               })),
             };
           },
         );
       } else {
-        // For other errors, revert to previous state (liked)
         setOptimisticLikes((prev) => ({
           ...prev,
           [variables.id_project]: true,
@@ -365,11 +352,20 @@ export default function HomePage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  /** Show the auth-prompt dialog with an optional contextual message. */
+  const showAuthPrompt = useCallback((message?: string) => {
+    setAuthDialogMessage(message);
+    setAuthDialogOpen(true);
+  }, []);
+
   const handleToggleBookmark = (
     projectId: string,
     currentIsBookmarked: boolean,
   ) => {
-    if (!user) return;
+    if (!user) {
+      showAuthPrompt("Sign in to save projects to your personal collection.");
+      return;
+    }
     setOptimisticBookmarks((prev) => ({
       ...prev,
       [projectId]: !currentIsBookmarked,
@@ -382,7 +378,10 @@ export default function HomePage() {
   };
 
   const handleToggleLike = (projectId: string, currentIsLiked: boolean) => {
-    if (!user) return;
+    if (!user) {
+      showAuthPrompt("Sign in to like projects and show your appreciation.");
+      return;
+    }
     setOptimisticLikes((prev) => ({ ...prev, [projectId]: !currentIsLiked }));
     if (currentIsLiked) {
       unlikeMutation.mutate({ id_user: user.id, id_project: projectId });
@@ -398,30 +397,6 @@ export default function HomePage() {
         <PageContainer title="Home">
           <LoadingSpinner />
         </PageContainer>
-      </>
-    );
-  }
-
-  if (!user && isUserLoaded) {
-    return (
-      <>
-        {" "}
-        <Sidebar activeItem="Home" />{" "}
-        <PageContainer title="Home">
-          {" "}
-          <div className="flex items-center justify-center h-64">
-            {" "}
-            <div className="text-center">
-              {" "}
-              <h3 className="text-lg font-semibold text-muted-foreground mb-2">
-                Welcome to Feeds
-              </h3>{" "}
-              <p className="text-muted-foreground">
-                Please sign in to view and interact with posts.
-              </p>{" "}
-            </div>{" "}
-          </div>{" "}
-        </PageContainer>{" "}
       </>
     );
   }
@@ -502,7 +477,7 @@ export default function HomePage() {
                 <p className="text-muted-foreground">
                   {user
                     ? "Be the first to share a project!"
-                    : "Sign in to see the feed."}
+                    : "Browse projects or sign in to interact."}
                 </p>
               </div>
             )}
@@ -510,6 +485,13 @@ export default function HomePage() {
       </PageContainer>
 
       <FloatingActionButton onClick={handleFabClick} />
+
+      {/* Auth-prompt dialog — shown when guests attempt write actions */}
+      <AuthPromptDialog
+        isOpen={authDialogOpen}
+        onClose={() => setAuthDialogOpen(false)}
+        message={authDialogMessage}
+      />
     </>
   );
 }

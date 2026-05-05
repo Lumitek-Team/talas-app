@@ -13,6 +13,7 @@ import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog";
+import { AuthPromptDialog } from "@/components/ui/auth-prompt-dialog";
 import { skipToken } from "@tanstack/react-query";
 
 export default function ProjectDetailPage() {
@@ -34,13 +35,16 @@ export default function ProjectDetailPage() {
   const [isArchiveConfirmOpen, setIsArchiveConfirmOpen] = useState(false);
   const [isUnarchiveConfirmOpen, setIsUnarchiveConfirmOpen] = useState(false);
 
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [authDialogMessage, setAuthDialogMessage] = useState<string | undefined>(undefined);
+
   const utils = trpc.useUtils();
   const currentUserId = user?.id;
 
   const queryClientKeyProjectGetOne = useMemo(
     () =>
-      currentUserId && projectId
-        ? { id: projectId, id_user: currentUserId }
+      projectId
+        ? { id: projectId, id_user: currentUserId || "" }
         : undefined,
     [projectId, currentUserId],
   );
@@ -51,7 +55,7 @@ export default function ProjectDetailPage() {
     error,
     refetch: refetchProject,
   } = trpc.project.getOne.useQuery(queryClientKeyProjectGetOne || skipToken, {
-    enabled: !!projectId && isUserLoaded && !!user,
+    enabled: !!projectId && isUserLoaded,
   });
 
   useEffect(() => {
@@ -254,7 +258,11 @@ export default function ProjectDetailPage() {
   }, []);
 
   const handleToggleBookmark = () => {
-    /* ... as before ... */ if (!user || !project) return;
+    if (!user || !project) {
+      setAuthDialogMessage("Sign in to save projects to your personal collection.");
+      setAuthDialogOpen(true);
+      return;
+    }
     const currentIsBookmarked =
       optimisticBookmark !== undefined
         ? optimisticBookmark
@@ -273,7 +281,11 @@ export default function ProjectDetailPage() {
     }
   };
   const handleToggleLike = () => {
-    if (!user || !project) return;
+    if (!user || !project) {
+      setAuthDialogMessage("Sign in to like projects and show your appreciation.");
+      setAuthDialogOpen(true);
+      return;
+    }
     // Optimistic update is now more robustly handled in onMutate and onError
     const currentIsLiked =
       optimisticLike !== undefined ? optimisticLike : project.data.is_liked;
@@ -460,6 +472,11 @@ export default function ProjectDetailPage() {
         onConfirm={handleConfirmUnarchiveProject}
         confirmText="Yes, Unarchive"
         confirmButtonVariant="default"
+      />
+      <AuthPromptDialog
+        isOpen={authDialogOpen}
+        onClose={() => setAuthDialogOpen(false)}
+        message={authDialogMessage}
       />
     </>
   );

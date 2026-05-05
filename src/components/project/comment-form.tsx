@@ -20,7 +20,7 @@ import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { getPublicUrl } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import Link from "next/link";
+import { AuthPromptDialog } from "@/components/ui/auth-prompt-dialog";
 
 const commentFormSchema = z.object({
   content: z
@@ -56,6 +56,7 @@ export function CommentForm({
 }: CommentFormProps) {
   const { user: userclerk, isLoaded: isUserLoaded } = useUser();
   const [isSubmittingLocal, setIsSubmittingLocal] = useState(false);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const utils = trpc.useUtils();
 
   // Fetch the latest user data from your database
@@ -130,16 +131,15 @@ export function CommentForm({
 
     if (mode === "create") {
       createCommentMutation.mutate({
-        id_project: projectId, // Changed back to snake_case
+        id_project: projectId,
         content: values.content,
-        parent_id: parentId, // Changed back to snake_case
-        // Remove userId - backend doesn't expect it in input
+        parent_id: parentId,
       });
     } else if (mode === "edit" && currentCommentId) {
       editCommentMutation.mutate({
         id: currentCommentId,
         content: values.content,
-        id_user: user.id, // Changed back to snake_case
+        id_user: user.id,
       });
     } else {
       setIsSubmittingLocal(false);
@@ -161,15 +161,21 @@ export function CommentForm({
   if (!user) {
     if (mode === "create" && !parentId && !compact) {
       return (
-        <div className="py-4">
-          <p className="text-sm text-muted-foreground">
-            Please{" "}
-            <Link href="/sign-in" className="underline hover:text-primary">
-              sign in
-            </Link>{" "}
-            to post a comment.
-          </p>
-        </div>
+        <>
+          <div className="py-4">
+            <button
+              onClick={() => setAuthDialogOpen(true)}
+              className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200 cursor-pointer text-left"
+            >
+              <span className="underline">Sign in</span> to post a comment.
+            </button>
+          </div>
+          <AuthPromptDialog
+            isOpen={authDialogOpen}
+            onClose={() => setAuthDialogOpen(false)}
+            message="Join Talas to share your thoughts and engage with the community."
+          />
+        </>
       );
     } else {
       return null;
