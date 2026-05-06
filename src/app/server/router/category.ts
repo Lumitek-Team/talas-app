@@ -1,27 +1,35 @@
 import { z } from "zod";
-import { protectedProcedure, publicProcedure, router } from "../trpc";
+import { publicProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { CategoryType } from "@/lib/type";
+import { TRPCError } from "@trpc/server";
 
 export const categoryRouter = router({
 	getAll: publicProcedure.query(async () => {
-		const data: CategoryType[] = await prisma.category.findMany({
-			select: {
-				id: true,
-				slug: true,
-				title: true,
-				count_projects: true,
-			},
-			orderBy: {
-				count_projects: "desc",
-			},
-		});
+		try {
+			const data: CategoryType[] = await prisma.category.findMany({
+				select: {
+					id: true,
+					slug: true,
+					title: true,
+					count_projects: true,
+				},
+				orderBy: {
+					count_projects: "desc",
+				},
+			});
 
-		return {
-			success: true,
-			message: `Successfully get ${data.length} categories`,
-			data,
-		};
+			return {
+				success: true,
+				message: `Successfully get ${data.length} categories`,
+				data,
+			};
+		} catch (error) {
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: "Error fetching categories: " + (error instanceof Error ? error.message : String(error)),
+			});
+		}
 	}),
 
 	getOne: publicProcedure
@@ -48,13 +56,24 @@ export const categoryRouter = router({
 					},
 				});
 
+				if (!data) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "Category not found",
+					});
+				}
+
 				return {
 					success: true,
 					message: `Successfully get category`,
 					data,
 				};
 			} catch (error) {
-				throw new Error("Error fetching category: " + error);
+				if (error instanceof TRPCError) throw error;
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error fetching category: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 });

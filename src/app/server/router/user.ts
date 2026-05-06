@@ -84,8 +84,10 @@ export const userRouter = router({
 					};
 				}
 			} catch (error) {
-				// The original error message here was incorrect
-				throw new Error("Error syncing user: " + error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error syncing user: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 
@@ -122,7 +124,10 @@ export const userRouter = router({
 					data,
 				};
 			} catch (error) {
-				throw new Error("Error fetching user: " + error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error fetching users: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 
@@ -160,13 +165,24 @@ export const userRouter = router({
 					},
 				});
 
+				if (!data) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "User not found",
+					});
+				}
+
 				return {
 					success: true,
 					message: "Successfully get user",
 					data,
 				};
 			} catch (error) {
-				throw new Error("Error fetching user: " + error);
+				if (error instanceof TRPCError) throw error;
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error fetching user: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 
@@ -203,13 +219,24 @@ export const userRouter = router({
 					},
 				});
 
+				if (!data) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "User not found",
+					});
+				}
+
 				return {
 					success: true,
 					message: "Successfully get user",
 					data,
 				};
 			} catch (error) {
-				throw new Error("Error fetching user: " + error);
+				if (error instanceof TRPCError) throw error;
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error fetching user by username: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 
@@ -250,7 +277,10 @@ export const userRouter = router({
 					data,
 				};
 			} catch (error) {
-				throw new Error("Error fetching followers: " + error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error fetching followers: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 
@@ -291,7 +321,10 @@ export const userRouter = router({
 					data,
 				};
 			} catch (error) {
-				throw new Error("Error fetching followings: " + error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error fetching followings: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 
@@ -319,7 +352,10 @@ export const userRouter = router({
 					data,
 				};
 			} catch (error) {
-				throw new Error("Error fetching photoProfile: " + error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error fetching photo profile: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 
@@ -340,9 +376,16 @@ export const userRouter = router({
 				}),
 			})
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
+			const performerId = ctx.auth.userId ?? input.id;
+			if (performerId !== input.id) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "You can only update your own profile",
+				});
+			}
+
 			try {
-				// Cek jika username ingin diubah, pastikan unik
 				if (input.data.username) {
 					const existing = await prisma.user.findFirst({
 						where: {
@@ -354,7 +397,7 @@ export const userRouter = router({
 					if (existing) {
 						throw new TRPCError({
 							code: "CONFLICT",
-							message: "Username sudah digunakan oleh pengguna lain.",
+							message: "Username already in use",
 						});
 					}
 				}
@@ -392,23 +435,21 @@ export const userRouter = router({
 				};
 			} catch (error) {
 				if (error instanceof TRPCError) throw error;
-				// Prisma throws P2025 when record not found
 				if (error instanceof Prisma.PrismaClientKnownRequestError) {
 					if (error.code === "P2025") {
 						throw new TRPCError({
 							code: "NOT_FOUND",
-							message: "User not found.",
+							message: "User not found",
 						});
 					}
 				}
 				throw new TRPCError({
 					code: "INTERNAL_SERVER_ERROR",
-					message: "Error updating user.",
+					message: "Error updating user: " + (error instanceof Error ? error.message : String(error)),
 				});
 			}
 		}),
 
-	// use infinite query
 	getBookmarked: protectedProcedure
 		.input(
 			z.object({
@@ -422,10 +463,16 @@ export const userRouter = router({
 			const limit = input.limit ?? 12;
 			const { cursor } = input;
 			const currentUserId = ctx.auth.userId;
+			const targetUserId = input.id;
+
+			// Optional: Allow users to only see their own bookmarks if private,
+			// but currently bookmarks seem public in this app's logic.
+			// Let's keep it consistent with the existing implementation.
+
 			try {
-				const bookmarks = await prisma.bookmark.findMany({
+				const bookmarksFromDb = await prisma.bookmark.findMany({
 					where: {
-						id_user: input.id,
+						id_user: targetUserId,
 					},
 					take: limit + 1,
 					cursor: cursor ? { id: cursor } : undefined,
@@ -506,17 +553,15 @@ export const userRouter = router({
 					},
 				});
 
-				const hasNextPage = bookmarks.length > limit;
-				const itemsFromDb = hasNextPage ? bookmarks.slice(0, -1) : bookmarks;
+				const hasNextPage = bookmarksFromDb.length > limit;
+				const itemsFromDb = hasNextPage ? bookmarksFromDb.slice(0, -1) : bookmarksFromDb;
 
 				const items = itemsFromDb.map((b) => ({
 					id: b.id,
 					id_user: b.id_user,
 					created_at: b.created_at.toISOString(),
 					project: {
-						id: b.project.id,
-						title: b.project.title,
-						slug: b.project.slug,
+						...b.project,
 						image1: b.project.image1 ?? undefined,
 						image2: b.project.image2 ?? undefined,
 						image3: b.project.image3 ?? undefined,
@@ -532,7 +577,6 @@ export const userRouter = router({
 								photo_profile: pu.user.photo_profile ?? undefined,
 							},
 							ownership: pu.ownership,
-							// Prisma can return null for owner rows; UI types expect a value.
 							collabStatus: pu.collabStatus ?? "ACCEPTED",
 						})),
 					},
@@ -543,7 +587,10 @@ export const userRouter = router({
 					nextCursor: hasNextPage ? items[items.length - 1].id : null,
 				};
 			} catch (error) {
-				throw new Error("Error fetching bookmarks: " + error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error fetching bookmarks: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 
@@ -558,10 +605,10 @@ export const userRouter = router({
 			try {
 				const data: SelectCollabType[] = (await prisma.user.findMany({
 					where: {
-						id: { not: input.id_user }, // exclude self
+						id: { not: input.id_user },
 						OR: [
-							{ username: { contains: input.query } },
-							{ name: { contains: input.query } },
+							{ username: { contains: input.query, mode: "insensitive" } },
+							{ name: { contains: input.query, mode: "insensitive" } },
 						],
 					},
 					select: {
@@ -570,6 +617,7 @@ export const userRouter = router({
 						username: true,
 						photo_profile: true,
 					},
+					take: 10,
 				}))
 					.map((u) => ({
 						...u,
@@ -582,7 +630,10 @@ export const userRouter = router({
 					data,
 				};
 			} catch (error) {
-				throw new Error("Error fetching user: " + error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error searching collaborators: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 
@@ -594,9 +645,17 @@ export const userRouter = router({
 				cursor: z.string().nullish(),
 			})
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const limit = input.limit ?? 12;
 			const { cursor } = input;
+			const performerId = ctx.auth.userId ?? input.id_user;
+
+			if (performerId !== input.id_user) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "You can only view your own notifications",
+				});
+			}
 
 			const now = new Date();
 			const oneMonthAgo = new Date();
@@ -633,22 +692,33 @@ export const userRouter = router({
 					nextCursor: hasNextPage ? items[items.length - 1].id : null,
 				};
 			} catch (error) {
-				throw new Error("Error fetching notifications: " + error); // Fixed error message
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error fetching notifications: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 
 	getRequestCollab: protectedProcedure
 		.input(z.string())
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
+			const performerId = ctx.auth.userId ?? input;
+			if (performerId !== input) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "You can only view your own collaboration requests",
+				});
+			}
+
 			try {
-				const requests: RequestCollabType[] = (await prisma.projectUser.findMany({
+				const requestsFromDb = await prisma.projectUser.findMany({
 					where: {
 						id_user: input,
 						collabStatus: "PENDING",
 					},
 					select: {
 						id: true,
-						created_at: true, // Ensure created_at is selected
+						created_at: true,
 						project: {
 							select: {
 								id: true,
@@ -669,12 +739,14 @@ export const userRouter = router({
 											},
 										},
 									},
+									where: { ownership: "OWNER" },
 								},
 							},
 						},
 					},
-				}))
-					.map((r) => ({
+				});
+
+				const requests: RequestCollabType[] = requestsFromDb.map((r) => ({
 						id: r.id,
 						created_at: r.created_at.toISOString(),
 						project: {
@@ -698,11 +770,14 @@ export const userRouter = router({
 
 				return {
 					success: true,
-					message: "Successfully get request collaboration",
+					message: "Successfully fetched collaboration requests",
 					data: requests,
 				};
 			} catch (error) {
-				throw new Error("Error fetching user: " + error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error fetching collaboration requests: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 
@@ -717,16 +792,23 @@ export const userRouter = router({
 		)
 		.query(async ({ input, ctx }) => {
 			const limit = input.limit ?? 50;
-			const { cursor, id_user, excludePinned } = input;
+			const { cursor, excludePinned } = input;
 			const currentUserId = ctx.auth.userId;
+			const targetUserId = input.id_user ?? currentUserId;
+
+			if (!targetUserId) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "User ID is required",
+				});
+			}
 
 			try {
 				const where: UserProjectsCondition = {
-					// Only filter out archived if not owner
-					is_archived: currentUserId && currentUserId === id_user ? undefined : false,
+					is_archived: currentUserId && currentUserId === targetUserId ? undefined : false,
 					project_user: {
 						some: {
-							id_user: id_user,
+							id_user: targetUserId,
 							OR: [
 								{ ownership: "OWNER" },
 								{
@@ -740,13 +822,13 @@ export const userRouter = router({
 					},
 				};
 
-				if (excludePinned && id_user) {
+				if (excludePinned) {
 					where.pinProject = {
-						none: { id_user: id_user },
+						none: { id_user: targetUserId },
 					};
 				}
 
-				const projects = await prisma.project.findMany({
+				const projectsFromDb = await prisma.project.findMany({
 					where,
 					select: {
 						id: true,
@@ -762,6 +844,7 @@ export const userRouter = router({
 						video: true,
 						count_likes: true,
 						count_comments: true,
+						is_archived: true,
 						link_figma: true,
 						link_github: true,
 						created_at: true,
@@ -770,7 +853,7 @@ export const userRouter = router({
 							select: {
 								id: true,
 								title: true,
-								slug: true,
+							slug: true,
 							},
 						},
 						project_user: {
@@ -811,48 +894,57 @@ export const userRouter = router({
 				});
 
 				let nextCursor: typeof cursor | undefined = undefined;
-
-				if (projects.length > limit) {
-					const nextItem = projects.pop();
+				if (projectsFromDb.length > limit) {
+					const nextItem = projectsFromDb.pop();
 					nextCursor = nextItem!.id;
 				}
 
-				const data: ProjectOneType[] = projects.map((p) =>
+				const data: ProjectOneType[] = projectsFromDb.map((p) =>
 					toProjectOneDTO({
-						...(p as unknown as Parameters<typeof toProjectOneDTO>[0]),
-						bookmarks: (p as unknown as { bookmarks?: { id: string }[] }).bookmarks,
-						LikeProject: (p as unknown as { LikeProject?: { id: string }[] }).LikeProject,
+						...p,
+						bookmarks: "bookmarks" in p ? (p.bookmarks as { id: string }[] | undefined) : undefined,
+						LikeProject: "LikeProject" in p ? (p.LikeProject as { id: string }[] | undefined) : undefined,
 					}),
 				);
 
 				return {
 					success: true,
-					message: "Successfully get all projects in user",
+					message: "Successfully fetched user projects",
 					data,
 					nextCursor,
 				};
 			} catch (error) {
-				throw new Error("Error fetching projects: " + error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error fetching user projects: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 
 	getPinnedProjects: publicProcedure
 		.input(
 			z.object({
-				id_user: z.string(),
+				id_user: z.string().optional(),
 			})
 		)
 		.query(async ({ input, ctx }) => {
-			const { id_user } = input;
 			const currentUserId = ctx.auth.userId;
+			const targetUserId = input.id_user ?? currentUserId;
+			
+			if (!targetUserId) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "User ID is required",
+				});
+			}
+
 			try {
-				const pinnedProjects = await prisma.project.findMany({
+				const pinnedProjectsFromDb = await prisma.project.findMany({
 					where: {
 						pinProject: {
-							some: { id_user: id_user },
+							some: { id_user: targetUserId },
 						},
-						// same here, hide archived from public
-						is_archived: currentUserId && currentUserId === id_user ? undefined : false,
+						is_archived: currentUserId && currentUserId === targetUserId ? undefined : false,
 					},
 					select: {
 						id: true,
@@ -911,21 +1003,24 @@ export const userRouter = router({
  					},
  				});
 
-				const data: ProjectOneType[] = pinnedProjects.map((p) =>
+				const data: ProjectOneType[] = pinnedProjectsFromDb.map((p) =>
 					toProjectOneDTO({
-						...(p as unknown as Parameters<typeof toProjectOneDTO>[0]),
-						bookmarks: (p as unknown as { bookmarks?: { id: string }[] }).bookmarks,
-						LikeProject: (p as unknown as { LikeProject?: { id: string }[] }).LikeProject,
+						...p,
+						bookmarks: "bookmarks" in p ? (p.bookmarks as { id: string }[] | undefined) : undefined,
+						LikeProject: "LikeProject" in p ? (p.LikeProject as { id: string }[] | undefined) : undefined,
 					}),
 				);
 
 				return {
 					success: true,
-					message: "Successfully get pinned projects",
+					message: "Successfully fetched pinned projects",
 					data,
 				};
 			} catch (error) {
-				throw new Error("Error fetching pinned projects: " + error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Error fetching pinned projects: " + (error instanceof Error ? error.message : String(error)),
+				});
 			}
 		}),
 });

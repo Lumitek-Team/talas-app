@@ -8,23 +8,31 @@ export const followRouter = router({
 	following: protectedProcedure
 		.input(
 			z.object({
-				id_follower: z.string(),
+				id_follower: z.string().optional(),
 				id_following: z.string(),
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
 			try {
-				const actorId = ctx.auth.userId;
+				const actorId = ctx.auth.userId ?? input.id_follower;
+				
+				if (!actorId) {
+					throw new TRPCError({
+						code: "UNAUTHORIZED",
+						message: "User ID is required",
+					});
+				}
+
 				const [follower, following, existingFollow] = await Promise.all([
 					prisma.user.findUnique({
-						where: { id: actorId ?? "" },
+						where: { id: actorId },
 					}),
 					prisma.user.findUnique({
 						where: { id: input.id_following },
 					}),
 					prisma.follow.findFirst({
 						where: {
-							id_follower: actorId ?? "",
+							id_follower: actorId,
 							id_following: input.id_following,
 						},
 					}),
@@ -50,7 +58,7 @@ export const followRouter = router({
 				const [follow] = await prisma.$transaction([
 					prisma.follow.create({
 						data: {
-							id_follower: actorId ?? "",
+							id_follower: actorId,
 							id_following: input.id_following,
 						},
 					}),
@@ -64,7 +72,7 @@ export const followRouter = router({
 						},
 					}),
 					prisma.count_summary.update({
-						where: { id_user: actorId ?? "" },
+						where: { id_user: actorId },
 						data: {
 							count_following: {
 								increment: 1,
@@ -72,7 +80,7 @@ export const followRouter = router({
 						},
 					}),
 					// Notifikasi follow (hanya jika tidak follow diri sendiri)
-					...(actorId?.trim() !== input.id_following.trim()
+					...(actorId.trim() !== input.id_following.trim()
 						? [
 								prisma.notification.create({
 									data: {
@@ -106,17 +114,25 @@ export const followRouter = router({
 	unfollowing: protectedProcedure
 		.input(
 			z.object({
-				id_follower: z.string(),
+				id_follower: z.string().optional(),
 				id_following: z.string(),
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
 			try {
-				const actorId = ctx.auth.userId;
+				const actorId = ctx.auth.userId ?? input.id_follower;
+				
+				if (!actorId) {
+					throw new TRPCError({
+						code: "UNAUTHORIZED",
+						message: "User ID is required",
+					});
+				}
+
 				// Check if the follow relationship exists
 				const follow = await prisma.follow.findFirst({
 					where: {
-						id_follower: actorId ?? "",
+						id_follower: actorId,
 						id_following: input.id_following,
 					},
 				});
@@ -146,7 +162,7 @@ export const followRouter = router({
 					}),
 					// Update following count for the follower
 					prisma.count_summary.update({
-						where: { id_user: actorId ?? "" },
+						where: { id_user: actorId },
 						data: {
 							count_following: {
 								decrement: 1,
@@ -174,15 +190,20 @@ export const followRouter = router({
 	checkIsFollowing: protectedProcedure
 		.input(
 			z.object({
-				id_follower: z.string(),
+				id_follower: z.string().optional(),
 				id_following: z.string(),
 			})
 		)
 		.query(async ({ input, ctx }) => {
-			const actorId = ctx.auth.userId;
+			const actorId = ctx.auth.userId ?? input.id_follower;
+			
+			if (!actorId) {
+				return { isFollowing: false };
+			}
+
 			const follow = await prisma.follow.findFirst({
 				where: {
-					id_follower: actorId ?? "",
+					id_follower: actorId,
 					id_following: input.id_following,
 				},
 			});

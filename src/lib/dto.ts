@@ -90,7 +90,7 @@ export function toProjectOneDTO(input: {
 	project_user: Array<{
 		user: { id: string; name: string; username: string; photo_profile: string | null };
 		ownership: ownershipType;
-		collabStatus: collabStatusType;
+		collabStatus: collabStatusType | null;
 	}>;
 	bookmarks?: Array<{ id: string }> | null;
 	LikeProject?: Array<{ id: string }> | null;
@@ -121,7 +121,7 @@ export function toProjectOneDTO(input: {
 				photo_profile: pu.user.photo_profile ?? undefined,
 			},
 			ownership: pu.ownership,
-			collabStatus: pu.collabStatus,
+			collabStatus: pu.collabStatus ?? "ACCEPTED",
 		})),
 		is_bookmarked: !!input.bookmarks?.length,
 		is_liked: !!input.LikeProject?.length,

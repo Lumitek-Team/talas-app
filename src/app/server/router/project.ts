@@ -85,6 +85,7 @@ export const projectRouter = router({
                   },
                 },
                 ownership: true,
+                collabStatus: true,
               },
               orderBy: {
                 created_at: "asc",
@@ -105,20 +106,17 @@ export const projectRouter = router({
           },
         });
 
-        if (!data) return null;
-
-        type GetOneProjectSelect = Parameters<typeof toProjectOneDTO>[0] & {
-          bookmarks?: { id: string }[];
-          LikeProject?: { id: string }[];
-        };
-
-        const selected = data as unknown as GetOneProjectSelect;
+        if (!data) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Project not found",
+          });
+        }
 
         const project: ProjectOneType = toProjectOneDTO({
-          ...selected,
-          // Normalize conditional selects (Prisma can omit them when `select: false`)
-          bookmarks: selected.bookmarks ?? undefined,
-          LikeProject: selected.LikeProject ?? undefined,
+          ...data,
+          bookmarks: "bookmarks" in data ? (data.bookmarks as { id: string }[] | undefined) : undefined,
+          LikeProject: "LikeProject" in data ? (data.LikeProject as { id: string }[] | undefined) : undefined,
         });
 
         return {
@@ -127,7 +125,11 @@ export const projectRouter = router({
           data: project,
         };
       } catch (error) {
-        throw new Error("Error fetching project: " + error);
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Error fetching project: " + (error instanceof Error ? error.message : String(error)),
+        });
       }
     }),
 
@@ -140,7 +142,7 @@ export const projectRouter = router({
       }),
     )
     .query(async ({ input, ctx }) => {
-      const limit = input.limit ?? 12; // Reduced from 50: fetch only first viewport worth
+      const limit = input.limit ?? 12;
       const { cursor } = input;
       const currentUserId = ctx.auth.userId;
 
@@ -163,6 +165,7 @@ export const projectRouter = router({
             video: true,
             count_likes: true,
             count_comments: true,
+            is_archived: true,
             link_figma: true,
             link_github: true,
             created_at: true,
@@ -230,15 +233,10 @@ export const projectRouter = router({
         }
 
         const projects: ProjectOneType[] = projectsFromDb.map((p) => {
-          const pWithOptional = p as unknown as {
-            bookmarks?: { id: string }[];
-            LikeProject?: { id: string }[];
-          };
-
           return toProjectOneDTO({
-            ...(p as unknown as Parameters<typeof toProjectOneDTO>[0]),
-            bookmarks: pWithOptional.bookmarks ?? undefined,
-            LikeProject: pWithOptional.LikeProject ?? undefined,
+            ...p,
+            bookmarks: "bookmarks" in p ? (p.bookmarks as { id: string }[] | undefined) : undefined,
+            LikeProject: "LikeProject" in p ? (p.LikeProject as { id: string }[] | undefined) : undefined,
           });
         });
 
@@ -247,7 +245,10 @@ export const projectRouter = router({
           nextCursor,
         };
       } catch (error) {
-        throw new Error("Error fetching projects: " + error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Error fetching projects: " + (error instanceof Error ? error.message : String(error)),
+        });
       }
     }),
 
@@ -259,9 +260,17 @@ export const projectRouter = router({
         id_user: z.string().optional(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const limit = input.limit ?? 50;
-      const { cursor, id_user } = input;
+      const { cursor } = input;
+      const id_user = input.id_user ?? ctx.auth.userId;
+
+      if (!id_user) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "User ID is required",
+        });
+      }
 
       try {
         const projects = await prisma.project.findMany({
@@ -333,7 +342,10 @@ export const projectRouter = router({
           nextCursor,
         };
       } catch (error) {
-        throw new Error("Error fetching archived projects: " + error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Error fetching archived projects: " + (error instanceof Error ? error.message : String(error)),
+        });
       }
     }),
 
@@ -345,16 +357,19 @@ export const projectRouter = router({
         },
       });
 
-      return project ? true : false;
+      return !!project;
     } catch (error) {
-      throw new Error("Error checking slug: " + error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error checking slug: " + (error instanceof Error ? error.message : String(error)),
+      });
     }
   }),
 
   create: protectedProcedure
     .input(
       z.object({
-        id_user: z.string(),
+        id_user: z.string().optional(),
         id_category: z.string(),
         title: z.string(),
         content: z.string().min(1),
@@ -379,7 +394,17 @@ export const projectRouter = router({
         link_github: z.string().optional().nullable(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Source of truth is the session, with fallback for backward compatibility
+      const finalIdUser = ctx.auth.userId ?? input.id_user;
+      
+      if (!finalIdUser) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "User ID is required",
+        });
+      }
+
       let slug = slugify(input.title, {
         lower: true,
         strict: true,
@@ -415,7 +440,7 @@ export const projectRouter = router({
         });
 
         const ownerCollab = {
-          id_user: input.id_user,
+          id_user: finalIdUser,
           id_project: newProject.id,
           ownership: ownershipType.OWNER,
           collabStatus: collabStatusType.ACCEPTED,
@@ -445,9 +470,9 @@ export const projectRouter = router({
             data: { count_projects: { increment: 1 } },
           }),
           prisma.count_summary.upsert({
-            where: { id_user: input.id_user },
+            where: { id_user: finalIdUser },
             update: { count_project: { increment: 1 } },
-            create: { id_user: input.id_user, count_project: 1 },
+            create: { id_user: finalIdUser, count_project: 1 },
           }),
         ]);
 
@@ -457,7 +482,10 @@ export const projectRouter = router({
           data: newProject,
         };
       } catch (error) {
-        throw new Error("Error creating project: " + error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Error creating project: " + (error instanceof Error ? error.message : String(error)),
+        });
       }
     }),
 
@@ -465,7 +493,7 @@ export const projectRouter = router({
     .input(
       z.object({
         id: z.string(),
-        id_user: z.string(),
+        id_user: z.string().optional(),
         id_category: z.string().optional(),
         title: z.string().optional(),
         content: z.string().optional(),
@@ -473,7 +501,16 @@ export const projectRouter = router({
         link_github: z.string().url().optional().nullable(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const performerId = ctx.auth.userId ?? input.id_user;
+      
+      if (!performerId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "User ID is required",
+        });
+      }
+
       try {
         const existingProject = await prisma.project.findFirst({
           where: {
@@ -490,16 +527,22 @@ export const projectRouter = router({
           },
         });
 
-        const ownerUser = existingProject?.project_user.find(
+        if (!existingProject) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Project not found",
+          });
+        }
+
+        const ownerUser = existingProject.project_user.find(
           (pu) => pu.ownership === "OWNER",
         );
 
-        if (
-          !existingProject ||
-          !ownerUser ||
-          ownerUser.id_user !== input.id_user
-        ) {
-          throw new Error("Project not found or access denied.");
+        if (!ownerUser || ownerUser.id_user !== performerId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You do not have permission to edit this project",
+          });
         }
 
         let updatedSlug = existingProject.slug;
@@ -535,32 +578,15 @@ export const projectRouter = router({
           ]);
         }
 
-        const updateData: {
-          id_category?: string;
-          title?: string;
-          slug: string;
-          content?: string;
-          link_figma?: string | null;
-          link_github?: string | null;
-        } = {
+        const updateData: any = {
           slug: updatedSlug,
         };
 
-        if (input.id_category !== undefined) {
-          updateData.id_category = input.id_category;
-        }
-        if (input.title !== undefined) {
-          updateData.title = input.title;
-        }
-        if (input.content !== undefined) {
-          updateData.content = input.content;
-        }
-        if (input.link_figma !== undefined) {
-          updateData.link_figma = input.link_figma;
-        }
-        if (input.link_github !== undefined) {
-          updateData.link_github = input.link_github;
-        }
+        if (input.id_category !== undefined) updateData.id_category = input.id_category;
+        if (input.title !== undefined) updateData.title = input.title;
+        if (input.content !== undefined) updateData.content = input.content;
+        if (input.link_figma !== undefined) updateData.link_figma = input.link_figma;
+        if (input.link_github !== undefined) updateData.link_github = input.link_github;
 
         const updatedProject = await prisma.project.update({
           where: { id: input.id },
@@ -573,8 +599,11 @@ export const projectRouter = router({
           data: updatedProject,
         };
       } catch (error) {
-        console.error("Error editing project:", error);
-        throw new Error("Error editing project: " + (error as Error).message);
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Error editing project: " + (error instanceof Error ? error.message : String(error)),
+        });
       }
     }),
 
@@ -582,10 +611,19 @@ export const projectRouter = router({
     .input(
       z.object({
         id: z.string(),
-        id_user: z.string(),
+        id_user: z.string().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const performerId = ctx.auth.userId ?? input.id_user;
+      
+      if (!performerId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "User ID is required",
+        });
+      }
+
       try {
         const existingProject = await prisma.project.findFirst({
           where: {
@@ -602,16 +640,22 @@ export const projectRouter = router({
           },
         });
 
-        const ownerUser = existingProject?.project_user.find(
+        if (!existingProject) {
+           throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Project not found",
+          });
+        }
+
+        const ownerUser = existingProject.project_user.find(
           (pu) => pu.ownership === "OWNER",
         );
 
-        if (
-          !existingProject ||
-          !ownerUser ||
-          ownerUser.id_user !== input.id_user
-        ) {
-          throw new Error("Project not found or access denied.");
+        if (!ownerUser || ownerUser.id_user !== performerId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You do not have permission to delete this project",
+          });
         }
 
         const images = [
@@ -625,8 +669,6 @@ export const projectRouter = router({
         await deleteImages(images);
 
         await prisma.$transaction([
-          // Explicitly delete all child records to guard against
-          // migrations where DB-level CASCADE was not applied
           prisma.likeComment.deleteMany({
             where: { comment: { id_project: input.id } },
           }),
@@ -653,7 +695,7 @@ export const projectRouter = router({
             data: { count_projects: { decrement: 1 } },
           }),
           prisma.count_summary.updateMany({
-            where: { id_user: input.id_user },
+            where: { id_user: ownerUser.id_user },
             data: { count_project: { decrement: 1 } },
           }),
         ]);
@@ -675,7 +717,7 @@ export const projectRouter = router({
     .input(
       z.object({
         id: z.string(),
-        id_user: z.string().optional(), // kept for compatibility but ignore in favor of ctx.auth.userId
+        id_user: z.string().optional(),
       }),
     )
     .query(async ({ input, ctx }) => {
@@ -717,7 +759,7 @@ export const projectRouter = router({
 
         for (const comment of comments) {
           const isLiked = currentUserId
-            ? comment.LikeComment && comment.LikeComment.length > 0
+            ? !!(comment.LikeComment && comment.LikeComment.length > 0)
             : false;
 
           commentMap[comment.id] = {
@@ -759,11 +801,14 @@ export const projectRouter = router({
 
         return {
           success: true,
-          message: "Successfully all comment in project",
+          message: "Successfully fetched all comments in project",
           data: roots,
         };
       } catch (error) {
-        throw new Error("Error fetching comments: " + error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Error fetching comments: " + (error instanceof Error ? error.message : String(error)),
+        });
       }
     }),
 
@@ -771,10 +816,17 @@ export const projectRouter = router({
     .input(
       z.object({
         id: z.string(),
-        id_user: z.string(),
+        id_user: z.string().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const performerId = ctx.auth.userId ?? input.id_user;
+      if (!performerId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "User ID is required",
+        });
+      }
       try {
         const existingProject = await prisma.project.findFirst({
           where: {
@@ -793,15 +845,21 @@ export const projectRouter = router({
         });
 
         if (!existingProject) {
-          throw new Error("Project not found or access denied.");
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Project not found",
+          });
         }
 
         const ownerUser = existingProject.project_user.find(
           (pu) => pu.ownership === "OWNER",
         );
 
-        if (!ownerUser || ownerUser.id_user !== input.id_user) {
-          throw new Error("Project not found or access denied.");
+        if (!ownerUser || ownerUser.id_user !== performerId) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You do not have permission to archive this project",
+          });
         }
 
         const [project] = await prisma.$transaction([
@@ -814,28 +872,39 @@ export const projectRouter = router({
             data: { count_projects: { decrement: 1 } },
           }),
           prisma.count_summary.updateMany({
-            where: { id_user: input.id_user },
+            where: { id_user: ownerUser.id_user },
             data: { count_project: { decrement: 1 } },
           }),
         ]);
 
         return {
           success: true,
-          message: "Successfully archiving project",
+          message: "Successfully archived project",
           data: project,
         };
       } catch (error) {
-        throw new Error("Error archiving project: " + error);
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Error archiving project: " + (error instanceof Error ? error.message : String(error)),
+        });
       }
     }),
   unarchive: protectedProcedure
     .input(
       z.object({
         id: z.string(),
-        id_user: z.string(),
+        id_user: z.string().optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      const performerId = ctx.auth.userId ?? input.id_user;
+      if (!performerId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "User ID is required",
+        });
+      }
       try {
         const existingProject = await prisma.project.findFirst({
           where: {
@@ -864,7 +933,7 @@ export const projectRouter = router({
           (pu) => pu.ownership === "OWNER",
         );
 
-        if (!ownerUser || ownerUser.id_user.trim() !== input.id_user.trim()) {
+        if (!ownerUser || ownerUser.id_user.trim() !== performerId.trim()) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You do not have permission to unarchive this project.",
@@ -881,7 +950,7 @@ export const projectRouter = router({
             data: { count_projects: { increment: 1 } },
           }),
           prisma.count_summary.updateMany({
-            where: { id_user: input.id_user },
+            where: { id_user: performerId },
             data: { count_project: { increment: 1 } },
           }),
         ]);

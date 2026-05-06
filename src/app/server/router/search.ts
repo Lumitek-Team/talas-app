@@ -1,4 +1,4 @@
-import { protectedProcedure, publicProcedure, router } from "../trpc";
+import { publicProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -45,6 +45,7 @@ export const searchRouter = router({
 					where: projectWhere,
 					select: {
 						id: true,
+						id_category: true,
 						title: true,
 						slug: true,
 						content: true,
@@ -56,6 +57,7 @@ export const searchRouter = router({
 						video: true,
 						count_likes: true,
 						count_comments: true,
+						is_archived: true,
 						link_figma: true,
 						link_github: true,
 						created_at: true,
@@ -113,9 +115,9 @@ export const searchRouter = router({
 
 				const projectItems: ProjectOneType[] = projects.map((p) =>
 					toProjectOneDTO({
-						...(p as unknown as Parameters<typeof toProjectOneDTO>[0]),
-						bookmarks: (p as unknown as { bookmarks?: { id: string }[] }).bookmarks,
-						LikeProject: (p as unknown as { LikeProject?: { id: string }[] }).LikeProject,
+						...p,
+						bookmarks: "bookmarks" in p ? (p.bookmarks as { id: string }[] | undefined) : undefined,
+						LikeProject: "LikeProject" in p ? (p.LikeProject as { id: string }[] | undefined) : undefined,
 					}),
 				);
 
@@ -185,7 +187,7 @@ export const searchRouter = router({
 
 				const userItems: UserSearchType[] = users.map((u) =>
 					toUserSearchDTO({
-						...(u as unknown as Omit<Parameters<typeof toUserSearchDTO>[0], "count_summary">),
+						...u,
 						count_summary: u.count_summary ?? {
 							count_project: 0,
 							count_follower: 0,
@@ -252,7 +254,11 @@ export const searchRouter = router({
 				});
 		}
 		} catch (error) {
-			throw error;
+			if (error instanceof TRPCError) throw error;
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: "Error performing search: " + (error instanceof Error ? error.message : String(error)),
+			});
 		}
 	}),
 
