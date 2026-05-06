@@ -640,7 +640,7 @@ export const userRouter = router({
 	getNotification: protectedProcedure
 		.input(
 			z.object({
-				id_user: z.string(),
+				id_user: z.string().optional(),
 				limit: z.number().min(1).max(100).nullish(),
 				cursor: z.string().nullish(),
 			})
@@ -650,7 +650,15 @@ export const userRouter = router({
 			const { cursor } = input;
 			const performerId = ctx.auth.userId ?? input.id_user;
 
-			if (performerId !== input.id_user) {
+			if (!performerId) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "User ID is required",
+				});
+			}
+
+			// Trim both sides to handle trailing spaces from malformed frontend requests
+			if (input.id_user && performerId.trim() !== input.id_user.trim()) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
 					message: "You can only view your own notifications",
@@ -664,7 +672,7 @@ export const userRouter = router({
 			try {
 				const notifications = await prisma.notification.findMany({
 					where: {
-						id_user: input.id_user,
+						id_user: performerId.trim(),
 						created_at: {
 							gte: oneMonthAgo,
 							lte: now,
@@ -700,10 +708,18 @@ export const userRouter = router({
 		}),
 
 	getRequestCollab: protectedProcedure
-		.input(z.string())
+		.input(z.string().optional())
 		.query(async ({ input, ctx }) => {
 			const performerId = ctx.auth.userId ?? input;
-			if (performerId !== input) {
+			
+			if (!performerId) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "User ID is required",
+				});
+			}
+
+			if (input && performerId.trim() !== input.trim()) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
 					message: "You can only view your own collaboration requests",
@@ -713,7 +729,7 @@ export const userRouter = router({
 			try {
 				const requestsFromDb = await prisma.projectUser.findMany({
 					where: {
-						id_user: input,
+						id_user: performerId.trim(),
 						collabStatus: "PENDING",
 					},
 					select: {
