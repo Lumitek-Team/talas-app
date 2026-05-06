@@ -377,8 +377,10 @@ export const userRouter = router({
 			})
 		)
 		.mutation(async ({ input, ctx }) => {
-			const performerId = ctx.auth.userId ?? input.id;
-			if (performerId !== input.id) {
+			const performerId = (ctx.auth.userId ?? input.id).trim();
+			const targetId = input.id.trim();
+
+			if (performerId !== targetId) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
 					message: "You can only update your own profile",
@@ -390,7 +392,7 @@ export const userRouter = router({
 					const existing = await prisma.user.findFirst({
 						where: {
 							username: input.data.username,
-							id: { not: input.id },
+							id: { not: targetId },
 						},
 						select: { id: true },
 					});
@@ -403,7 +405,7 @@ export const userRouter = router({
 				}
 
 				const updatedUser = await prisma.user.update({
-					where: { id: input.id },
+					where: { id: targetId },
 					data: {
 						...input.data,
 					},

@@ -396,7 +396,7 @@ export const projectRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       // Source of truth is the session, with fallback for backward compatibility
-      const finalIdUser = ctx.auth.userId ?? input.id_user;
+      const finalIdUser = (ctx.auth.userId ?? input.id_user)?.trim();
       
       if (!finalIdUser) {
         throw new TRPCError({
@@ -538,7 +538,7 @@ export const projectRouter = router({
           (pu) => pu.ownership === "OWNER",
         );
 
-        if (!ownerUser || ownerUser.id_user !== performerId) {
+        if (!ownerUser || ownerUser.id_user.trim() !== performerId.trim()) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You do not have permission to edit this project",
@@ -651,7 +651,7 @@ export const projectRouter = router({
           (pu) => pu.ownership === "OWNER",
         );
 
-        if (!ownerUser || ownerUser.id_user !== performerId) {
+        if (!ownerUser || ownerUser.id_user.trim() !== performerId.trim()) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You do not have permission to delete this project",
@@ -855,7 +855,7 @@ export const projectRouter = router({
           (pu) => pu.ownership === "OWNER",
         );
 
-        if (!ownerUser || ownerUser.id_user !== performerId) {
+        if (!ownerUser || ownerUser.id_user.trim() !== performerId.trim()) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You do not have permission to archive this project",

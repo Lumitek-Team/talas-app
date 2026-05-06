@@ -13,7 +13,8 @@ export const pinRouter = router({
 			})
 		)
 		.mutation(async ({ input }) => {
-			const { id_project, id_user } = input;
+			const id_project = input.id_project.trim();
+			const id_user = input.id_user.trim();
 
 			try {
 				const project = await prisma.project.findFirst({
@@ -92,7 +93,8 @@ export const pinRouter = router({
 			})
 		)
 		.mutation(async ({ input }) => {
-			const { id_project, id_user } = input;
+			const id_project = input.id_project.trim();
+			const id_user = input.id_user.trim();
 
 			try {
 				const project = await prisma.project.findFirst({
