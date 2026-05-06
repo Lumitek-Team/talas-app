@@ -5,7 +5,7 @@ import { TRPCError } from "@trpc/server";
 
 export const collaborationRouter = router({
 	// Follow a user
-	accept: protectedProcedure.input(z.string()).mutation(async ({ input }) => {
+	accept: protectedProcedure.input(z.string()).mutation(async ({ input, ctx }) => {
 		const collab = await prisma.projectUser.update({
 			where: {
 				id: input,
@@ -34,17 +34,22 @@ export const collaborationRouter = router({
 			});
 		}
 
-		// Notify the owner (non-blocking — don't delay response for this)
+		// Notify the other party (non-blocking — don't delay response for this)
 		const ownerId = collab.project.project_user[0]?.id_user;
-		if (ownerId) {
-			prisma.notification.create({
-				data: {
-					id_user: ownerId,
-					title: `Your collaboration request for project "${collab.project.title}" has been accepted.`,
-					is_read: false,
-					type: "COLLABORATION" as const,
-				},
-			}).catch(console.error);
+		const actorId = ctx.auth.userId;
+		
+		if (ownerId && actorId) {
+			const targetUserId = actorId.trim() === ownerId.trim() ? collab.id_user : ownerId;
+			if (targetUserId) {
+				prisma.notification.create({
+					data: {
+						id_user: targetUserId.trim(),
+						title: `Your collaboration request for project "${collab.project.title}" has been accepted.`,
+						is_read: false,
+						type: "COLLABORATION" as const,
+					},
+				}).catch(console.error);
+			}
 		}
 
 		const collabData = {
@@ -60,7 +65,7 @@ export const collaborationRouter = router({
 		};
 	}),
 
-	reject: protectedProcedure.input(z.string()).mutation(async ({ input }) => {
+	reject: protectedProcedure.input(z.string()).mutation(async ({ input, ctx }) => {
 		const collab = await prisma.projectUser.delete({
 			where: {
 				id: input,
@@ -86,17 +91,22 @@ export const collaborationRouter = router({
 			});
 		}
 
-		// Notify the owner (non-blocking — don't delay response for this)
+		// Notify the other party (non-blocking — don't delay response for this)
 		const ownerId = collab.project.project_user[0]?.id_user;
-		if (ownerId) {
-			prisma.notification.create({
-				data: {
-					id_user: ownerId,
-					title: `Your collaboration request for project "${collab.project.title}" has been rejected.`,
-					is_read: false,
-					type: "COLLABORATION" as const,
-				},
-			}).catch(console.error);
+		const actorId = ctx.auth.userId;
+
+		if (ownerId && actorId) {
+			const targetUserId = actorId.trim() === ownerId.trim() ? collab.id_user : ownerId;
+			if (targetUserId) {
+				prisma.notification.create({
+					data: {
+						id_user: targetUserId.trim(),
+						title: `Your collaboration request for project "${collab.project.title}" has been rejected.`,
+						is_read: false,
+						type: "COLLABORATION" as const,
+					},
+				}).catch(console.error);
+			}
 		}
 
 		const collabData = {

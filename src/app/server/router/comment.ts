@@ -21,11 +21,11 @@ export const commentRouter = router({
 				parent_id: z.string().nullable(),
 			})
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			const { id_project, content, parent_id } = input;
-			const userClerk = await currentUser();
+			const actorId = ctx.auth.userId;
 			const user = await prisma.user.findUnique({
-				where: { id: userClerk?.id ?? "" },
+				where: { id: actorId ?? "" },
 				select: {
 					id: true,
 					username: true,
@@ -111,6 +111,8 @@ export const commentRouter = router({
 
 			const ownerUserId = projectUsers.find((pu) => pu.ownership === "OWNER")
 				?.user.id;
+			const userIdTrimmed = user.id.trim();
+			const ownerUserIdTrimmed = ownerUserId?.trim();
 
 			// Notifikasi untuk semua kolaborator/owner kecuali diri sendiri
 			const notifications: {
@@ -119,15 +121,16 @@ export const commentRouter = router({
 				is_read: boolean;
 				type: "COMMENT_PROJECT" | "REPLY_COMMENT";
 			}[] = projectUsers
-				.filter((pu) => pu.user.id !== user.id)
+				.filter((pu) => pu.user.id.trim() !== userIdTrimmed)
 				.map((pu) => {
+					const puIdTrimmed = pu.user.id.trim();
 					const notificationTitle =
-						pu.user.id === ownerUserId
+						puIdTrimmed === ownerUserIdTrimmed
 							? `${user.username} comment on your project ${project.title}`
 							: `${user.username} comment on project you collaborate on: ${project.title}`;
 
 					return {
-						id_user: pu.user.id,
+						id_user: puIdTrimmed,
 						title: notificationTitle,
 						is_read: false,
 						type: "COMMENT_PROJECT",
@@ -142,13 +145,18 @@ export const commentRouter = router({
 					select: { id_user: true },
 				});
 				parentCommentUserId = parentComment?.id_user;
-				if (parentCommentUserId && parentCommentUserId !== user.id) {
-					notifications.push({
-						id_user: parentCommentUserId,
-						title: `${user.username} replied to your comment on project ${project.title}`,
-						is_read: false,
-						type: "REPLY_COMMENT",
-					});
+				const parentUserIdTrimmed = parentCommentUserId?.trim();
+				if (parentUserIdTrimmed && parentUserIdTrimmed !== userIdTrimmed) {
+					// Cek apakah sudah masuk di list notifications (kolaborator)
+					const alreadyNotified = notifications.some(n => n.id_user === parentUserIdTrimmed);
+					if (!alreadyNotified) {
+						notifications.push({
+							id_user: parentUserIdTrimmed,
+							title: `${user.username} replied to your comment on project ${project.title}`,
+							is_read: false,
+							type: "REPLY_COMMENT",
+						});
+					}
 				}
 			}
 

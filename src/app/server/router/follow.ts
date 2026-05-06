@@ -12,19 +12,19 @@ export const followRouter = router({
 				id_following: z.string(),
 			})
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			try {
-				// Check if users exist
+				const actorId = ctx.auth.userId;
 				const [follower, following, existingFollow] = await Promise.all([
 					prisma.user.findUnique({
-						where: { id: input.id_follower },
+						where: { id: actorId ?? "" },
 					}),
 					prisma.user.findUnique({
 						where: { id: input.id_following },
 					}),
 					prisma.follow.findFirst({
 						where: {
-							id_follower: input.id_follower,
+							id_follower: actorId ?? "",
 							id_following: input.id_following,
 						},
 					}),
@@ -50,7 +50,7 @@ export const followRouter = router({
 				const [follow] = await prisma.$transaction([
 					prisma.follow.create({
 						data: {
-							id_follower: input.id_follower,
+							id_follower: actorId ?? "",
 							id_following: input.id_following,
 						},
 					}),
@@ -64,22 +64,26 @@ export const followRouter = router({
 						},
 					}),
 					prisma.count_summary.update({
-						where: { id_user: input.id_follower },
+						where: { id_user: actorId ?? "" },
 						data: {
 							count_following: {
 								increment: 1,
 							},
 						},
 					}),
-					// Notifikasi follow
-					prisma.notification.create({
-						data: {
-							id_user: input.id_following,
-							title: `${followerUsername} following you`,
-							is_read: false,
-							type: "FOLLOW",
-						},
-					}),
+					// Notifikasi follow (hanya jika tidak follow diri sendiri)
+					...(actorId?.trim() !== input.id_following.trim()
+						? [
+								prisma.notification.create({
+									data: {
+										id_user: input.id_following.trim(),
+										title: `${followerUsername} following you`,
+										is_read: false,
+										type: "FOLLOW",
+									},
+								}),
+						  ]
+						: []),
 				]);
 
 				return {
@@ -106,12 +110,13 @@ export const followRouter = router({
 				id_following: z.string(),
 			})
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			try {
+				const actorId = ctx.auth.userId;
 				// Check if the follow relationship exists
 				const follow = await prisma.follow.findFirst({
 					where: {
-						id_follower: input.id_follower,
+						id_follower: actorId ?? "",
 						id_following: input.id_following,
 					},
 				});
@@ -141,7 +146,7 @@ export const followRouter = router({
 					}),
 					// Update following count for the follower
 					prisma.count_summary.update({
-						where: { id_user: input.id_follower },
+						where: { id_user: actorId ?? "" },
 						data: {
 							count_following: {
 								decrement: 1,
@@ -173,10 +178,11 @@ export const followRouter = router({
 				id_following: z.string(),
 			})
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
+			const actorId = ctx.auth.userId;
 			const follow = await prisma.follow.findFirst({
 				where: {
-					id_follower: input.id_follower,
+					id_follower: actorId ?? "",
 					id_following: input.id_following,
 				},
 			});

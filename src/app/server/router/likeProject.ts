@@ -12,8 +12,9 @@ export const likeProjectRouter = router({
 				id_project: z.string(),
 			})
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			try {
+				const actorId = ctx.auth.userId;
 				const [project, liker, existingLike] = await Promise.all([
 					prisma.project.findUnique({
 						where: { id: input.id_project },
@@ -30,12 +31,12 @@ export const likeProjectRouter = router({
 						},
 					}),
 					prisma.user.findUnique({
-						where: { id: input.id_user },
-						select: { username: true, name: true },
+						where: { id: actorId ?? "" },
+						select: { id: true, username: true, name: true },
 					}),
 					prisma.likeProject.findFirst({
 						where: {
-							id_user: input.id_user,
+							id_user: actorId ?? "",
 							id_project: input.id_project,
 						},
 					}),
@@ -73,16 +74,19 @@ export const likeProjectRouter = router({
 				const ownerUserId = projectUsers.find(
 					(pu) => pu.ownership === "OWNER"
 				)?.id_user;
+				
+				const likerIdTrimmed = liker.id.trim();
+				
 				const notifications = projectUsers
-					.filter((pu) => pu.id_user !== input.id_user)
+					.filter((pu) => pu.id_user.trim() !== likerIdTrimmed)
 					.map((pu) => {
 						const notificationTitle =
-							pu.id_user === ownerUserId
+							pu.id_user.trim() === ownerUserId?.trim()
 								? `${liker?.username} liked your project "${project.title}"`
 								: `${liker?.username} liked a project you collaborate on: "${project.title}"`;
 
 						return {
-							id_user: pu.id_user,
+							id_user: pu.id_user.trim(),
 							title: notificationTitle,
 							is_read: false,
 							type: "LIKE_PROJECT" as const,
@@ -92,7 +96,7 @@ export const likeProjectRouter = router({
 				const [, updatedProject] = await prisma.$transaction([
 					prisma.likeProject.create({
 						data: {
-							id_user: input.id_user,
+							id_user: actorId ?? "",
 							id_project: input.id_project,
 						},
 					}),

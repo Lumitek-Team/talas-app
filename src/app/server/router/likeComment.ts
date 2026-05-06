@@ -11,9 +11,9 @@ export const likeCommentRouter = router({
 				id_comment: z.string(),
 			})
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			try {
-				// Ambil data komentar beserta user-nya, existingLike, dan liker secara paralel
+				const actorId = ctx.auth.userId;
 				const [comment, existingLike, liker] = await Promise.all([
 					prisma.comment.findUnique({
 						where: { id: input.id_comment },
@@ -21,13 +21,13 @@ export const likeCommentRouter = router({
 					}),
 					prisma.likeComment.findFirst({
 						where: {
-							id_user: input.id_user,
+							id_user: actorId ?? "",
 							id_comment: input.id_comment,
 						},
 					}),
 					prisma.user.findUnique({
-						where: { id: input.id_user },
-						select: { username: true },
+						where: { id: actorId ?? "" },
+						select: { id: true, username: true },
 					}),
 				]);
 
@@ -35,6 +35,13 @@ export const likeCommentRouter = router({
 					throw new TRPCError({
 						code: "NOT_FOUND",
 						message: "Comment not found",
+					});
+				}
+				
+				if (!liker) {
+					throw new TRPCError({
+						code: "NOT_FOUND",
+						message: "User not found",
 					});
 				}
 
@@ -47,9 +54,12 @@ export const likeCommentRouter = router({
 
 				// Siapkan notifikasi jika yang like bukan pemilik komentar
 				let notificationData = null;
-				if (comment.user.id !== input.id_user) {
+				const likerIdTrimmed = liker.id.trim();
+				const commentAuthorIdTrimmed = comment.user.id.trim();
+
+				if (commentAuthorIdTrimmed !== likerIdTrimmed) {
 					notificationData = {
-						id_user: comment.user.id,
+						id_user: commentAuthorIdTrimmed,
 						title: `${liker?.username} liked your comment on project "${comment.project.title}"`,
 						is_read: false,
 						type: "LIKE_COMMENT" as const,
@@ -60,7 +70,7 @@ export const likeCommentRouter = router({
 				const [like, updatedComment] = await prisma.$transaction([
 					prisma.likeComment.create({
 						data: {
-							id_user: input.id_user,
+							id_user: actorId ?? "",
 							id_comment: input.id_comment,
 						},
 					}),
