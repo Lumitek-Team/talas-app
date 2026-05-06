@@ -17,42 +17,51 @@ interface ProfilePageProps {
 
 export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
   const { username } = await params;
-  const helpers = createServerSideHelpers({
-    router: appRouter,
-    ctx: await createContext(),
-    transformer: superjson,
-  });
+  
+  try {
+    const helpers = createServerSideHelpers({
+      router: appRouter,
+      ctx: await createContext(),
+      transformer: superjson,
+    });
 
-  const profile = await helpers.user.getByUsername.fetch({ username }).catch(() => null);
+    const profile = await helpers.user.getByUsername.fetch({ username });
 
-  if (!profile?.data) {
+    if (!profile?.data) {
+      return {
+        title: "Profile Not Found | Talas",
+      };
+    }
+
+    const name = profile.data.name || profile.data.username;
+    const title = `${name} (@${profile.data.username}) | Talas`;
+    const description = `View ${name}'s portfolio and projects on Talas.`;
+    const image = profile.data.photo_profile ? getPublicUrl(profile.data.photo_profile) : "/img/dummy/profile-photo-dummy.jpg";
+
     return {
-      title: "Profile Not Found | Talas",
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: [image],
+        type: "profile",
+        username: profile.data.username,
+      },
+      twitter: {
+        card: "summary",
+        title,
+        description,
+        images: [image],
+      },
+    };
+  } catch (error) {
+    console.error("METADATA_ERROR: Profile metadata fetch failed:", error);
+    return {
+      title: `${username} | Talas`,
+      description: `View ${username}'s profile and creative portfolio on Talas.`,
     };
   }
-
-  const name = profile.data.name || profile.data.username;
-  const title = `${name} (@${profile.data.username}) | Talas`;
-  const description = `View ${name}'s portfolio and projects on Talas.`;
-  const image = profile.data.photo_profile ? getPublicUrl(profile.data.photo_profile) : "/img/dummy/profile-photo-dummy.jpg";
-
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      images: [image],
-      type: "profile",
-      username: profile.data.username,
-    },
-    twitter: {
-      card: "summary",
-      title,
-      description,
-      images: [image],
-    },
-  };
 }
 
 export default async function ProfilePage({ params }: ProfilePageProps) {

@@ -17,40 +17,49 @@ interface ProjectPageProps {
 
 export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
   const { id } = await params;
-  const helpers = createServerSideHelpers({
-    router: appRouter,
-    ctx: await createContext(),
-    transformer: superjson,
-  });
+  
+  try {
+    const helpers = createServerSideHelpers({
+      router: appRouter,
+      ctx: await createContext(),
+      transformer: superjson,
+    });
 
-  const project = await helpers.project.getOne.fetch({ id }).catch(() => null);
+    const project = await helpers.project.getOne.fetch({ id });
 
-  if (!project?.data) {
+    if (!project?.data) {
+      return {
+        title: "Project Not Found | Talas",
+      };
+    }
+
+    const title = `${project.data.title} | Talas`;
+    const description = project.data.content?.substring(0, 160) || "Check out this amazing project on Talas.";
+    const image = project.data.image1 ? getPublicUrl(project.data.image1) : "/img/og-default.png";
+
     return {
-      title: "Project Not Found | Talas",
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: [image],
+        type: "article",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: [image],
+      },
+    };
+  } catch (error) {
+    console.error("METADATA_ERROR: Project metadata fetch failed:", error);
+    return {
+      title: "Project Details | Talas",
+      description: "View project details and collaboration history on Talas.",
     };
   }
-
-  const title = `${project.data.title} | Talas`;
-  const description = project.data.content?.substring(0, 160) || "Check out this amazing project on Talas.";
-  const image = project.data.image1 ? getPublicUrl(project.data.image1) : "/img/og-default.png";
-
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      images: [image],
-      type: "article",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: [image],
-    },
-  };
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
