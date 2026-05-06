@@ -15,12 +15,13 @@ export const searchRouter = router({
         category: z.string().optional(),
         limit: z.number().min(1).max(100).nullish(),
         cursor: z.string().nullish(),
-        id_user: z.string().optional(),
+        id_user: z.string().optional(), // kept for compatibility but should be ignored in favor of ctx.auth.userId
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const limit = input.limit ?? 50;
-      const { cursor, id_user } = input;
+      const { cursor } = input;
+      const currentUserId = ctx.auth.userId;
 
 		try {
 			switch (input.type) {
@@ -83,15 +84,15 @@ export const searchRouter = router({
 								created_at: "asc",
 							},
 						},
-						bookmarks: id_user
+						bookmarks: currentUserId
 							? {
-									where: { id_user: id_user },
+									where: { id_user: currentUserId },
 									select: { id: true },
 							  }
 							: false,
-						LikeProject: id_user
+						LikeProject: currentUserId
 							? {
-									where: { id_user: id_user },
+									where: { id_user: currentUserId },
 									select: { id: true },
 							  }
 							: false,
@@ -258,11 +259,11 @@ export const searchRouter = router({
 	getPopularPost: publicProcedure
 		.input(
 			z.object({
-				id_user: z.string().optional(),
+				id_user: z.string().optional(), // kept for compatibility but should be ignored in favor of ctx.auth.userId
 			})
 		)
-		.query(async ({ input }: { input: { id_user?: string } }) => {
-			const { id_user } = input;
+		.query(async ({ input, ctx }) => {
+			const currentUserId = ctx.auth.userId;
 			try {
 				// Step 1: Lightweight query — fetch id + id_category ordered by
 				// [id_category asc, popularity_score desc]. The first row per category
@@ -345,15 +346,15 @@ export const searchRouter = router({
 								created_at: "asc",
 							},
 						},
-						bookmarks: id_user
+						bookmarks: currentUserId
 							? {
-									where: { id_user: id_user },
+									where: { id_user: currentUserId },
 									select: { id: true },
 							  }
 							: false,
-						LikeProject: id_user
+						LikeProject: currentUserId
 							? {
-									where: { id_user: id_user },
+									where: { id_user: currentUserId },
 									select: { id: true },
 							  }
 							: false,
@@ -384,10 +385,10 @@ export const searchRouter = router({
  					updated_at: p.updated_at.toISOString(),
  					id_category: (p as { id_category?: string }).id_category ?? p.category.id,
  					is_archived: false,
- 					is_bookmarked: id_user
+ 					is_bookmarked: currentUserId
  						? p.bookmarks && p.bookmarks.length > 0
  						: false,
- 					is_liked: id_user
+ 					is_liked: currentUserId
  						? p.LikeProject && p.LikeProject.length > 0
  						: false,
  				}));

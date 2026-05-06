@@ -413,14 +413,15 @@ export const userRouter = router({
 		.input(
 			z.object({
 				id: z.string(),
-				id_user: z.string().optional(),
+				id_user: z.string().optional(), // kept for compatibility but ignored
 				limit: z.number().min(1).max(100).nullish(),
 				cursor: z.string().nullish(),
 			})
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const limit = input.limit ?? 12;
 			const { cursor } = input;
+			const currentUserId = ctx.auth.userId;
 			try {
 				const bookmarks = await prisma.bookmark.findMany({
 					where: {
@@ -487,15 +488,15 @@ export const userRouter = router({
 										created_at: "asc",
 									},
 								},
-								bookmarks: input.id_user
+								bookmarks: currentUserId
 									? {
-											where: { id_user: input.id_user },
+											where: { id_user: currentUserId },
 											select: { id: true },
 									  }
 									: false,
-								LikeProject: input.id_user
+								LikeProject: currentUserId
 									? {
-											where: { id_user: input.id_user },
+											where: { id_user: currentUserId },
 											select: { id: true },
 									  }
 									: false,
@@ -705,7 +706,7 @@ export const userRouter = router({
 			}
 		}),
 
-	getAllProjects: protectedProcedure
+	getAllProjects: publicProcedure
 		.input(
 			z.object({
 				limit: z.number().min(1).max(100).nullish(),
@@ -714,13 +715,15 @@ export const userRouter = router({
 				excludePinned: z.boolean().optional(),
 			}),
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const limit = input.limit ?? 50;
 			const { cursor, id_user, excludePinned } = input;
+			const currentUserId = ctx.auth.userId;
 
 			try {
 				const where: UserProjectsCondition = {
-					is_archived: false,
+					// Only filter out archived if not owner
+					is_archived: currentUserId && currentUserId === id_user ? undefined : false,
 					project_user: {
 						some: {
 							id_user: id_user,
@@ -787,15 +790,15 @@ export const userRouter = router({
 								created_at: "asc",
 							},
 						},
-						bookmarks: id_user
+						bookmarks: currentUserId
 							? {
-									where: { id_user: id_user },
+									where: { id_user: currentUserId },
 									select: { id: true },
 							  }
 							: false,
-						LikeProject: id_user
+						LikeProject: currentUserId
 							? {
-									where: { id_user: id_user },
+									where: { id_user: currentUserId },
 									select: { id: true },
 							  }
 							: false,
@@ -833,20 +836,23 @@ export const userRouter = router({
 			}
 		}),
 
-	getPinnedProjects: protectedProcedure
+	getPinnedProjects: publicProcedure
 		.input(
 			z.object({
 				id_user: z.string(),
 			})
 		)
-		.query(async ({ input }) => {
+		.query(async ({ input, ctx }) => {
 			const { id_user } = input;
+			const currentUserId = ctx.auth.userId;
 			try {
 				const pinnedProjects = await prisma.project.findMany({
 					where: {
 						pinProject: {
 							some: { id_user: id_user },
 						},
+						// same here, hide archived from public
+						is_archived: currentUserId && currentUserId === id_user ? undefined : false,
 					},
 					select: {
 						id: true,
@@ -891,14 +897,14 @@ export const userRouter = router({
  								created_at: "asc",
  							},
  						},
- 						bookmarks: {
- 							where: { id_user: id_user },
+ 						bookmarks: currentUserId ? {
+ 							where: { id_user: currentUserId },
  							select: { id: true },
- 						},
- 						LikeProject: {
- 							where: { id_user: id_user },
+ 						} : false,
+ 						LikeProject: currentUserId ? {
+ 							where: { id_user: currentUserId },
  							select: { id: true },
- 						},
+ 						} : false,
  					},
  					orderBy: {
  						created_at: "desc",

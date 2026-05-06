@@ -18,10 +18,11 @@ export const projectRouter = router({
     .input(
       z.object({
         id: z.string(),
-        id_user: z.string().optional(), // id_user is used for checking bookmark and like status
+        id_user: z.string().optional(), // kept for compatibility but should be ignored in favor of ctx.auth.userId
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      const currentUserId = ctx.auth.userId;
       try {
         const data = await prisma.project.findFirst({
           where: {
@@ -36,7 +37,7 @@ export const projectRouter = router({
                       {
                         project_user: {
                           some: {
-                            id_user: input.id_user,
+                            id_user: currentUserId ?? undefined,
                             ownership: "OWNER",
                           },
                         },
@@ -89,15 +90,15 @@ export const projectRouter = router({
                 created_at: "asc",
               },
             },
-            bookmarks: input.id_user
+            bookmarks: currentUserId
               ? {
-                  where: { id_user: input.id_user },
+                  where: { id_user: currentUserId },
                   select: { id: true },
                 }
               : false,
-            LikeProject: input.id_user
+            LikeProject: currentUserId
               ? {
-                  where: { id_user: input.id_user },
+                  where: { id_user: currentUserId },
                   select: { id: true },
                 }
               : false,
@@ -138,9 +139,10 @@ export const projectRouter = router({
         id_user: z.string().optional(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const limit = input.limit ?? 12; // Reduced from 50: fetch only first viewport worth
-      const { cursor, id_user } = input;
+      const { cursor } = input;
+      const currentUserId = ctx.auth.userId;
 
       try {
         const projectsFromDb = await prisma.project.findMany({
@@ -200,15 +202,15 @@ export const projectRouter = router({
                 created_at: "asc",
               },
             },
-            bookmarks: id_user
+            bookmarks: currentUserId
               ? {
-                  where: { id_user: id_user },
+                  where: { id_user: currentUserId },
                   select: { id: true },
                 }
               : false,
-            LikeProject: id_user
+            LikeProject: currentUserId
               ? {
-                  where: { id_user: id_user },
+                  where: { id_user: currentUserId },
                   select: { id: true },
                 }
               : false,
@@ -673,10 +675,11 @@ export const projectRouter = router({
     .input(
       z.object({
         id: z.string(),
-        id_user: z.string().optional(), // Include id_user for is_liked
+        id_user: z.string().optional(), // kept for compatibility but ignore in favor of ctx.auth.userId
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      const currentUserId = ctx.auth.userId;
       try {
         const comments = await prisma.comment.findMany({
           where: {
@@ -697,9 +700,9 @@ export const projectRouter = router({
                 photo_profile: true,
               },
             },
-            LikeComment: input.id_user
+            LikeComment: currentUserId
               ? {
-                  where: { id_user: input.id_user },
+                  where: { id_user: currentUserId },
                   select: { id: true },
                 }
               : false,
@@ -713,7 +716,7 @@ export const projectRouter = router({
         const roots: CommentsInProjectType[] = [];
 
         for (const comment of comments) {
-          const isLiked = input.id_user
+          const isLiked = currentUserId
             ? comment.LikeComment && comment.LikeComment.length > 0
             : false;
 
