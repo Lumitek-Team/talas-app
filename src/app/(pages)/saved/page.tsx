@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { PageContainer } from "@/components/ui/page-container";
-import { LoadingSpinner } from "@/components/ui/loading";
+import { ProjectCardSkeleton } from "@/components/project/project-card-skeleton";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { BookmarkType } from "@/lib/type";
@@ -215,7 +215,10 @@ export default function SavedProjectsPage() {
 
           {/* Show loading when user is not loaded or when initially loading data */}
           {(!isUserLoaded || (isLoading && trulySavedPosts.length === 0)) && (
-            <LoadingSpinner />
+            <div className="space-y-4">
+              <ProjectCardSkeleton />
+              <ProjectCardSkeleton />
+            </div>
           )}
 
           {/* Show sign-in message when user is loaded but not authenticated */}
@@ -251,7 +254,9 @@ export default function SavedProjectsPage() {
 
           {/* Show pagination loading */}
           {isFetchingNextPage && (
-            <LoadingSpinner className="h-32" />
+            <div className="mt-4">
+              <ProjectCardSkeleton />
+            </div>
           )}
 
           {/* Show end of results message */}

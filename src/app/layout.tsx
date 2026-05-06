@@ -44,12 +44,14 @@ export const metadata: Metadata = {
     template: "%s | Talas",
   },
   description:
-    "Showcase your work, document your process, collaborate with other creators.",
+    "Showcase your work, document your process, and collaborate with other creators in a dedicated space for builders.",
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000",
   ),
   openGraph: {
     type: "website",
+    locale: "en_US",
+    url: "/",
     siteName: "Talas",
     images: [
       {
@@ -60,11 +62,21 @@ export const metadata: Metadata = {
       },
     ],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "Talas — Portfolio for Creators",
+    description: "Showcase your work and collaborate with other creators.",
+    images: ["/logo/talas-logo.png"],
+  },
   icons: {
     icon: "/logo/talas-logo.png",
     shortcut: "/logo/talas-logo.png",
     apple: "/logo/talas-logo.png",
   },
+};
+
+export const viewport = {
+  themeColor: "#0F172A",
 };
 
 export default function RootLayout({

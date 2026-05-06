@@ -30,18 +30,18 @@ export default function NotificationPage() {
     isFetchingNextPage,
   } = trpc.user.getNotification.useInfiniteQuery(
     {
-      id_user: user?.id ?? "",
+      id_user: userclerk?.id ?? "",
       limit: 20,
     },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
-      enabled: !!user?.id,
+      enabled: isLoaded && !!userclerk?.id,
     },
   );
 
   const requestCollaborationRaw = trpc.user.getRequestCollab.useQuery(
-    user?.id ?? "", // Ensure user?.id is used safely
-    { enabled: isLoaded && !!userclerk?.id && !!user?.id }, // Ensure all conditions are met
+    userclerk?.id ?? "",
+    { enabled: isLoaded && !!userclerk?.id },
   );
 
   const requestCollaboration = requestCollaborationRaw.data?.data ?? [];
@@ -56,12 +56,12 @@ export default function NotificationPage() {
       !hasMarkedAllRead.current && // hanya sekali
       !isLoading &&
       !error &&
-      user?.id &&
+      userclerk?.id &&
       data
     ) {
       hasMarkedAllRead.current = true;
       markAllAsRead.mutate(
-        { id_user: user.id },
+        { id_user: userclerk.id },
         {
           onError: (err) => {
             if (process.env.NODE_ENV === "development") {
@@ -76,7 +76,7 @@ export default function NotificationPage() {
   useEffect(() => {
     markAllNotificationsAsReadOnce();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, data, isLoading, error]);
+  }, [userclerk?.id, data, isLoading, error]);
 
   const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -114,21 +114,25 @@ export default function NotificationPage() {
           <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-6 w-full ">
             <div className="flex-1 overflow-y-auto">
               {/* {renderContent()} */}
+              {/* 1. Loading State */}
               {isLoading && <LoadingSpinner />}
-              {error && (
+
+              {/* 2. Error State */}
+              {!isLoading && error && (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                   <BellIcon className="w-12 h-12 mb-4" />
                   <p className="text-sm mb-2">{error.message}</p>
                   <button
                     onClick={() => window.location.reload()}
-                    className="text-sm text-green-500 pointer hover:text-green-400"
+                    className="text-sm text-green-500 hover:text-green-400"
                   >
                     Try again
                   </button>
                 </div>
               )}
 
-              {!allNotifications.length && !requestCollaboration?.length && (
+              {/* 3. Empty State (Only if not loading, no error, and no items) */}
+              {!isLoading && !error && !allNotifications.length && !requestCollaboration?.length && (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                   <BellIcon className="w-12 h-12 mb-4" />
                   <p className="text-sm">No notifications</p>

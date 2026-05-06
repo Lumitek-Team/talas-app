@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { SidebarLogo } from "./sidebar-logo";
 import { SidebarNav } from "./sidebar-nav";
 import { SidebarMore } from "./sidebar-more";
@@ -10,27 +11,16 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeItem }: SidebarProps) {
+  const isMobile = useIsMobile(690);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Function to check window width and update sidebar state
     const handleResize = () => {
-      const width = window.innerWidth;
-      setIsCollapsed(width <= 1180);
-      setIsMobile(width <= 690);
+      setIsCollapsed(window.innerWidth <= 1180);
     };
-
-    // Set initial state
     handleResize();
-
-    // Add event listener for window resize
     window.addEventListener('resize', handleResize);
-
-    // Clean up event listener on component unmount
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   if (isMobile) {

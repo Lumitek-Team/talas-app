@@ -8,9 +8,58 @@ import { createContext } from "@/app/server/context";
 import superjson from "superjson";
 import { notFound } from "next/navigation";
 import { ProjectDetailView } from "@/components/project/project-detail-view";
+import { Metadata } from "next";
+import { getPublicUrl } from "@/lib/utils";
 
 interface ProjectPageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
+  const { id } = await params;
+  
+  try {
+    const helpers = createServerSideHelpers({
+      router: appRouter,
+      ctx: await createContext(),
+      transformer: superjson,
+    });
+
+    const project = await helpers.project.getOne.fetch({ id });
+
+    if (!project?.data) {
+      return {
+        title: "Project Not Found | Talas",
+      };
+    }
+
+    const title = `${project.data.title} | Talas`;
+    const description = project.data.content?.substring(0, 160) || "Check out this amazing project on Talas.";
+    const image = project.data.image1 ? getPublicUrl(project.data.image1) : "/img/og-default.png";
+
+    return {
+      title,
+      description,
+      openGraph: {
+        title,
+        description,
+        images: [image],
+        type: "article",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+        images: [image],
+      },
+    };
+  } catch (error) {
+    console.error("METADATA_ERROR: Project metadata fetch failed:", error);
+    return {
+      title: "Project Details | Talas",
+      description: "View project details and collaboration history on Talas.",
+    };
+  }
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
