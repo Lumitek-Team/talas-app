@@ -12,7 +12,7 @@ import { ProfileRow } from "@/components/profile/edit/profile-row";
 import { TextAreaForm } from "@/components/profile/edit/form-textarea";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { trpc } from "@/app/_trpc/client";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { useToast } from "@/contexts/toast-context";
 import { debounce } from "@/lib/utils";
 import { deleteImages, uploadImage } from "@/lib/imageUtils";
@@ -44,6 +44,7 @@ export default function EditProfile() {
   const router = useRouter();
   const usernameFromUrl = params?.username as string | undefined;
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const { showToast } = useToast();
   const [isMobile, setIsMobile] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -224,10 +225,17 @@ export default function EditProfile() {
 
     if (selectedFile) {
       try {
-        uploadedImagePath = await uploadImage(selectedFile, "profile_photos");
+        let token: string | null = null;
+        try {
+          token = await getToken({ template: "supabase" });
+        } catch (e) {
+          console.error("Clerk 'supabase' template acquisition failed:", e);
+        }
+
+        uploadedImagePath = await uploadImage(selectedFile, "profile_photos", token || undefined);
 
         if (userData.photo_profile) {
-          await deleteImages([userData.photo_profile]);
+          await deleteImages([userData.photo_profile], token || undefined);
         }
       } catch (error) {
         console.error("Error uploading profile image:", error);
@@ -252,7 +260,7 @@ export default function EditProfile() {
     });
   }, [
     userData,
-    user,
+
     name,
     usernameInput,
     email,
@@ -264,6 +272,8 @@ export default function EditProfile() {
     selectedFile,
     updateMutation,
     usernameError,
+    getToken,
+    showToast,
   ]);
 
   // Fallback saat redirect

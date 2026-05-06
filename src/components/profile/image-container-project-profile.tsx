@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 
@@ -31,11 +32,14 @@ export function ImageContainerProjectProfile({ images }: ImageContainerProps) {
                 key={idx}
                 className="w-full aspect-video"
               >
-                <img
+                <Image
                   src={src}
                   alt={`Image ${idx + 1}`}
+                  width={800}
+                  height={450}
                   onLoad={() => setLoadedCount((prev) => prev + 1)}
                   className="w-full h-full object-cover rounded-sm bg-white"
+                  unoptimized
                 />
               </CarouselItem>
             ))}
@@ -45,11 +49,14 @@ export function ImageContainerProjectProfile({ images }: ImageContainerProps) {
         </Carousel>
       ) : (
         <div className="w-full aspect-video">
-          <img
+          <Image
             src={images[0]}
             alt="Single Image"
+            width={800}
+            height={450}
             onLoad={() => setLoadedCount((prev) => prev + 1)}
             className="w-full h-full object-cover rounded-sm bg-white"
+            unoptimized
           />
         </div>
       )}

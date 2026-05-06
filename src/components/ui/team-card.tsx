@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 
@@ -19,7 +19,7 @@ interface TeamMember {
 
 interface TeamCardProps {
   member: TeamMember;
-  variants?: any;
+  variants?: Variants;
   isAnyExpanded: boolean;
   isExpanded: boolean;
   onExpand: (id: number) => void;

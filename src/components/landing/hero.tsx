@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
+const words = ["BIG", "AMAZING", "WONDERFUL", "MARVELLOUS", "INCREDIBLE"];
+
 export function Hero() {
-  const words = ["BIG", "AMAZING", "WONDERFUL", "MARVELLOUS", "INCREDIBLE"];
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
@@ -39,7 +40,7 @@ export function Hero() {
     }
 
     return () => clearTimeout(timeout);
-  }, [displayedText, isTyping, currentWordIndex, words]);
+  }, [displayedText, isTyping, currentWordIndex]);
 
   return (
     <section className="text-center px-4 h-screen flex flex-col items-center justify-center">

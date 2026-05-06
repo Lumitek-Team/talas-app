@@ -57,7 +57,7 @@ export function PopupFollow({ open, onClose, userId, type }: PopupFollowProps) {
     };
 
     fetchData();
-  }, [open, type]);
+  }, [open, type, getFollowers, getFollowings]);
 
   if (!open) return null;
 

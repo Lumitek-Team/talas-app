@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { CheckCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 

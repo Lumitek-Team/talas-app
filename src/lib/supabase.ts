@@ -8,20 +8,38 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Default client with anon key
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,
+  },
+});
+
+// Cache for the authenticated client to prevent multiple instances
+let authenticatedClient: ReturnType<typeof createClient> | null = null;
+let lastToken: string | null = null;
 
 /**
- * Creates a Supabase client with a custom auth token.
- * Useful for integrating Clerk with Supabase RLS.
+ * Creates or retrieves a memoized Supabase client with a custom auth token.
  * 
- * @param token - The JWT token (e.g., from Clerk's getToken({ template: 'supabase' }))
+ * @param token - The JWT token from Clerk
  */
 export const createClerkSupabaseClient = (token: string) => {
-  return createClient(supabaseUrl, supabaseAnonKey, {
+  // Return cached client if token is the same
+  if (authenticatedClient && lastToken === token) {
+    return authenticatedClient;
+  }
+
+  lastToken = token;
+  authenticatedClient = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false, // Prevents "Multiple GoTrueClient instances" warning
+    },
     global: {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     },
   });
+  
+  return authenticatedClient;
 };

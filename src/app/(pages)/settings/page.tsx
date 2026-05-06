@@ -9,11 +9,9 @@ import { SupportContent } from "@/components/setting/support";
 import { useRouter } from "next/navigation";
 import {
   ChevronDown,
-  ChevronUp,
   Archive,
   Shield,
   LifeBuoy,
-  UserX,
 } from "lucide-react";
 
 export default function SettingsPage() {

@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const existingProject = await trpc.project.getOne({ id, id_user });
+    const existingProject = await trpc.project.getOne({ id });
 
     if (!existingProject) {
       return new Response("Project not found or access denied", {

@@ -18,10 +18,10 @@ import { LoadingSpinner } from "@/components/ui/loading";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { cn, getPublicUrl } from "@/lib/utils";
-import { ProjectOneType } from "@/lib/type";
+import { ProjectOneType, UserSearchType, CategoryType } from "@/lib/type";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { ArrowLeftIcon } from "@heroicons/react/24/solid";
-import { Separator } from "@/components/ui/separator";
+
 import { AuthPromptDialog } from "@/components/ui/auth-prompt-dialog";
 
 type FilterType = "Project" | "Profile" | "Category";
@@ -72,7 +72,7 @@ const ProfileAvatar = ({ src, alt, fallback }: { src?: string; alt?: string; fal
     try {
       const url = new URL(src);
       if (approvedHosts.includes(url.hostname)) useNextImage = true;
-    } catch (e) {
+    } catch {
       useNextImage = true;
     }
   }
@@ -91,9 +91,25 @@ const ProfileAvatar = ({ src, alt, fallback }: { src?: string; alt?: string; fal
   );
 };
 
-const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike, handleToggleBookmark, optimisticLikes, optimisticBookmarks }: any) => {
+const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike, handleToggleBookmark, optimisticLikes, optimisticBookmarks }: {
+  category: { title: string; slug: string };
+  onBack: () => void;
+  queryResult: {
+    data: { pages: { data: ProjectOneType[] }[] } | undefined | null;
+    isLoading: boolean;
+    isError: boolean;
+    error: unknown;
+    isFetchingNextPage: boolean;
+    hasNextPage?: boolean;
+    fetchNextPage: () => void;
+  };
+  handleToggleLike: (projectId: string, isLiked: boolean) => void;
+  handleToggleBookmark: (projectId: string, isBookmarked: boolean) => void;
+  optimisticLikes: Record<string, boolean>;
+  optimisticBookmarks: Record<string, boolean>;
+}) => {
   const { data, isLoading, isError, error, isFetchingNextPage, hasNextPage, fetchNextPage } = queryResult;
-  const projects = useMemo(() => data?.pages.flatMap((page: any) => page.data) || [], [data]);
+  const projects = useMemo(() => data?.pages.flatMap((page) => (page as { data: ProjectOneType[] }).data) || [], [data]);
   const handleScroll = useCallback(() => {
     if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 200 && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
@@ -126,7 +142,7 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
 
       {isError && (
         <div className="text-center py-8">
-          <p className="text-red-400">Error: {error.message}</p>
+          <p className="text-red-400">Error: {(error as { message?: string })?.message}</p>
         </div>
       )}
 
@@ -142,7 +158,7 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
           const post = transformProjectToPost(project, optimisticLikes, optimisticBookmarks);
           return (
             <div key={post.id} className="border-b border-white/10 last:border-b-0 p-1">
-              <PostCard data={post} onToggleBookmark={() => handleToggleBookmark(post.id, post.is_bookmarked)} onToggleLike={() => handleToggleLike(post.id, post.is_liked)} />
+              <PostCard data={post} onToggleBookmark={() => handleToggleBookmark(post.id, post.is_bookmarked ?? false)} onToggleLike={() => handleToggleLike(post.id, post.is_liked ?? false)} />
             </div>
           )
         })}
@@ -154,7 +170,7 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
           const post = transformProjectToPost(project, optimisticLikes, optimisticBookmarks);
           return (
             <div key={post.id} className="border-b border-white/10 last:border-b-0 p-1">
-              <PostCard data={post} onToggleBookmark={() => handleToggleBookmark(post.id, post.is_bookmarked)} onToggleLike={() => handleToggleLike(post.id, post.is_liked)} />
+              <PostCard data={post} onToggleBookmark={() => handleToggleBookmark(post.id, post.is_bookmarked ?? false)} onToggleLike={() => handleToggleLike(post.id, post.is_liked ?? false)} />
             </div>
           )
         })}
@@ -196,9 +212,7 @@ export default function SearchPage() {
 
   const { data: categoryResponse } = trpc.category.getAll.useQuery(undefined, { staleTime: STALE.STATIC });
 
-  const { data: popularProjectsRaw, isLoading: loadingPopularProjectsRaw } = trpc.search.getPopularPost.useQuery({
-    id_user: user?.id || "",
-  }, { staleTime: STALE.MEDIUM })
+  const { data: popularProjectsRaw, isLoading: loadingPopularProjectsRaw } = trpc.search.getPopularPost.useQuery({}, { staleTime: STALE.MEDIUM })
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 690);
@@ -231,10 +245,10 @@ export default function SearchPage() {
   }, [formValues, committedValues, router]);
   const queryInput = useMemo(() => {
     if (viewingCategory) {
-      return { limit: 10, id_user: user?.id || "", type: 'PROJECT' as BackendFilterType, search: '__all__', category: viewingCategory.slug };
+      return { limit: 10, type: 'PROJECT' as BackendFilterType, search: '__all__', category: viewingCategory.slug };
     }
-    return { limit: 10, id_user: user?.id || "", type: committedValues.type, search: committedValues.query || undefined, category: committedValues.category || undefined };
-  }, [viewingCategory, committedValues, user?.id]);
+    return { limit: 10, type: committedValues.type, search: committedValues.query || undefined, category: committedValues.category || undefined };
+  }, [viewingCategory, committedValues]);
 
   const searchQuery = trpc.search.search.useInfiniteQuery(
     queryInput, {
@@ -245,7 +259,7 @@ export default function SearchPage() {
   }
   );
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch, error: searchError } = searchQuery;
+  const { data, isFetchingNextPage, isLoading, refetch, error: searchError } = searchQuery;
 
   useEffect(() => {
     const projects = data?.pages.flatMap(page => page.data as ProjectOneType[]) || [];
@@ -257,25 +271,7 @@ export default function SearchPage() {
     }
   }, [data, queryInput.type, optimisticLikes, optimisticBookmarks]);
 
-  const allRawResults = useMemo(() => data?.pages.flatMap(page => (page.data as any[]) || []) || [], [data]);
-
-  // FUNCTIONALITY FIX: Add trpc utils and mutations from feeds page
-  const utils = trpc.useUtils();
-
-  const updateCache = (projectId: string, updates: Partial<ProjectOneType>) => {
-    utils.search.search.setInfiniteData(queryInput, (oldData) => {
-      if (!oldData) return oldData;
-      return {
-        ...oldData,
-        pages: oldData.pages.map(page => ({
-          ...page,
-          data: page.data.map((p: any) =>
-            p.id === projectId ? { ...p, ...updates } : p
-          ),
-        })),
-      };
-    });
-  };
+  const allRawResults = useMemo(() => data?.pages.flatMap(page => (page.data as (ProjectOneType | UserSearchType | CategoryType)[]) || []) || [], [data]);
 
   const bookmarkMutation = trpc.bookmark.create.useMutation({
     onSuccess: () => refetch(),
@@ -380,7 +376,7 @@ export default function SearchPage() {
                   <CategoryProjectsView
                     category={viewingCategory}
                     onBack={() => setViewingCategory(null)}
-                    queryResult={searchQuery}
+                    queryResult={searchQuery as unknown as { data: { pages: { data: ProjectOneType[]; }[]; }; isLoading: boolean; isError: boolean; error: unknown; isFetchingNextPage: boolean; hasNextPage?: boolean; fetchNextPage: () => void; }}
                     handleToggleLike={handleToggleLike}
                     handleToggleBookmark={handleToggleBookmark}
                     optimisticLikes={optimisticLikes}
@@ -412,11 +408,11 @@ export default function SearchPage() {
                       </div>
                     ) : allRawResults.length === 0 ? (
                       <div className="text-center py-8">
-                        <p className="text-muted-foreground">No results found for "{committedValues.query}"</p>
+                        <p className="text-muted-foreground">No results found for &quot;{committedValues.query}&quot;</p>
                       </div>
                     ) : (
                       <div>
-                        <p className="text-neutral-400 p-4">Showing results for: <span className="font-semibold text-neutral-200">"{committedValues.query}"</span></p>
+                        <p className="text-neutral-400 p-4">Showing results for: <span className="font-semibold text-neutral-200">&quot;{committedValues.query}&quot;</span></p>
 
                         {activeFilter === 'Project' && committedValues.type === 'PROJECT' && displayablePosts.filter(Boolean).map(post => (
                           <div key={`project-${post.id}`} className="border-b border-white/10 last:border-b-0 p-1">
@@ -424,7 +420,7 @@ export default function SearchPage() {
                           </div>
                         ))}
 
-                        {activeFilter === 'Profile' && committedValues.type === 'USER' && allRawResults.filter(Boolean).map((item: any) => (
+                        {activeFilter === 'Profile' && committedValues.type === 'USER' && (allRawResults as UserSearchType[]).filter(Boolean).map((item) => (
                           <div key={`profile-${item.id}`} className="cursor-pointer border border-neutral-700/50 rounded-lg p-4 m-4 hover:bg-neutral-800/30 transition-colors" onClick={() => router.push(`/profile/${item.username}`)}>
                             <div className="flex items-center gap-4">
                               <ProfileAvatar src={item.photo_profile ? getPublicUrl(item.photo_profile) : undefined} alt={item.name || item.username} fallback={item.name?.[0]?.toUpperCase() || "U"} />
@@ -437,7 +433,7 @@ export default function SearchPage() {
                         ))}
 
 
-                        {activeFilter === 'Category' && committedValues.type === 'CATEGORY' && allRawResults.filter(Boolean).map((item: any) => (
+                        {activeFilter === 'Category' && committedValues.type === 'CATEGORY' && (allRawResults as CategoryType[]).filter(Boolean).map((item) => (
                           <div key={`category-${item.id}`} className="border border-neutral-700/50 rounded-lg p-4 m-4 cursor-pointer hover:bg-neutral-800/30 transition-colors">
                             <button type="button" className="w-full text-left cursor-pointer" onClick={() => setViewingCategory({ slug: item.slug, title: item.title })}>
                               <h3 className="text-lg font-semibold text-neutral-200 hover:text-white">{item.title}</h3>

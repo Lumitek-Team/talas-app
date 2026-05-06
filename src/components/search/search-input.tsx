@@ -1,6 +1,6 @@
 // components/search/search-input.tsx
 import { Search } from 'lucide-react';
-import { cn } from '@/lib/utils';
+
 
 // FIX: Define props for the component to receive
 interface SearchInputProps {

@@ -56,7 +56,7 @@ export function ProfileCard({
     }
   );
 
-  const { data: followingData, isLoading: isFollowingLoading } =
+  const { data: followingData } =
     trpc.user.getAllFollowing.useQuery(
       { id_follower: currentUserId },
       {

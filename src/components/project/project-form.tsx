@@ -24,7 +24,7 @@ import { FigmaUrlSection } from "./form-sections/figma-url-section";
 import { ImagesSection } from "./form-sections/images-section";
 import { CategorySection } from "./form-sections/category-section";
 import { trpc } from "@/app/_trpc/client";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { getPublicUrl } from "@/lib/utils";
 import { ProjectOneType } from "@/lib/type";
 import { uploadImage } from "@/lib/imageUtils";
@@ -71,6 +71,7 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
   const router = useRouter();
   const utils = trpc.useUtils();
   const { user, isLoaded: isUserLoaded } = useUser();
+  const { getToken } = useAuth();
 
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -154,8 +155,8 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
     onSuccess: (data) => {
       setIsSubmittingForm(false);
       if (project && user?.id) {
-        utils.project.getOne.invalidate({ id: project.id, id_user: user.id });
-        utils.project.getOne.invalidate({ id: project.slug, id_user: user.id });
+        utils.project.getOne.invalidate({ id: project.id });
+        utils.project.getOne.invalidate({ id: project.slug });
       }
       utils.project.getAll.invalidate();
       router.replace(`/project/${data.data.slug}`);
@@ -193,8 +194,9 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
   async function uploadImagesDirectly(
     files: File[],
     folder: string,
+    token?: string,
   ): Promise<string[]> {
-    return Promise.all(files.map((file) => uploadImage(file, folder)));
+    return Promise.all(files.map((file) => uploadImage(file, folder, token)));
   }
 
   const onSubmit = async (data: ProjectFormValues) => {
@@ -217,9 +219,20 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
       try {
         let uploadedImagePaths: string[] = [];
         if (imageFiles.length > 0) {
+          let token: string | null = null;
+          try {
+            // Attempt to get the specialized Supabase token
+            token = await getToken({ template: "supabase" });
+            // TEMPORARY: Debugging
+            console.log("JWT BEING SENT:", token);
+          } catch (tokenError) {
+            console.error("Clerk 'supabase' template acquisition failed:", tokenError);
+          }
+
           uploadedImagePaths = await uploadImagesDirectly(
             imageFiles,
             "project",
+            token || undefined,
           );
         }
 

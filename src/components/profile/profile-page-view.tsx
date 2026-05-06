@@ -33,10 +33,9 @@ export function ProfilePageView({ username }: ProfilePageViewProps) {
 
   const profileId = profileData?.data?.id;
 
-  // Projects (protected – only fetched when we have the profile id and the viewer is signed in)
   const { data: projectsData, isLoading: isProjectsLoading } = trpc.user.getAllProjects.useQuery(
     { id_user: profileId, limit: 100 },
-    { enabled: !!profileId && !!userId, staleTime: STALE.MEDIUM },
+    { enabled: !!profileId, staleTime: STALE.MEDIUM },
   );
 
   useEffect(() => {
@@ -48,7 +47,7 @@ export function ProfilePageView({ username }: ProfilePageViewProps) {
 
   // Wait for Clerk and profile data
   const isLoading = !isLoaded || isProfileLoading || (!!userId && isMyUserLoading);
-  const isProjectsLoading_ = !!userId && isProjectsLoading;
+  const isProjectsLoading_ = isProjectsLoading;
 
   if (isLoading) {
     return (

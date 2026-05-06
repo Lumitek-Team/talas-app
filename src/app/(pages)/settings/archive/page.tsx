@@ -8,7 +8,7 @@ import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { CardArchive } from "@/components/archive/card-archive";
-import type { ProjectType } from "@/components/archive/card-archive";
+
 import { LoadingSpinner } from "@/components/ui/loading";
 
 export default function Archive() {

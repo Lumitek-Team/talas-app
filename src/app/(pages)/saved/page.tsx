@@ -9,10 +9,10 @@ import { PageContainer } from "@/components/ui/page-container";
 import { LoadingSpinner } from "@/components/ui/loading";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { trpc } from "@/app/_trpc/client";
-import { ProjectOneType, BookmarkType } from "@/lib/type";
+import { BookmarkType } from "@/lib/type";
 import { useUser } from "@clerk/nextjs";
 import { getPublicUrl } from "@/lib/utils";
-import { redirect } from "next/navigation";
+
 import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog"; // Import dialog
 
 // Transform bookmarked item data to PostCard props (remains the same)
@@ -100,7 +100,7 @@ export default function SavedProjectsPage() {
     isError,
     error,
   } = trpc.user.getBookmarked.useInfiniteQuery(
-    { id: currentUserIdSaved, id_user: user?.id, limit: 10 },
+    { id: currentUserIdSaved, limit: 10 },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
       enabled: !!user && isUserLoaded,
@@ -136,10 +136,10 @@ export default function SavedProjectsPage() {
         // Invalidate project.getOne if the user navigates to a project detail page
         // that was just unbookmarked, to reflect the change.
         if (variables?.id_project) {
-          utils.project.getOne.invalidate({ id: variables.id_project, id_user: user.id });
+          utils.project.getOne.invalidate({ id: variables.id_project });
         }
         // Also invalidate feeds page if it shows bookmark status directly
-        utils.project.getAll.invalidate({ limit: 15, id_user: user.id });
+        utils.project.getAll.invalidate({ limit: 15 });
       }
     },
   });
@@ -265,7 +265,7 @@ export default function SavedProjectsPage() {
           {isUserLoaded && user && !isError && !isLoading && !isFetchingNextPage && trulySavedPosts.length === 0 && (
             <div className="text-center py-16">
               <h3 className="text-lg font-semibold mb-2">No Saved Projects</h3>
-              <p className="text-muted-foreground">You haven't bookmarked any projects yet.</p>
+              <p className="text-muted-foreground">You haven&apos;t bookmarked any projects yet.</p>
             </div>
           )}
         </div>

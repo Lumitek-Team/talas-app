@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import {
   Carousel,
   CarouselContent,
@@ -19,10 +20,13 @@ export function ImageContainer({ images }: ImageContainerProps) {
   if (!isCarouselActive) {
     return (
       <div className="w-full rounded-md overflow-hidden">
-        <img
+        <Image
           src={images[0]}
           alt="Project Image"
+          width={800}
+          height={450}
           className="w-full aspect-video object-cover bg-white rounded-sm"
+          unoptimized
         />
       </div>
     );
@@ -37,10 +41,13 @@ export function ImageContainer({ images }: ImageContainerProps) {
             className="basis-full sm:basis-[80%] md:basis-[60%] lg:basis-[50%]"
           >
             <div className="overflow-hidden rounded-sm">
-              <img
+              <Image
                 src={src}
                 alt={`Image ${idx + 1}`}
+                width={800}
+                height={450}
                 className="w-full aspect-video object-cover bg-white"
+                unoptimized
               />
             </div>
           </CarouselItem>

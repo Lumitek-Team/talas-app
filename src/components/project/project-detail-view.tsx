@@ -42,11 +42,8 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
   // Query key: pass id_user when known, omit when guest so we hit the
   // same cache key that the server prefetch used (no id_user).
   const queryInput = useMemo(
-    () =>
-      projectId
-        ? { id: projectId, ...(currentUserId ? { id_user: currentUserId } : {}) }
-        : undefined,
-    [projectId, currentUserId],
+    () => (projectId ? { id: projectId } : undefined),
+    [projectId],
   );
 
   const {

@@ -58,13 +58,12 @@ export default function HomePage() {
   >(undefined);
 
   const utils = trpc.useUtils();
-  const currentUserIdFeeds = user?.id || undefined;
+
   const queryClientKeyProjectGetAll = useMemo(
     () => ({
       limit: 15,
-      id_user: currentUserIdFeeds,
     }),
-    [currentUserIdFeeds],
+    [],
   );
 
   const {

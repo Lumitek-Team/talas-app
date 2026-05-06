@@ -36,7 +36,6 @@ export function CardProjectProfile({
   project,
   userId,
   isPinned = false,
-  isDeleted = false,
   onMutateSuccess,
   isMyProfile,
 }: CardProjectProfileProps) {
@@ -45,7 +44,6 @@ export function CardProjectProfile({
 
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [pinned, setPinned] = useState<boolean>(isPinned);
-  const [deleted, setDeleted] = useState<boolean>(isDeleted);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setArchiveDialogOpen] = useState(false);
 
@@ -76,7 +74,7 @@ export function CardProjectProfile({
 
   const deleteProject = trpc.project.delete.useMutation({
     onSuccess: () => {
-      setDeleted(true);
+
       utils.project.getArchived.invalidate();
       utils.user.getAllProjects.invalidate();
       onMutateSuccess?.();
