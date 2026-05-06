@@ -12,35 +12,13 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { ProjectOneType } from "@/lib/type";
 import { useUser } from "@clerk/nextjs";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { transformProjectToPost } from "@/lib/project-utils";
 
-// Transform backend data to PostCard props
-const transformProjectToPost = (
-  project: ProjectOneType,
-  optimisticLikes: Record<string, boolean>,
-  optimisticBookmarks: Record<string, boolean>,
-) => {
-  const isLiked =
-    optimisticLikes[project.id] !== undefined
-      ? optimisticLikes[project.id]
-      : project.is_liked;
-
-  const isBookmarked =
-    optimisticBookmarks[project.id] !== undefined
-      ? optimisticBookmarks[project.id]
-      : project.is_bookmarked;
-
-  const transformed: ProjectOneType = {
-    ...project,
-    is_bookmarked: isBookmarked,
-    is_liked: isLiked,
-  };
-
-  return transformed;
-};
 
 export default function HomePage() {
   const { user, isLoaded: isUserLoaded } = useUser();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile(690);
   const [allPosts, setAllPosts] = useState<
     ReturnType<typeof transformProjectToPost>[]
   >([]);
@@ -325,12 +303,6 @@ export default function HomePage() {
     }
   }, [data, optimisticLikes, optimisticBookmarks]);
 
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 690);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   const handleScroll = useCallback(() => {
     if (

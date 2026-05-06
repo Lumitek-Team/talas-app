@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/contexts/toast-context";
 import { ProjectOneType } from "@/lib/type";
 import { getSanitizedConfig } from "@/lib/sanitize";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 
 interface PostCardProps<T extends Partial<ProjectOneType> = ProjectOneType> {
@@ -28,9 +29,9 @@ export function PostCard<T extends Partial<ProjectOneType>>({
   onToggleBookmark,
   displayContext,
 }: PostCardProps<T>) {
+  const isMobile = useIsMobile(690);
   const router = useRouter();
-  const [isMobile, setIsMobile] = useState(false);
-  const { showToast } = useToast(); // This should work now
+  const { showToast } = useToast();
 
   const allDisplayImages = [];
   if (data?.image1) allDisplayImages.push(data.image1);
@@ -38,17 +39,6 @@ export function PostCard<T extends Partial<ProjectOneType>>({
   if (data?.image3) allDisplayImages.push(data.image3);
   if (data?.image4) allDisplayImages.push(data.image4);
   if (data?.image5) allDisplayImages.push(data.image5);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 690);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
 
   // const handleCardClick = (e: React.MouseEvent) => {
   //   const target = e.target as HTMLElement;
