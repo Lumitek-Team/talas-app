@@ -14,7 +14,7 @@ import { SearchInput } from "@/components/search/search-input";
 import { FilterButton } from "@/components/search/filter-button";
 import { CategorySelect } from "@/components/search/category-select";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
-import { LoadingSpinner } from "@/components/ui/loading";
+import { ProjectCardSkeleton } from "@/components/project/project-card-skeleton";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { cn, getPublicUrl } from "@/lib/utils";
@@ -137,7 +137,10 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
       </div>
 
       {isLoading && (
-        <LoadingSpinner />
+        <div className="space-y-4 p-4">
+          <ProjectCardSkeleton />
+          <ProjectCardSkeleton />
+        </div>
       )}
 
       {isError && (
@@ -177,7 +180,9 @@ const CategoryProjectsView = ({ category, onBack, queryResult, handleToggleLike,
       </div>
 
       {isFetchingNextPage && (
-        <LoadingSpinner className="h-32" />
+        <div className="p-4">
+          <ProjectCardSkeleton />
+        </div>
       )}
     </div>
   );
@@ -348,7 +353,10 @@ export default function SearchPage() {
 
           {/* Show loading when user is not loaded */}
           {!isLoaded && (
-            <LoadingSpinner />
+            <div className="p-4 space-y-4">
+              <ProjectCardSkeleton />
+              <ProjectCardSkeleton />
+            </div>
           )}
 
           {/* Show main content when user is loaded */}
@@ -386,7 +394,10 @@ export default function SearchPage() {
                   <div>
                     {showInitialPrompt ? (
                       loadingPopularProjectsRaw ?
-                        <LoadingSpinner />
+                        <div className="space-y-4 p-4">
+                          <ProjectCardSkeleton />
+                          <ProjectCardSkeleton />
+                        </div>
                         :
                         <div>
                           <p className="px-4  mt-4 text-lg font-semibold">Popular projects in each category</p>
@@ -401,7 +412,10 @@ export default function SearchPage() {
                           ))}
                         </div>
                     ) : isLoading ? (
-                      <LoadingSpinner />
+                      <div className="space-y-4 p-4">
+                        <ProjectCardSkeleton />
+                        <ProjectCardSkeleton />
+                      </div>
                     ) : searchError ? (
                       <div className="text-center py-8">
                         <p className="text-red-400">Error: {searchError.message}</p>
@@ -443,7 +457,9 @@ export default function SearchPage() {
                         ))}
 
                         {isFetchingNextPage && (
-                          <LoadingSpinner className="h-32" />
+                          <div className="p-4">
+                            <ProjectCardSkeleton />
+                          </div>
                         )}
                       </div>
                     )}

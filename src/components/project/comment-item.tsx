@@ -30,6 +30,7 @@ import { CommentForm } from "./comment-form";
 import { formatDistanceToNow } from "date-fns";
 import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog"; // Import the new dialog
 import { useToast } from "@/contexts/toast-context";
+import { getSanitizedConfig } from "@/lib/sanitize";
 
 interface CommentItemProps {
   comment: CommentsInProjectType;
@@ -241,9 +242,10 @@ export function CommentItem({
                 </DropdownMenu>
               )}
             </div>
-            <p className="text-sm mt-1 mb-2 text-slate-300 whitespace-pre-line">
-              {comment.content}
-            </p>
+            <div 
+              className="text-sm mt-1 mb-2 text-slate-300 whitespace-pre-line"
+              dangerouslySetInnerHTML={getSanitizedConfig(comment.content)}
+            />
             <div className="flex items-center gap-3">
               {canReply && currentUserId && (
                 <button

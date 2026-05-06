@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "@/contexts/toast-context";
 import { ProjectOneType } from "@/lib/type";
+import { getSanitizedConfig } from "@/lib/sanitize";
 
 
 interface PostCardProps<T extends Partial<ProjectOneType> = ProjectOneType> {
@@ -140,7 +141,10 @@ export function PostCard<T extends Partial<ProjectOneType>>({
             {data.category.title}
           </p>
         )}
-        <p className="text-white text-sm whitespace-pre-line">{data.content}</p>
+        <div 
+          className="text-white text-sm whitespace-pre-line"
+          dangerouslySetInnerHTML={getSanitizedConfig(data.content || "")}
+        />
 
         {(data.link_figma || data.link_github) && (
           <div

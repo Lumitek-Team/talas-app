@@ -6,7 +6,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { PageContainer } from "@/components/ui/page-container";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { CommentSection } from "@/components/project/comment-section";
-import { LoadingSpinner } from "@/components/ui/loading";
+import { ProjectDetailSkeleton } from "@/components/project/project-detail-skeleton";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
@@ -240,7 +240,7 @@ export function ProjectDetailView({ projectId }: ProjectDetailViewProps) {
       <>
         <Sidebar />
         <PageContainer title="Loading Project..." showBackButton={true}>
-          <LoadingSpinner className="h-96" />
+          <ProjectDetailSkeleton />
         </PageContainer>
       </>
     );

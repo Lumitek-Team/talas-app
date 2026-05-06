@@ -6,7 +6,7 @@ import { PostComposer } from "@/components/home/organisms/post-composer";
 import { PostCard } from "@/components/home/organisms/post-card";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { PageContainer } from "@/components/ui/page-container";
-import { LoadingSpinner } from "@/components/ui/loading";
+import { ProjectCardSkeleton } from "@/components/project/project-card-skeleton";
 import { AuthPromptDialog } from "@/components/ui/auth-prompt-dialog";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { trpc } from "@/app/_trpc/client";
@@ -395,7 +395,11 @@ export default function HomePage() {
       <>
         <Sidebar activeItem="Home" />
         <PageContainer title="Home">
-          <LoadingSpinner />
+          <div className="space-y-4">
+            <ProjectCardSkeleton />
+            <ProjectCardSkeleton />
+            <ProjectCardSkeleton />
+          </div>
         </PageContainer>
       </>
     );
@@ -442,7 +446,12 @@ export default function HomePage() {
             />
           )}
 
-          {isLoadingPosts && allPosts.length === 0 && <LoadingSpinner />}
+          {isLoadingPosts && allPosts.length === 0 && (
+            <div className="space-y-4 p-1">
+              <ProjectCardSkeleton />
+              <ProjectCardSkeleton />
+            </div>
+          )}
 
           {allPosts.map((post) => (
             <div key={post.id} className="border-b border-white/10 p-1">
@@ -458,7 +467,11 @@ export default function HomePage() {
             </div>
           ))}
 
-          {isFetchingNextPage && <LoadingSpinner className="h-32" />}
+          {isFetchingNextPage && (
+            <div className="p-1">
+              <ProjectCardSkeleton />
+            </div>
+          )}
 
           {!hasNextPage && allPosts.length > 0 && !isFetchingNextPage && (
             <div className="text-center py-8">

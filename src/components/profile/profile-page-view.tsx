@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { PageContainer } from "@/components/ui/page-container";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { ProfileCard } from "@/components/profile/profile-card";
-import { LoadingSpinner } from "@/components/ui/loading";
+import { ProfileSkeleton } from "@/components/profile/profile-skeleton";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { STALE } from "@/lib/query-config";
@@ -54,7 +54,7 @@ export function ProfilePageView({ username }: ProfilePageViewProps) {
       <>
         <Sidebar activeItem="" />
         <PageContainer title="Profile">
-          <LoadingSpinner className="h-96" />
+          <ProfileSkeleton />
         </PageContainer>
         <FloatingActionButton />
       </>
