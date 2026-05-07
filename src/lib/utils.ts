@@ -1,7 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import imageCompression from "browser-image-compression";
-import prisma from "@/lib/prisma";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -128,7 +127,7 @@ export async function getCroppedImg(
 	});
 }
 
-// Helper untuk kompresi gambar
+// Helper for image compression
 export async function compressImage(blob: Blob): Promise<File> {
 	const file = new File([blob], "temp-image.jpg", { type: blob.type });
 	const compressedBlob = await imageCompression(file, {
@@ -142,7 +141,7 @@ export async function compressImage(blob: Blob): Promise<File> {
 	});
 }
 
-// Helper untuk load gambar ke dalam elemen Image
+// Helper to load image into an Image element
 function createImage(url: string): Promise<HTMLImageElement> {
 	return new Promise((resolve, reject) => {
 		const img = new Image();
@@ -169,23 +168,3 @@ export function getPublicUrl(path: string | null | undefined): string {
 	return `${process.env.BASE_URL || "http://localhost:3000"}${path}`;
 }
 
-export async function getCommentTreeIds(parentId: string): Promise<string[]> {
-	// Hasil akhir
-	const descendants: string[] = [];
-
-	// Fungsi rekursif untuk mengambil semua anak
-	async function fetchChildren(parentIds: string[]) {
-		if (parentIds.length === 0) return;
-		const children = await prisma.comment.findMany({
-			where: { parent_id: { in: parentIds } },
-			select: { id: true },
-		});
-		const childIds = children.map((c) => c.id);
-		descendants.push(...childIds);
-		// Rekursif ke level berikutnya
-		await fetchChildren(childIds);
-	}
-
-	await fetchChildren([parentId]);
-	return descendants;
-}
