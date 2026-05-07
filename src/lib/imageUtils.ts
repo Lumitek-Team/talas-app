@@ -86,36 +86,39 @@ export async function deleteImages(imageUrls: string[], token?: string): Promise
   // Use authenticated client if token is provided, otherwise use default
   const supabase = token ? createClerkSupabaseClient(token) : defaultSupabase;
 
+  const filePaths: string[] = [];
+
   for (const url of imageUrls) {
     try {
       // Extract relative path from Supabase Public URL
-      // Example URL: https://xyz.supabase.co/storage/v1/object/public/project-image/folder/name.jpg
-      // We need: folder/name.jpg
       const urlObj = new URL(url);
       const pathParts = urlObj.pathname.split(`/public/${BUCKET_NAME}/`);
 
-      if (pathParts.length < 2) {
-        if (process.env.NODE_ENV === "development") {
-          console.warn("Invalid Supabase URL format, skipping delete:", url);
-        }
-        continue;
+      if (pathParts.length >= 2) {
+        filePaths.push(pathParts[1]);
+      } else if (process.env.NODE_ENV === "development") {
+        console.warn("Invalid Supabase URL format, skipping delete candidate:", url);
       }
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("Error parsing image URL for deletion:", err);
+      }
+    }
+  }
 
-      const filePath = pathParts[1];
-
+  if (filePaths.length > 0) {
+    try {
       const { error } = await supabase.storage
         .from(BUCKET_NAME)
-        .remove([filePath]);
+        .remove(filePaths);
 
       if (error) {
         throw error;
       }
     } catch (err) {
       if (process.env.NODE_ENV === "development") {
-        console.error("Error deleting image from Supabase:", err);
+        console.error("Error deleting images from Supabase:", err);
       }
-      // We don't necessarily want to throw here to allow other deletions to proceed,
-      // but we log it.
     }
   }
 }
