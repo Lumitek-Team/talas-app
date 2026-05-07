@@ -57,9 +57,8 @@ export function PageContainer({
       )}
       
       <div className={`w-full flex justify-center transition-all duration-300 ${
-        // Spacing based on screen width via CSS media queries
         "max-[690px]:pt-16 max-[690px]:pb-16 max-[690px]:px-0 " +
-        "min-[691px]:min-[1181px]:pl-[100px] " +
+        "min-[1181px]:pl-[100px] " +
         "min-[691px]:max-[1180px]:pl-[65px]"
       }`}>
         <main className={`w-full py-8 font-inter ${
