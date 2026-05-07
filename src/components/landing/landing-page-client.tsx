@@ -67,7 +67,7 @@ export function LandingPageClient() {
   return (
     <main
       ref={containerRef}
-      className="bg-bg-primary min-h-screen font-sans relative overflow-hidden cursor-none"
+      className="bg-bg-primary min-h-screen font-sans relative overflow-hidden"
     >
       <SmoothCursor />
 
