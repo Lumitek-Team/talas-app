@@ -85,6 +85,8 @@ model Comment {
   LikeComment LikeComment[]
 
   @@index([id_project], map: "idx_project_comment")
+  @@index([parent_id], map: "idx_comment_parent")
+  @@index([id_user], map: "idx_user_comment")
 }
 
 model Notification {
@@ -94,7 +96,7 @@ model Notification {
   created_at DateTime  @default(now()) @db.Timestamp(6)
   is_read    Boolean   @default(false)
   type       notifType
-  user       User      @relation(fields: [id_user], references: [id])
+  user       User       @relation(fields: [id_user], references: [id])
 
   @@index([id_user], map: "idx_user_notification")
   @@index([id_user, is_read], map: "idx_user_notification_read")
@@ -104,7 +106,7 @@ model Category {
   id             String    @id @default(ulid()) @db.Char(26)
   slug           String    @unique @db.VarChar(255)
   title          String    @db.VarChar(255)
-  count_projects Int       @default(0)
+  count_projects Int      @default(0)
   created_at     DateTime  @default(now()) @db.Timestamp(6)
   projects       Project[]
 }
@@ -131,6 +133,7 @@ model Follow {
   following    User     @relation("Following", fields: [id_following], references: [id])
 
   @@index([id_follower, id_following], map: "idx_follower_following")
+  @@index([id_following], map: "idx_following")
 }
 
 model ProjectUser {

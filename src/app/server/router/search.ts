@@ -271,37 +271,18 @@ export const searchRouter = router({
 		.query(async ({ ctx }) => {
 			const currentUserId = ctx.auth.userId;
 			try {
-				// Step 1: Lightweight query — fetch id + id_category ordered by
-				// [id_category asc, popularity_score desc]. The first row per category
-				// is always the highest-scored project — equivalent to RANK() = 1,
-				// but fully type-safe with zero raw SQL.
-				const allSummaries = await prisma.project.findMany({
+				// Fetch the most popular project for each category using 'distinct'
+				// This is much more efficient than fetching all projects and filtering in memory.
+				const projectsFromDb = await prisma.project.findMany({
 					where: { is_archived: false },
+					distinct: ["id_category"],
 					orderBy: [
 						{ id_category: "asc" },
 						{ popularity_score: "desc" },
 					],
-					select: { id: true, id_category: true },
-				});
-
-				// JS dedup: first occurrence per category = top scorer
-				const popularIds: string[] = [];
-				const seenCategories = new Set<string>();
-				for (const p of allSummaries) {
-					if (!seenCategories.has(p.id_category)) {
-						seenCategories.add(p.id_category);
-						popularIds.push(p.id);
-					}
-				}
-
-				// Fetch all projects with those IDs, including interactions
-				const projectsFromDb = await prisma.project.findMany({
-					where: {
-						id: { in: popularIds },
-						is_archived: false,
-					},
 					select: {
 						id: true,
+						id_category: true,
 						title: true,
 						slug: true,
 						content: true,
@@ -365,9 +346,6 @@ export const searchRouter = router({
 							  }
 							: false,
 					},
-					orderBy: {
-						created_at: "desc",
-					},
 				});
 
 				const projectWithInteractionsItems: ProjectWithInteractionsType[] =
@@ -389,7 +367,7 @@ export const searchRouter = router({
  					link_github: p.link_github ?? "",
  					created_at: p.created_at.toISOString(),
  					updated_at: p.updated_at.toISOString(),
- 					id_category: (p as { id_category?: string }).id_category ?? p.category.id,
+ 					id_category: p.id_category ?? p.category.id,
  					is_archived: false,
  					is_bookmarked: currentUserId
  						? p.bookmarks && p.bookmarks.length > 0

@@ -947,7 +947,7 @@ export const userRouter = router({
 		)
 		.query(async ({ input, ctx }) => {
 			const currentUserId = ctx.auth.userId;
-			const targetUserId = input.id_user ?? currentUserId;
+			const targetUserId = (input.id_user ?? currentUserId)?.trim();
 			
 			if (!targetUserId) {
 				throw new TRPCError({
@@ -957,75 +957,82 @@ export const userRouter = router({
 			}
 
 			try {
-				const pinnedProjectsFromDb = await prisma.project.findMany({
+				const pins = await prisma.pinProject.findMany({
 					where: {
-						pinProject: {
-							some: { id_user: targetUserId },
+						id_user: targetUserId,
+						project: {
+							is_archived: currentUserId && currentUserId === targetUserId ? undefined : false,
 						},
-						is_archived: currentUserId && currentUserId === targetUserId ? undefined : false,
 					},
 					select: {
-						id: true,
-						id_category: true,
-						slug: true,
-						title: true,
-						content: true,
-						is_archived: true,
-						image1: true,
-						image2: true,
-						image3: true,
-						image4: true,
-						image5: true,
-						video: true,
-						count_likes: true,
-						count_comments: true,
-						link_figma: true,
-						link_github: true,
-						created_at: true,
-						updated_at: true,
-						category: {
+						project: {
 							select: {
- 								id: true,
- 								title: true,
- 								slug: true,
- 							},
- 						},
- 						project_user: {
- 							select: {
- 								user: {
- 									select: {
- 										id: true,
- 										name: true,
- 										username: true,
- 										photo_profile: true,
- 									},
- 								},
- 								ownership: true,
- 								collabStatus: true,
- 							},
- 							orderBy: {
- 								created_at: "asc",
- 							},
- 						},
- 						bookmarks: currentUserId ? {
- 							where: { id_user: currentUserId },
- 							select: { id: true },
- 						} : false,
- 						LikeProject: currentUserId ? {
- 							where: { id_user: currentUserId },
- 							select: { id: true },
- 						} : false,
- 					},
- 					orderBy: {
- 						created_at: "desc",
- 					},
- 				});
+								id: true,
+								id_category: true,
+								slug: true,
+								title: true,
+								content: true,
+								is_archived: true,
+								image1: true,
+								image2: true,
+								image3: true,
+								image4: true,
+								image5: true,
+								video: true,
+								count_likes: true,
+								count_comments: true,
+								link_figma: true,
+								link_github: true,
+								created_at: true,
+								updated_at: true,
+								category: {
+									select: {
+										id: true,
+										title: true,
+										slug: true,
+									},
+								},
+								project_user: {
+									select: {
+										user: {
+											select: {
+												id: true,
+												name: true,
+												username: true,
+												photo_profile: true,
+											},
+										},
+										ownership: true,
+										collabStatus: true,
+									},
+									orderBy: {
+										created_at: "asc",
+									},
+								},
+								bookmarks: currentUserId ? {
+									where: { id_user: currentUserId },
+									select: { id: true },
+								} : false,
+								LikeProject: currentUserId ? {
+									where: { id_user: currentUserId },
+									select: { id: true },
+								} : false,
+							},
+						},
+					},
+					orderBy: {
+						project: {
+							created_at: "desc",
+						},
+					},
+					take: 10,
+				});
 
-				const data: ProjectOneType[] = pinnedProjectsFromDb.map((p) =>
+				const data: ProjectOneType[] = pins.map((pin) =>
 					toProjectOneDTO({
-						...p,
-						bookmarks: "bookmarks" in p ? (p.bookmarks as { id: string }[] | undefined) : undefined,
-						LikeProject: "LikeProject" in p ? (p.LikeProject as { id: string }[] | undefined) : undefined,
+						...pin.project,
+						bookmarks: "bookmarks" in pin.project ? (pin.project.bookmarks as { id: string }[] | undefined) : undefined,
+						LikeProject: "LikeProject" in pin.project ? (pin.project.LikeProject as { id: string }[] | undefined) : undefined,
 					}),
 				);
 
