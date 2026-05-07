@@ -72,7 +72,7 @@ export default function EditProfile() {
 
   const updateMutation = trpc.user.update.useMutation({
     onSuccess: (updatedUser) => {
-      console.log("Berhasil update user!");
+      console.log("User updated successfully!");
       utils.user.getByUsername.invalidate({ username: usernameFromUrl });
       if (updatedUser.data.username !== usernameFromUrl) {
         router.replace(`/profile/${updatedUser.data.username}`);
@@ -82,7 +82,7 @@ export default function EditProfile() {
     },
     onError: (error) => {
       console.error("Gagal update user:", error);
-      showToast("Gagal menyimpan data. Silakan coba lagi.", "error");
+      showToast("Failed to save data. Please try again.", "error");
     },
   });
 
@@ -109,14 +109,14 @@ export default function EditProfile() {
     };
   }, [usernameInput]);
 
-  // Deteksi perubahan username dari nilai awal
+  // Detect username changes from original value
   useEffect(() => {
     if (userData) {
       setIsUsernameDirty(usernameInput !== userData.username);
     }
   }, [usernameInput, userData]);
 
-  // Cek akses pengguna
+  // Check user access
   useEffect(() => {
     if (
       !isUserDetailLoading &&
@@ -188,7 +188,7 @@ export default function EditProfile() {
       { username: debouncedUsername },
       {
         enabled:
-          !!debouncedUsername && debouncedUsername !== userData?.username, // hanya cek jika berubah
+          !!debouncedUsername && debouncedUsername !== userData?.username, // only check if changed
       },
     );
 
@@ -199,7 +199,7 @@ export default function EditProfile() {
       usernameCheckData?.data?.id &&
       usernameCheckData.data.id !== userData?.id
     ) {
-      setUsernameError("Username sudah digunakan.");
+      setUsernameError("Username is already taken.");
     } else {
       setUsernameError(null);
     }
@@ -207,12 +207,12 @@ export default function EditProfile() {
 
   const handleSubmit = useCallback(async () => {
     if (!userData) {
-      showToast("Data pengguna tidak lengkap.", "error");
+      showToast("User data incomplete.", "error");
       return;
     }
 
     if (!name || !usernameInput) {
-      showToast("Nama dan username wajib diisi.", "error");
+      showToast("Name and username are required.", "error");
       return;
     }
 
@@ -276,11 +276,11 @@ export default function EditProfile() {
     showToast,
   ]);
 
-  // Fallback saat redirect
+  // Fallback during redirect
   if (isRedirecting) return null;
 
   if (!isLoaded || isUserDetailLoading || isLoggedInUserLoading) {
-    return <div className="text-center p-10 text-white">Memuat data...</div>;
+    return <div className="text-center p-10 text-white">Loading data...</div>;
   }
 
   if (userDetailError || loggedInUserError) {
@@ -294,7 +294,7 @@ export default function EditProfile() {
           onClick={() => window.location.reload()}
           className="mt-4 bg-red-600 px-4 py-2 rounded text-white hover:bg-red-700"
         >
-          Muat ulang
+          Reload
         </button>
       </div>
     );

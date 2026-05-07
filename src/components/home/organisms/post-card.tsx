@@ -6,7 +6,6 @@ import { PostHeader } from "../molecules/post-header";
 import { PostActions } from "../molecules/post-actions";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
 import { Github, Figma } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";

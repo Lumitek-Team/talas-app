@@ -3,7 +3,7 @@ import { z } from "zod";
 import { protectedProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
-import { getCommentTreeIds } from "@/lib/utils";
+import { getCommentTreeIds } from "@/lib/server-utils";
 import { currentUser } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 // NOTE: Avoid casting Prisma results to frontend DTO types (ProjectOneType/ProjectWithInteractionsType)

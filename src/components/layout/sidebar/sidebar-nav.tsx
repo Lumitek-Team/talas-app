@@ -161,8 +161,6 @@ export function SidebarNav({
                     onClick={(e) => handleNavClick(e, item)}
                     className={cn(
                       "flex items-center justify-center p-2 rounded-md",
-                      "transition-all duration-200 ease-in-out",
-                      "hover:scale-105 active:scale-90",
                       isActive ? "text-primary" : "text-white hover:bg-white/10",
                     )}
                     title={item.label}
@@ -201,8 +199,6 @@ export function SidebarNav({
                   className={cn(
                     "flex items-center gap-3 w-full px-6 py-4 text-base font-medium rounded-md",
                     isCollapsed ? "justify-center" : "",
-                    "transition-all duration-200 ease-in-out",
-                    "hover:scale-105 active:scale-90",
                     isActive
                       ? "text-primary"
                       : "text-white hover:bg-white/10",

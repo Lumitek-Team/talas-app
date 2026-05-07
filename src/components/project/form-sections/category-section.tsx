@@ -1,14 +1,13 @@
-// components/project/form-sections/category-section.tsx (Corrected)
 "use client";
 
-import { FormLabel, FormMessage } from "@/components/ui/form"; // Added FormMessage
-import { UseFormReturn, useWatch, Controller } from "react-hook-form"; // Import useWatch and Controller
-import { ProjectFormValues } from "../project-form"; // Assuming this path is correct
-import { CategoryType } from "@/lib/type"; // Using CategoryType from your lib/type.ts
+import { FormLabel, FormMessage } from "@/components/ui/form";
+import { UseFormReturn, useWatch, Controller } from "react-hook-form";
+import { ProjectFormValues } from "../project-form";
+import { CategoryType } from "@/lib/type";
 
 interface CategorySectionProps {
   form: UseFormReturn<ProjectFormValues>;
-  availableCategories: CategoryType[]; // Expecting the full CategoryType array from tRPC
+  availableCategories: CategoryType[];
   isLoading?: boolean;
 }
 
@@ -18,7 +17,7 @@ export function CategorySection({
   isLoading
 }: CategorySectionProps) {
   // Get the current value of the 'category' field from react-hook-form
-  // This will be used to style the active button.
+  // Current value used for active styling
   const currentCategoryValue = useWatch({
     control: form.control,
     name: "category", // The name of the field in your form schema

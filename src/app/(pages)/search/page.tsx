@@ -300,14 +300,6 @@ export default function SearchPage() {
     }
   };
 
-  const handleCreateProjectClick = () => {
-    if (!user) {
-      setAuthDialogMessage("Sign in to create and share your own projects.");
-      setAuthDialogOpen(true);
-      return;
-    }
-    router.push("/project/create");
-  };
   const showInitialPrompt = !committedValues.query || (committedValues.query.trim().length === 0);
 
   // Always render the layout structure
@@ -436,7 +428,7 @@ export default function SearchPage() {
           )}
         </div>
       </PageContainer>
-      <FloatingActionButton onClick={handleCreateProjectClick} />
+      <FloatingActionButton />
       <AuthPromptDialog
         isOpen={authDialogOpen}
         onClose={() => setAuthDialogOpen(false)}

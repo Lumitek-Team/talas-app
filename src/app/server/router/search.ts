@@ -268,7 +268,7 @@ export const searchRouter = router({
 				id_user: z.string().optional(), // kept for compatibility but should be ignored in favor of ctx.auth.userId
 			})
 		)
-		.query(async ({ input, ctx }) => {
+		.query(async ({ ctx }) => {
 			const currentUserId = ctx.auth.userId;
 			try {
 				// Step 1: Lightweight query — fetch id + id_category ordered by

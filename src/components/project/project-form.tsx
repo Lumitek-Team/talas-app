@@ -223,8 +223,7 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
           try {
             // Attempt to get the specialized Supabase token
             token = await getToken({ template: "supabase" });
-            // TEMPORARY: Debugging
-            console.log("JWT BEING SENT:", token);
+
           } catch (tokenError) {
             console.error("Clerk 'supabase' template acquisition failed:", tokenError);
           }
@@ -335,7 +334,7 @@ export function ProjectForm({ mode = "create", project }: ProjectFormProps) {
                       />
                     </FormControl>
                     <FormDescription>
-                      Tambahkan user yang akan berkolaborasi.
+                      Add users to collaborate with.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

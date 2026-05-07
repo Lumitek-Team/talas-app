@@ -62,7 +62,7 @@ export async function uploadImage(file: File, folder: string, token?: string): P
       console.error("CRITICAL: Supabase Storage Error:", {
         message: error.message,
         name: error.name,
-        status: (error as any).status,
+        status: (error as { status?: number }).status,
         path: filePath,
         bucket: BUCKET_NAME
       });

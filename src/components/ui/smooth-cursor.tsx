@@ -1,12 +1,12 @@
 "use client";
-
-import { useEffect, useState, useMemo } from 'react';
-import { motion, useMotionValue, useSpring, useVelocity, useTransform } from 'framer-motion';
-
+ 
+import { useEffect, useState } from 'react';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
+ 
 interface SmoothCursorProps {
   className?: string;
 }
-
+ 
 export const SmoothCursor: React.FC<SmoothCursorProps> = ({ className = "" }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
@@ -16,26 +16,24 @@ export const SmoothCursor: React.FC<SmoothCursorProps> = ({ className = "" }) =>
   const cursorX = useMotionValue(-100);
   const cursorY = useMotionValue(-100);
   
-  // Velocity tracking for the brush effect
-  const velocityX = useVelocity(cursorX);
-  const velocityY = useVelocity(cursorY);
+  // Spring configs for cascading "liquid" feel - defined individually to follow React Hook rules
+  const springX0 = useSpring(cursorX, { damping: 20, stiffness: 300, mass: 0.5 });
+  const springY0 = useSpring(cursorY, { damping: 20, stiffness: 300, mass: 0.5 });
   
-  const velocity = useTransform(
-    [velocityX, velocityY],
-    ([vX, vY]) => Math.sqrt(Math.pow(vX as number, 2) + Math.pow(vY as number, 2))
-  );
+  const springX1 = useSpring(cursorX, { damping: 25, stiffness: 200, mass: 0.8 });
+  const springY1 = useSpring(cursorY, { damping: 25, stiffness: 200, mass: 0.8 });
+  
+  const springX2 = useSpring(cursorX, { damping: 30, stiffness: 150, mass: 1.2 });
+  const springY2 = useSpring(cursorY, { damping: 30, stiffness: 150, mass: 1.2 });
+  
+  const springX3 = useSpring(cursorX, { damping: 35, stiffness: 100, mass: 1.8 });
+  const springY3 = useSpring(cursorY, { damping: 35, stiffness: 100, mass: 1.8 });
+  
+  const springX4 = useSpring(cursorX, { damping: 40, stiffness: 80, mass: 2.5 });
+  const springY4 = useSpring(cursorY, { damping: 40, stiffness: 80, mass: 2.5 });
 
-  // Spring configs for cascading "liquid" feel
-  const springConfigs = [
-    { damping: 20, stiffness: 300, mass: 0.5 }, // Near
-    { damping: 25, stiffness: 200, mass: 0.8 },
-    { damping: 30, stiffness: 150, mass: 1.2 },
-    { damping: 35, stiffness: 100, mass: 1.8 },
-    { damping: 40, stiffness: 80, mass: 2.5 },  // Far
-  ];
-
-  const springsX = springConfigs.map(config => useSpring(cursorX, config));
-  const springsY = springConfigs.map(config => useSpring(cursorY, config));
+  const springsX = [springX0, springX1, springX2, springX3, springX4];
+  const springsY = [springY0, springY1, springY2, springY3, springY4];
 
   useEffect(() => {
     setIsMounted(true);
@@ -83,8 +81,8 @@ export const SmoothCursor: React.FC<SmoothCursorProps> = ({ className = "" }) =>
       <motion.div
         className={`fixed pointer-events-none z-[9995] ${className}`}
         style={{
-          left: springsX[4],
-          top: springsY[4],
+          left: springX4,
+          top: springY4,
           width: '160px',
           height: '160px',
           x: '-50%',

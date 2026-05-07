@@ -13,7 +13,7 @@ import { BookmarkType } from "@/lib/type";
 import { useUser } from "@clerk/nextjs";
 import { getPublicUrl } from "@/lib/utils";
 
-import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog"; // Import dialog
+import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog";
 
 // Transform bookmarked item data to PostCard props (remains the same)
 const transformSavedItemToPostCardProps = (
@@ -276,7 +276,7 @@ export default function SavedProjectsPage() {
         </div>
       </PageContainer>
 
-      <FloatingActionButton onClick={handleFabClick} />
+      <FloatingActionButton onClick={handleFabClick} requiresAuth={false} />
 
       {/* Confirmation Dialog for Unsave */}
       <CustomAlertDialog
@@ -284,7 +284,7 @@ export default function SavedProjectsPage() {
         onOpenChange={setIsUnsaveConfirmOpen}
         title="Unsave Project"
         description="Are you sure you want to unsave this project?"
-        onConfirm={handleConfirmUnsave} // This will call unbookmarkMutation
+        onConfirm={handleConfirmUnsave}
         confirmText="Yes, Unsave"
         confirmButtonVariant="destructive" // "destructive" or "default" as preferred
       />

@@ -2,6 +2,7 @@
 
 import { useSignIn } from "@clerk/nextjs";
 import { useState } from "react";
+import Image from "next/image";
 
 export function SignInForm() {
   const { signIn, isLoaded } = useSignIn();
@@ -23,9 +24,21 @@ export function SignInForm() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background px-4 font-inter">
-      <div className="bg-[#181818] border border-white/5 rounded-[24px] p-8 sm:p-10 w-full max-w-[400px] shadow-2xl flex flex-col">
-        
+    <div className="relative flex items-center justify-center min-h-screen px-4 font-inter overflow-hidden">
+
+      {/* Background SVG — decorative only, hidden from screen readers */}
+      <div className="absolute inset-0 z-0" aria-hidden="true">
+        <Image
+          src="/img/auth-bg.jpg"
+          alt=""
+          fill
+          className="object-cover object-center opacity-70"
+          priority
+        />
+      </div>
+
+      <div className="bg-[#181818] z-10 border border-white/5 rounded-[24px] p-6 sm:px-10 sm:py-8 w-full max-w-[400px] shadow-2xl flex flex-col">
+
         <div className="text-center mb-8">
           <h1 className="text-[24px] font-bold text-white tracking-tight leading-tight mb-3">
             Log In or Sign Up

@@ -16,10 +16,6 @@ import { Button } from "@/components/ui/button";
 
 export default function NotificationPage() {
   const { user: userclerk, isLoaded } = useUser();
-  const user = trpc.user.getById.useQuery(
-    { id: userclerk?.id ?? "" },
-    { enabled: isLoaded && !!userclerk?.id },
-  ).data?.data;
 
   const {
     data,
@@ -50,10 +46,10 @@ export default function NotificationPage() {
 
   const hasMarkedAllRead = useRef(false);
 
-  // Fungsi untuk menandai semua notifikasi telah dibaca (hanya sekali)
+  // Function to mark all notifications as read (once per session)
   const markAllNotificationsAsReadOnce = () => {
     if (
-      !hasMarkedAllRead.current && // hanya sekali
+      !hasMarkedAllRead.current && // runs once
       !isLoading &&
       !error &&
       userclerk?.id &&
@@ -139,7 +135,7 @@ export default function NotificationPage() {
                 </div>
               )}
 
-              {/* notification */}
+
               {requestCollaboration && requestCollaboration.length > 0 && (
                 <section className="space-y-4 mb-6">
                   <h2 className="text-sm text-gray-400 font-medium mb-4">

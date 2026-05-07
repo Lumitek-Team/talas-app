@@ -68,7 +68,7 @@ export function AuthPromptDialog({
             exit={{ opacity: 0, scale: 0.95, y: 16 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
-            <div className="relative w-full max-w-[400px] bg-[#181818] border border-white/5 rounded-[24px] shadow-2xl p-8 sm:p-10 flex flex-col pointer-events-auto">
+            <div className="relative w-full max-w-[400px] bg-[#181818] border border-white/5 rounded-[24px] shadow-2xl p-6 sm:px-10 sm:py-6 flex flex-col pointer-events-auto">
               
               <button
                 onClick={onClose}

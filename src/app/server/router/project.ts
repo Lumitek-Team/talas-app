@@ -578,7 +578,14 @@ export const projectRouter = router({
           ]);
         }
 
-        const updateData: any = {
+        const updateData: {
+          slug?: string;
+          id_category?: string;
+          title?: string;
+          content?: string;
+          link_figma?: string | null;
+          link_github?: string | null;
+        } = {
           slug: updatedSlug,
         };
 

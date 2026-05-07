@@ -1,4 +1,3 @@
-// components/ui/custom-alert-dialog.tsx
 "use client";
 
 import {
@@ -10,8 +9,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-   // We might control it with isOpen prop instead
-} from "@/components/ui/alert-dialog"; // Assuming shadcn/ui path
+} from "@/components/ui/alert-dialog";
 
 
 interface CustomAlertDialogProps {

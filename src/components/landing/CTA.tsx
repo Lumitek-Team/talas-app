@@ -46,7 +46,7 @@ const TeamMember = memo(({ member }: { member: { id: number; image: string } }) 
       alt={`Team member ${member.id}`}
       width={176}
       height={208}
-      className="w-full h-full object-cover filter blur-sm grayscale hover:filter-none hover:scale-110 transition-all duration-300 ease-out"
+      className="w-full h-full object-cover md:filter md:blur-sm md:grayscale md:hover:filter-none md:hover:scale-110 transition-all duration-300 ease-out"
       loading="lazy"
       priority={false}
       quality={75}
@@ -67,7 +67,7 @@ export function CTA() {
 
   return (
     <motion.section 
-      className="text-center py-50 px-4 bg-bg-primary relative overflow-hidden"
+      className="text-center py-24 md:py-50 px-4 bg-bg-primary relative overflow-hidden"
       variants={containerVariants}
       initial="hidden"
       whileInView="visible"

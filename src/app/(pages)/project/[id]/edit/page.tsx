@@ -1,5 +1,3 @@
-// app/project/[id]/edit/page.tsx
-
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -7,7 +5,6 @@ import { useUser } from "@clerk/nextjs";
 import { trpc } from "@/app/_trpc/client";
 import { PageContainer } from "@/components/ui/page-container";
 import { Sidebar } from "@/components/layout/sidebar";
-// Ensure ProjectForm is adapted to handle edit mode and these props
 import { ProjectForm } from "@/components/project/project-form";
 
 import { useEffect, useState } from "react";
@@ -18,9 +15,6 @@ export default function EditProjectPage() {
   const router = useRouter();
   const { user, isLoaded: isUserLoaded } = useUser();
 
-  // Assuming the route is /project/[slug]/edit, so params.id is the slug.
-  // If the route uses the actual ID, this would be params.id.
-  // The provided page.tsx links to /project/${project.slug}/edit.
   const projectIdOrSlug = params.id as string;
 
   const [isMobile, setIsMobile] = useState(false);

@@ -62,8 +62,6 @@ export function SidebarMore({ isCollapsed }: { isCollapsed: boolean }) {
         className={cn(
           "flex items-center gap-3 w-full px-6 py-4 text-base font-medium rounded-md",
           isCollapsed ? "justify-center" : "",
-          "transition-all duration-200 ease-in-out", // General transition for all properties
-          "hover:scale-105 active:scale-90", // Scale animations
           "text-white hover:bg-white/10", // Consistent styling with nav items
           "cursor-pointer"
         )}
@@ -84,7 +82,7 @@ export function SidebarMore({ isCollapsed }: { isCollapsed: boolean }) {
         ) : (
           <div
             ref={popupRef}
-            className="absolute bottom-full mb-2 left-0 z-10 bg-[#2C2C2C] rounded-md shadow-lg transition-all duration-200"
+            className="absolute bottom-full mb-2 left-0 z-10 bg-[#2C2C2C] rounded-md shadow-lg"
             style={{ width: sidebarWidth }}
           >
             <MoreLeftSidebar isCollapsed={isCollapsed} />

@@ -1,17 +1,16 @@
-// app/create-project/page.tsx (or your equivalent path)
 "use client";
 
 import { Sidebar } from "@/components/layout/sidebar";
 import { PageContainer } from "@/components/ui/page-container";
-import { ProjectForm } from "@/components/project/project-form"; // Ensure path is correct
+import { ProjectForm } from "@/components/project/project-form";
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/nextjs"; // Optional: for page-level auth guard
-import { useRouter } from "next/navigation"; // Optional: for redirect
+import { useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 export default function CreateProjectPage() {
   const [isMobile, setIsMobile] = useState(false);
-  const { user, isLoaded } = useUser(); // Optional: for auth guard
-  const router = useRouter(); // Optional: for redirect
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
     const handleResize = () => {
@@ -26,19 +25,17 @@ export default function CreateProjectPage() {
     };
   }, []);
 
-  // Optional: Redirect if user is not loaded or not authenticated
+  // Auth guard: Redirect guests to sign-in
   useEffect(() => {
     if (isLoaded && !user) {
-      router.push("/sign-in"); // Or your sign-in page
+      router.push("/sign-in");
     }
   }, [isLoaded, user, router]);
 
   if (!isLoaded || !user) {
-    // You can show a loading spinner or a simple message here
-    // Or rely on Sidebar/PageContainer to have their own loading states if any
     return (
         <>
-            <Sidebar activeItem="Create" /> {/* Assuming "Create" is an activeItem */}
+            <Sidebar activeItem="Create" />
             <PageContainer title="Create Project" showBackButton={true}>
                 <p>Loading user...</p>
             </PageContainer>
@@ -48,7 +45,7 @@ export default function CreateProjectPage() {
 
   return (
     <>
-      <Sidebar activeItem="Create" /> {/* Ensure this matches your Sidebar's expectation */}
+      <Sidebar activeItem="Create" />
       <PageContainer title="Create Project" showBackButton={true}>
         <div className={`overflow-hidden ${isMobile ? 'bg-background' : 'bg-card rounded-3xl border border-white/10'}`}>
           <div className="p-6 space-y-6">

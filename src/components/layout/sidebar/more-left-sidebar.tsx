@@ -142,7 +142,7 @@ export function MoreLeftSidebar({
                       <button
                         className={`flex items-center cursor-pointer${
                           isCollapsed ? "justify-center" : ""
-                        } gap-3 w-full px-6 py-4 text-base font-medium transition-tranformation duration-200 active:scale-90 ${
+                        } gap-3 w-full px-6 py-4 text-base font-medium transition-tranformation duration-200 ${
                           isActive ? "text-primary" : "text-white hover:bg-white/10"
                         } rounded-md`}
                         title={isCollapsed ? item.label : ""}
@@ -160,7 +160,7 @@ export function MoreLeftSidebar({
                     onClick={(e) => handleProtectedClick(e, item)}
                     className={`flex items-center ${
                       isCollapsed ? "justify-center" : ""
-                    } gap-3 w-full px-6 py-4 text-base font-medium transition-tranformation duration-200 active:scale-90 ${
+                    } gap-3 w-full px-6 py-4 text-base font-medium transition-tranformation duration-200 ${
                       isActive ? "text-primary" : "text-white hover:bg-white/10"
                     } rounded-md`}
                     title={isCollapsed ? item.label : ""}

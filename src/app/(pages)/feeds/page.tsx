@@ -57,7 +57,7 @@ export default function HomePage() {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     // Guests can browse feeds — no auth required
     enabled: isUserLoaded,
-    staleTime: 60 * 1000, // MEDIUM — 1 minute
+    staleTime: 60 * 1000, // Cache duration: 1 minute
     refetchOnWindowFocus: false,
   });
 
@@ -321,9 +321,6 @@ export default function HomePage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
-  const handleFabClick = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   /** Show the auth-prompt dialog with an optional contextual message. */
   const showAuthPrompt = useCallback((message?: string) => {
@@ -418,10 +415,10 @@ export default function HomePage() {
         <div
           className={`overflow-hidden ${isMobile ? "bg-background" : "bg-card rounded-3xl border border-white/10"}`}
         >
-          {!isMobile && user && (
+          {!isMobile && (
             <PostComposer
-              avatarSrc={user.imageUrl || "/img/dummy/profile-photo-dummy.jpg"}
-              username={user.fullName || user.username || "User"}
+              avatarSrc={user?.imageUrl || "/img/dummy/avatar-dummy.jpg"}
+              username={user?.fullName || user?.username || "Guest"}
               className="border-b border-white/10"
             />
           )}
@@ -477,7 +474,7 @@ export default function HomePage() {
         </div>
       </PageContainer>
 
-      <FloatingActionButton onClick={handleFabClick} />
+      <FloatingActionButton />
 
       {/* Auth-prompt dialog — shown when guests attempt write actions */}
       <AuthPromptDialog

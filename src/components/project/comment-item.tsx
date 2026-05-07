@@ -7,7 +7,7 @@ import {
   Avatar,
   AvatarImage,
   AvatarFallback,
-} from "@/components/ui/avatar-gatau";
+} from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -28,9 +28,10 @@ import { trpc } from "@/app/_trpc/client";
 import { getPublicUrl, getInitials } from "@/lib/utils";
 import { CommentForm } from "./comment-form";
 import { formatDistanceToNow } from "date-fns";
-import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog"; // Import the new dialog
+import { CustomAlertDialog } from "@/components/ui/custom-alert-dialog";
 import { useToast } from "@/contexts/toast-context";
 import { getSanitizedConfig } from "@/lib/sanitize";
+import { AuthPromptDialog } from "@/components/ui/auth-prompt-dialog";
 
 interface CommentItemProps {
   comment: CommentsInProjectType;
@@ -50,6 +51,7 @@ export function CommentItem({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false); // State for delete dialog
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [optimisticLike, setOptimisticLike] = useState(comment.count_like || 0);
   const [isLiked, setIsLiked] = useState(false);
   const { showToast } = useToast();
@@ -88,7 +90,10 @@ export function CommentItem({
   });
 
   const handleLikeComment = () => {
-    if (!currentUserId) return;
+    if (!currentUserId) {
+      setIsAuthDialogOpen(true);
+      return;
+    }
     if (isLiked) {
       unlikeCommentMutation.mutate({
         id_user: currentUserId,
@@ -247,9 +252,13 @@ export function CommentItem({
               dangerouslySetInnerHTML={getSanitizedConfig(comment.content)}
             />
             <div className="flex items-center gap-3">
-              {canReply && currentUserId && (
+              {canReply && (
                 <button
                   onClick={() => {
+                    if (!currentUserId) {
+                      setIsAuthDialogOpen(true);
+                      return;
+                    }
                     setShowReplyForm(!showReplyForm);
                     if (isEditing) setIsEditing(false);
                   }}
@@ -317,6 +326,12 @@ export function CommentItem({
         onConfirm={handleConfirmDelete}
         confirmText="Delete"
         confirmButtonVariant="destructive"
+      />
+
+      <AuthPromptDialog 
+        isOpen={isAuthDialogOpen}
+        onClose={() => setIsAuthDialogOpen(false)}
+        message="Sign in to interact with comments and join the conversation."
       />
     </>
   );
