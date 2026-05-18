@@ -1,9 +1,15 @@
-import { protectedProcedure, router } from "../trpc";
+import { protectedProcedure, publicProcedure, router } from "../trpc";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
+import { currentUser } from "@clerk/nextjs/server";
 
 export const followRouter = router({
+	// DEBUG: Test reachability
+	ping: publicProcedure.query(() => {
+		return "pong";
+	}),
+
 	// Follow a user
 	following: protectedProcedure
 		.input(
@@ -15,6 +21,7 @@ export const followRouter = router({
 		.mutation(async ({ input, ctx }) => {
 			try {
 				const actorId = ctx.auth.userId ?? input.id_follower;
+				console.log(`[Follow] Actor: ${actorId}, Target: ${input.id_following}`);
 				
 				if (!actorId) {
 					throw new TRPCError({
@@ -23,10 +30,36 @@ export const followRouter = router({
 					});
 				}
 
-				const [follower, following, existingFollow] = await Promise.all([
-					prisma.user.findUnique({
-						where: { id: actorId },
-					}),
+				// 1. SAFETY SYNC: Ensure the follower exists in our DB
+				let follower = await prisma.user.findUnique({
+					where: { id: actorId },
+				});
+
+				if (!follower) {
+					console.log(`[Follow] Actor ${actorId} not in DB. Attempting auto-sync...`);
+					const user = await currentUser();
+					if (user && user.id === actorId) {
+						let username = user.emailAddresses[0].emailAddress.split("@")[0];
+						// Quick unique username logic
+						const existingWithUsername = await prisma.user.findFirst({ where: { username } });
+						if (existingWithUsername) username = `${username}-${Math.floor(100 + Math.random() * 900)}`;
+
+						follower = await prisma.user.create({
+							data: {
+								id: actorId,
+								username,
+								name: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || username,
+								email: user.emailAddresses[0].emailAddress,
+								auth_type: user.externalAccounts[0]?.provider || "clerk",
+								photo_profile: user.imageUrl,
+								count_summary: { create: {} },
+							},
+						});
+						console.log(`[Follow] Auto-sync successful for ${actorId}`);
+					}
+				}
+
+				const [following, existingFollow] = await Promise.all([
 					prisma.user.findUnique({
 						where: { id: input.id_following },
 					}),
@@ -38,10 +71,19 @@ export const followRouter = router({
 					}),
 				]);
 
-				if (!follower || !following) {
+				if (!follower) {
+					console.error(`[Follow] Follower still not found: ${actorId}`);
 					throw new TRPCError({
-						code: "NOT_FOUND",
-						message: "One or both users not found",
+						code: "INTERNAL_SERVER_ERROR",
+						message: `Follower user not found in DB (ID: ${actorId}). Your account record is missing.`,
+					});
+				}
+
+				if (!following) {
+					console.error(`[Follow] Target not found: ${input.id_following}`);
+					throw new TRPCError({
+						code: "INTERNAL_SERVER_ERROR",
+						message: `Target user not found in DB (ID: ${input.id_following}).`,
 					});
 				}
 
@@ -49,6 +91,28 @@ export const followRouter = router({
 					throw new TRPCError({
 						code: "CONFLICT",
 						message: "Already following this user",
+					});
+				}
+
+				// Ensure count_summary exists for both to avoid P2025 (Record to update not found)
+				try {
+					await Promise.all([
+						prisma.count_summary.upsert({
+							where: { id_user: actorId },
+							update: {},
+							create: { id_user: actorId }
+						}),
+						prisma.count_summary.upsert({
+							where: { id_user: input.id_following },
+							update: {},
+							create: { id_user: input.id_following }
+						})
+					]);
+				} catch (upsertError) {
+					console.error(`[Follow] Upsert count_summary failed:`, upsertError);
+					throw new TRPCError({
+						code: "INTERNAL_SERVER_ERROR",
+						message: `Failed to prepare counters: ${upsertError instanceof Error ? upsertError.message : 'Unknown error'}`
 					});
 				}
 
@@ -100,6 +164,7 @@ export const followRouter = router({
 					data: follow,
 				};
 			} catch (error) {
+				console.error(`[Follow] Mutation failed:`, error);
 				if (error instanceof TRPCError) throw error;
 				throw new TRPCError({
 					code: "INTERNAL_SERVER_ERROR",
