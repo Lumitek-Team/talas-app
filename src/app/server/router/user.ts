@@ -25,37 +25,55 @@ export const userRouter = router({
 			})
 		)
 		.mutation(async ({ input }) => {
-			const existingUser = await prisma.user.findFirst({
-				where: {
-					OR: [{ id: input.id }, { email: input.email }],
-				},
-			});
+			try {
+				// 1. Try finding by ID first
+				let user = await prisma.user.findUnique({
+					where: { id: input.id },
+					include: { count_summary: true }
+				});
 
-			let username = input.email.split("@")[0];
-
-			// Pastikan username unik
-			if (!existingUser) {
-				let unique = false;
-				let candidate = username;
-				while (!unique) {
-					const userWithUsername = await prisma.user.findFirst({
-						where: { username: candidate },
-						select: { id: true },
+				// 2. If not found by ID, try finding by email
+				if (!user) {
+					const userByEmail = await prisma.user.findUnique({
+						where: { email: input.email },
+						include: { count_summary: true }
 					});
-					if (!userWithUsername) {
-						username = candidate;
-						unique = true;
-					} else {
-						const randomDigits = Math.floor(100 + Math.random() * 900); // 3 digit
-						candidate = `${username}-${randomDigits}`;
+
+					if (userByEmail) {
+						// Email exists but ID is different (Clerk account mismatch/re-creation)
+						// Update the ID to match current Clerk ID
+						user = await prisma.user.update({
+							where: { email: input.email },
+							data: { 
+								id: input.id,
+								name: input.name,
+								photo_profile: input.photo_profile 
+							},
+							include: { count_summary: true }
+						});
 					}
 				}
-			}
 
-			try {
-				if (!existingUser) {
-					// FIX: Use a nested create to make the User and their count_summary at the same time.
-					const user = await prisma.user.create({
+				// 3. If still not found, create new user
+				if (!user) {
+					let username = input.email.split("@")[0];
+					let unique = false;
+					let candidate = username;
+					while (!unique) {
+						const userWithUsername = await prisma.user.findFirst({
+							where: { username: candidate },
+							select: { id: true },
+						});
+						if (!userWithUsername) {
+							username = candidate;
+							unique = true;
+						} else {
+							const randomDigits = Math.floor(100 + Math.random() * 900);
+							candidate = `${username}-${randomDigits}`;
+						}
+					}
+
+					user = await prisma.user.create({
 						data: {
 							id: input.id,
 							username: username,
@@ -63,26 +81,38 @@ export const userRouter = router({
 							email: input.email,
 							auth_type: input.auth_type,
 							photo_profile: input.photo_profile,
-							// This line creates the associated count_summary record automatically
 							count_summary: {
 								create: {},
 							},
 						},
+						include: { count_summary: true }
 					});
-
-					return {
-						success: true,
-						message: "Successfully synced user with Supabase",
-						data: user,
-					};
 				} else {
-					// User already exists, no action needed
-					return {
-						success: true,
-						message: "User already exists.",
-						data: existingUser,
-					};
+					// User exists, ensure count_summary exists
+					if (!user.count_summary) {
+						await prisma.count_summary.create({
+							data: { id_user: user.id }
+						});
+					}
+					
+					// Update profile info if changed
+					if (user.name !== input.name || user.photo_profile !== input.photo_profile) {
+						user = await prisma.user.update({
+							where: { id: user.id },
+							data: {
+								name: input.name,
+								photo_profile: input.photo_profile
+							},
+							include: { count_summary: true }
+						});
+					}
 				}
+
+				return {
+					success: true,
+					message: "Successfully synced user",
+					data: user,
+				};
 			} catch (error) {
 				throw new TRPCError({
 					code: "INTERNAL_SERVER_ERROR",
